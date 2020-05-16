@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2013 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,12 +12,11 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
+   |          Dmitry Stogov <dmitry@php.net>                              |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #include "zend.h"
 #include "zend_globals.h"
@@ -25,87 +24,127 @@
 #include "zend_API.h"
 #include "zend_interfaces.h"
 #include "zend_exceptions.h"
+#include "zend_weakrefs.h"
 
-ZEND_API void zend_object_std_init(zend_object *object, zend_class_entry *ce TSRMLS_DC)
+static zend_always_inline void _zend_object_std_init(zend_object *object, zend_class_entry *ce)
 {
+	GC_SET_REFCOUNT(object, 1);
+	GC_TYPE_INFO(object) = IS_OBJECT | (GC_COLLECTABLE << GC_FLAGS_SHIFT);
 	object->ce = ce;
 	object->properties = NULL;
-	object->properties_table = NULL;
-	object->guards = NULL;
+	zend_objects_store_put(object);
+	if (UNEXPECTED(ce->ce_flags & ZEND_ACC_USE_GUARDS)) {
+		ZVAL_UNDEF(object->properties_table + object->ce->default_properties_count);
+	}
 }
 
-ZEND_API void zend_object_std_dtor(zend_object *object TSRMLS_DC)
+ZEND_API void ZEND_FASTCALL zend_object_std_init(zend_object *object, zend_class_entry *ce)
 {
-	if (object->guards) {
-		zend_hash_destroy(object->guards);
-		FREE_HASHTABLE(object->guards);
-	}
-	if (object->properties) {
-		zend_hash_destroy(object->properties);
-		FREE_HASHTABLE(object->properties);
-		if (object->properties_table) {
-			efree(object->properties_table);
-		}
-	} else if (object->properties_table) {
-		int i;
+	_zend_object_std_init(object, ce);
+}
 
-		for (i = 0; i < object->ce->default_properties_count; i++) {
-			if (object->properties_table[i]) {
-				zval_ptr_dtor(&object->properties_table[i]);
+ZEND_API void zend_object_std_dtor(zend_object *object)
+{
+	zval *p, *end;
+
+	if (object->properties) {
+		if (EXPECTED(!(GC_FLAGS(object->properties) & IS_ARRAY_IMMUTABLE))) {
+			if (EXPECTED(GC_DELREF(object->properties) == 0)
+					&& EXPECTED(GC_TYPE(object->properties) != IS_NULL)) {
+				zend_array_destroy(object->properties);
 			}
 		}
-		efree(object->properties_table);
+	}
+	p = object->properties_table;
+	if (EXPECTED(object->ce->default_properties_count)) {
+		end = p + object->ce->default_properties_count;
+		do {
+			if (Z_REFCOUNTED_P(p)) {
+				if (UNEXPECTED(Z_ISREF_P(p)) &&
+						(ZEND_DEBUG || ZEND_REF_HAS_TYPE_SOURCES(Z_REF_P(p)))) {
+					zend_property_info *prop_info = zend_get_property_info_for_slot(object, p);
+					if (ZEND_TYPE_IS_SET(prop_info->type)) {
+						ZEND_REF_DEL_TYPE_SOURCE(Z_REF_P(p), prop_info);
+					}
+				}
+				i_zval_ptr_dtor(p);
+			}
+			p++;
+		} while (p != end);
+	}
+
+	if (UNEXPECTED(object->ce->ce_flags & ZEND_ACC_USE_GUARDS)) {
+		if (EXPECTED(Z_TYPE_P(p) == IS_STRING)) {
+			zval_ptr_dtor_str(p);
+		} else if (Z_TYPE_P(p) == IS_ARRAY) {
+			HashTable *guards;
+
+			guards = Z_ARRVAL_P(p);
+			ZEND_ASSERT(guards != NULL);
+			zend_hash_destroy(guards);
+			FREE_HASHTABLE(guards);
+		}
+	}
+
+	if (UNEXPECTED(GC_FLAGS(object) & IS_OBJ_WEAKLY_REFERENCED)) {
+		zend_weakrefs_notify(object);
 	}
 }
 
-ZEND_API void zend_objects_destroy_object(zend_object *object, zend_object_handle handle TSRMLS_DC)
+ZEND_API void zend_objects_destroy_object(zend_object *object)
 {
-	zend_function *destructor = object ? object->ce->destructor : NULL;
+	zend_function *destructor = object->ce->destructor;
 
 	if (destructor) {
-		zval *old_exception;
-		zval *obj;
-		zend_object_store_bucket *obj_bucket;
+		zend_object *old_exception;
+		zend_class_entry *orig_fake_scope;
+		zend_fcall_info fci;
+		zend_fcall_info_cache fcic;
+		zval ret;
 
 		if (destructor->op_array.fn_flags & (ZEND_ACC_PRIVATE|ZEND_ACC_PROTECTED)) {
 			if (destructor->op_array.fn_flags & ZEND_ACC_PRIVATE) {
 				/* Ensure that if we're calling a private function, we're allowed to do so.
 				 */
-				if (object->ce != EG(scope)) {
-					zend_class_entry *ce = object->ce;
+				if (EG(current_execute_data)) {
+					zend_class_entry *scope = zend_get_executed_scope();
 
-					zend_error(EG(in_execution) ? E_ERROR : E_WARNING,
-						"Call to private %s::__destruct() from context '%s'%s",
-						ce->name,
-						EG(scope) ? EG(scope)->name : "",
-						EG(in_execution) ? "" : " during shutdown ignored");
+					if (object->ce != scope) {
+						zend_throw_error(NULL,
+							"Call to private %s::__destruct() from context '%s'",
+							ZSTR_VAL(object->ce->name),
+							scope ? ZSTR_VAL(scope->name) : "");
+						return;
+					}
+				} else {
+					zend_error(E_WARNING,
+						"Call to private %s::__destruct() from context '' during shutdown ignored",
+						ZSTR_VAL(object->ce->name));
 					return;
 				}
 			} else {
 				/* Ensure that if we're calling a protected function, we're allowed to do so.
 				 */
-				if (!zend_check_protected(zend_get_function_root_class(destructor), EG(scope))) {
-					zend_class_entry *ce = object->ce;
+				if (EG(current_execute_data)) {
+					zend_class_entry *scope = zend_get_executed_scope();
 
-					zend_error(EG(in_execution) ? E_ERROR : E_WARNING,
-						"Call to protected %s::__destruct() from context '%s'%s",
-						ce->name,
-						EG(scope) ? EG(scope)->name : "",
-						EG(in_execution) ? "" : " during shutdown ignored");
+					if (!zend_check_protected(zend_get_function_root_class(destructor), scope)) {
+						zend_throw_error(NULL,
+							"Call to protected %s::__destruct() from context '%s'",
+							ZSTR_VAL(object->ce->name),
+							scope ? ZSTR_VAL(scope->name) : "");
+						return;
+					}
+				} else {
+					zend_error(E_WARNING,
+						"Call to protected %s::__destruct() from context '' during shutdown ignored",
+						ZSTR_VAL(object->ce->name));
 					return;
 				}
 			}
 		}
 
-		MAKE_STD_ZVAL(obj);
-		Z_TYPE_P(obj) = IS_OBJECT;
-		Z_OBJ_HANDLE_P(obj) = handle;
-		obj_bucket = &EG(objects_store).object_buckets[handle];
-		if (!obj_bucket->bucket.obj.handlers) {
-			obj_bucket->bucket.obj.handlers = &std_object_handlers;
-		}
-		Z_OBJ_HT_P(obj) = obj_bucket->bucket.obj.handlers;
-		zval_copy_ctor(obj);
+		GC_ADDREF(object);
 
 		/* Make sure that destructors are protected from previously thrown exceptions.
 		 * For example, if an exception was thrown in a function and when the function's
@@ -113,129 +152,163 @@ ZEND_API void zend_objects_destroy_object(zend_object *object, zend_object_handl
 		 */
 		old_exception = NULL;
 		if (EG(exception)) {
-			if (Z_OBJ_HANDLE_P(EG(exception)) == handle) {
-				zend_error(E_ERROR, "Attempt to destruct pending exception");
+			if (EG(exception) == object) {
+				zend_error_noreturn(E_CORE_ERROR, "Attempt to destruct pending exception");
 			} else {
 				old_exception = EG(exception);
 				EG(exception) = NULL;
 			}
 		}
-		zend_call_method_with_0_params(&obj, object->ce, &destructor, ZEND_DESTRUCTOR_FUNC_NAME, NULL);
+		orig_fake_scope = EG(fake_scope);
+		EG(fake_scope) = NULL;
+
+		ZVAL_UNDEF(&ret);
+
+		fci.size = sizeof(fci);
+		fci.object = object;
+		fci.retval = &ret;
+		fci.param_count = 0;
+		fci.params = NULL;
+		fci.no_separation = 1;
+		ZVAL_UNDEF(&fci.function_name); /* Unused */
+
+		fcic.function_handler = destructor;
+		fcic.called_scope = object->ce;
+		fcic.object = object;
+
+		zend_call_function(&fci, &fcic);
+		zval_ptr_dtor(&ret);
+
 		if (old_exception) {
 			if (EG(exception)) {
-				zend_exception_set_previous(EG(exception), old_exception TSRMLS_CC);
+				zend_exception_set_previous(EG(exception), old_exception);
 			} else {
 				EG(exception) = old_exception;
 			}
 		}
-		zval_ptr_dtor(&obj);
+		OBJ_RELEASE(object);
+		EG(fake_scope) = orig_fake_scope;
 	}
 }
 
-ZEND_API void zend_objects_free_object_storage(zend_object *object TSRMLS_DC)
+ZEND_API zend_object* ZEND_FASTCALL zend_objects_new(zend_class_entry *ce)
 {
-	zend_object_std_dtor(object TSRMLS_CC);
-	efree(object);
+	zend_object *object = emalloc(sizeof(zend_object) + zend_object_properties_size(ce));
+
+	_zend_object_std_init(object, ce);
+	object->handlers = &std_object_handlers;
+	return object;
 }
 
-ZEND_API zend_object_value zend_objects_new(zend_object **object, zend_class_entry *class_type TSRMLS_DC)
+ZEND_API void ZEND_FASTCALL zend_objects_clone_members(zend_object *new_object, zend_object *old_object)
 {
-	zend_object_value retval;
+	if (old_object->ce->default_properties_count) {
+		zval *src = old_object->properties_table;
+		zval *dst = new_object->properties_table;
+		zval *end = src + old_object->ce->default_properties_count;
 
-	*object = emalloc(sizeof(zend_object));
-	(*object)->ce = class_type;
-	(*object)->properties = NULL;
-	(*object)->properties_table = NULL;
-	(*object)->guards = NULL;
-	retval.handle = zend_objects_store_put(*object, (zend_objects_store_dtor_t) zend_objects_destroy_object, (zend_objects_free_object_storage_t) zend_objects_free_object_storage, NULL TSRMLS_CC);
-	retval.handlers = &std_object_handlers;
-	return retval;
-}
-
-ZEND_API zend_object *zend_objects_get_address(const zval *zobject TSRMLS_DC)
-{
-	return (zend_object *)zend_object_store_get_object(zobject TSRMLS_CC);
-}
-
-ZEND_API void zend_objects_clone_members(zend_object *new_object, zend_object_value new_obj_val, zend_object *old_object, zend_object_handle handle TSRMLS_DC)
-{
-	int i;
-
-	if (old_object->properties_table) {
-		if (!new_object->properties_table) {
-			new_object->properties_table = emalloc(sizeof(zval*) * old_object->ce->default_properties_count);
-			memset(new_object->properties_table, 0, sizeof(zval*) * old_object->ce->default_properties_count);
-		}
-		for (i = 0; i < old_object->ce->default_properties_count; i++) {
-			if (!new_object->properties) {
-				if (new_object->properties_table[i]) {
-					zval_ptr_dtor(&new_object->properties_table[i]);
+		do {
+			i_zval_ptr_dtor(dst);
+			ZVAL_COPY_VALUE_PROP(dst, src);
+			zval_add_ref(dst);
+			if (UNEXPECTED(Z_ISREF_P(dst)) &&
+					(ZEND_DEBUG || ZEND_REF_HAS_TYPE_SOURCES(Z_REF_P(dst)))) {
+				zend_property_info *prop_info = zend_get_property_info_for_slot(new_object, dst);
+				if (ZEND_TYPE_IS_SET(prop_info->type)) {
+					ZEND_REF_ADD_TYPE_SOURCE(Z_REF_P(dst), prop_info);
 				}
 			}
-			if (!old_object->properties) {
-				new_object->properties_table[i] = old_object->properties_table[i];
-				if (new_object->properties_table[i]) {
-					Z_ADDREF_P(new_object->properties_table[i]);
-				}
+			src++;
+			dst++;
+		} while (src != end);
+	} else if (old_object->properties && !old_object->ce->clone) {
+		/* fast copy */
+		if (EXPECTED(old_object->handlers == &std_object_handlers)) {
+			if (EXPECTED(!(GC_FLAGS(old_object->properties) & IS_ARRAY_IMMUTABLE))) {
+				GC_ADDREF(old_object->properties);
 			}
+			new_object->properties = old_object->properties;
+			return;
 		}
 	}
-	if (old_object->properties) {
+
+	if (old_object->properties &&
+	    EXPECTED(zend_hash_num_elements(old_object->properties))) {
+		zval *prop, new_prop;
+		zend_ulong num_key;
+		zend_string *key;
+
 		if (!new_object->properties) {
-			ALLOC_HASHTABLE(new_object->properties);
-			zend_hash_init(new_object->properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+			new_object->properties = zend_new_array(zend_hash_num_elements(old_object->properties));
+			zend_hash_real_init_mixed(new_object->properties);
+		} else {
+			zend_hash_extend(new_object->properties, new_object->properties->nNumUsed + zend_hash_num_elements(old_object->properties), 0);
 		}
-		zend_hash_copy(new_object->properties, old_object->properties, (copy_ctor_func_t) zval_add_ref, (void *) NULL /* Not used anymore */, sizeof(zval *));
-		if (old_object->properties_table) {
-			HashPosition pos;
-			zend_property_info *prop_info;
-			for (zend_hash_internal_pointer_reset_ex(&old_object->ce->properties_info, &pos);
-			     zend_hash_get_current_data_ex(&old_object->ce->properties_info, (void**)&prop_info, &pos) == SUCCESS;
-			     zend_hash_move_forward_ex(&old_object->ce->properties_info, &pos)) {
-				if ((prop_info->flags & ZEND_ACC_STATIC) == 0) {
-					if (zend_hash_quick_find(new_object->properties, prop_info->name, prop_info->name_length+1, prop_info->h, (void**)&new_object->properties_table[prop_info->offset]) == FAILURE) {
-						new_object->properties_table[prop_info->offset] = NULL;
-					}
-				}
+
+		HT_FLAGS(new_object->properties) |=
+			HT_FLAGS(old_object->properties) & HASH_FLAG_HAS_EMPTY_IND;
+
+		ZEND_HASH_FOREACH_KEY_VAL(old_object->properties, num_key, key, prop) {
+			if (Z_TYPE_P(prop) == IS_INDIRECT) {
+				ZVAL_INDIRECT(&new_prop, new_object->properties_table + (Z_INDIRECT_P(prop) - old_object->properties_table));
+			} else {
+				ZVAL_COPY_VALUE(&new_prop, prop);
+				zval_add_ref(&new_prop);
 			}
-		}
+			if (EXPECTED(key)) {
+				_zend_hash_append(new_object->properties, key, &new_prop);
+			} else {
+				zend_hash_index_add_new(new_object->properties, num_key, &new_prop);
+			}
+		} ZEND_HASH_FOREACH_END();
 	}
 
 	if (old_object->ce->clone) {
-		zval *new_obj;
+		zend_fcall_info fci;
+		zend_fcall_info_cache fcic;
+		zval ret;
 
-		MAKE_STD_ZVAL(new_obj);
-		new_obj->type = IS_OBJECT;
-		new_obj->value.obj = new_obj_val;
-		zval_copy_ctor(new_obj);
+		GC_ADDREF(new_object);
 
-		zend_call_method_with_0_params(&new_obj, old_object->ce, &old_object->ce->clone, ZEND_CLONE_FUNC_NAME, NULL);
+		ZVAL_UNDEF(&ret);
 
-		zval_ptr_dtor(&new_obj);
+		fci.size = sizeof(fci);
+		fci.object = new_object;
+		fci.retval = &ret;
+		fci.param_count = 0;
+		fci.params = NULL;
+		fci.no_separation = 1;
+		ZVAL_UNDEF(&fci.function_name); /* Unused */
+
+		fcic.function_handler = new_object->ce->clone;
+		fcic.called_scope = new_object->ce;
+		fcic.object = new_object;
+
+		zend_call_function(&fci, &fcic);
+		zval_ptr_dtor(&ret);
+		OBJ_RELEASE(new_object);
 	}
 }
 
-ZEND_API zend_object_value zend_objects_clone_obj(zval *zobject TSRMLS_DC)
+ZEND_API zend_object *zend_objects_clone_obj(zend_object *old_object)
 {
-	zend_object_value new_obj_val;
-	zend_object *old_object;
 	zend_object *new_object;
-	zend_object_handle handle = Z_OBJ_HANDLE_P(zobject);
 
 	/* assume that create isn't overwritten, so when clone depends on the
 	 * overwritten one then it must itself be overwritten */
-	old_object = zend_objects_get_address(zobject TSRMLS_CC);
-	new_obj_val = zend_objects_new(&new_object, old_object->ce TSRMLS_CC);
+	new_object = zend_objects_new(old_object->ce);
 
-	zend_objects_clone_members(new_object, new_obj_val, old_object, handle TSRMLS_CC);
+	/* zend_objects_clone_members() expect the properties to be initialized. */
+	if (new_object->ce->default_properties_count) {
+		zval *p = new_object->properties_table;
+		zval *end = p + new_object->ce->default_properties_count;
+		do {
+			ZVAL_UNDEF(p);
+			p++;
+		} while (p != end);
+	}
 
-	return new_obj_val;
+	zend_objects_clone_members(new_object, old_object);
+
+	return new_object;
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */

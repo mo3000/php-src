@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,8 +14,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef PHP_HASH_GOST_H
 #define PHP_HASH_GOST_H
 
@@ -25,10 +21,11 @@
 
 /* GOST context */
 typedef struct {
-	php_hash_uint32 state[16];
-	php_hash_uint32 count[2];
+	uint32_t state[16];
+	uint32_t count[2];
 	unsigned char length;
 	unsigned char buffer[32];
+	const uint32_t (*tables)[4][256];
 } PHP_GOST_CTX;
 
 PHP_HASH_API void PHP_GOSTInit(PHP_GOST_CTX *);
@@ -36,12 +33,3 @@ PHP_HASH_API void PHP_GOSTUpdate(PHP_GOST_CTX *, const unsigned char *, size_t);
 PHP_HASH_API void PHP_GOSTFinal(unsigned char[64], PHP_GOST_CTX *);
 
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

@@ -10,7 +10,7 @@ $fp = fopen($filename, "w+");
 echo "Write some data to the file:\n";
 $i = 0;
 while ($i++ < 20) {
-	fwrite($fp, "a line of data\n");
+    fwrite($fp, "a line of data\n");
 }
 
 var_dump(stream_get_meta_data($fp));
@@ -30,7 +30,7 @@ var_dump(stream_get_meta_data($fp));
 
 echo "\n\nRead entire file:\n";
 while(!feof($fp)) {
-	fread($fp, 1);
+    fread($fp, 1);
 }
 
 var_dump(stream_get_meta_data($fp));
@@ -43,6 +43,12 @@ unlink($filename);
 --EXPECTF--
 Write some data to the file:
 array(9) {
+  ["timed_out"]=>
+  bool(false)
+  ["blocked"]=>
+  bool(true)
+  ["eof"]=>
+  bool(false)
   ["wrapper_type"]=>
   string(9) "plainfile"
   ["stream_type"]=>
@@ -55,12 +61,6 @@ array(9) {
   bool(true)
   ["uri"]=>
   string(%i) "%s.tmp"
-  ["timed_out"]=>
-  bool(false)
-  ["blocked"]=>
-  bool(true)
-  ["eof"]=>
-  bool(false)
 }
 
 
@@ -68,6 +68,12 @@ Read a line of the file, causing data to be buffered:
 string(15) "a line of data
 "
 array(9) {
+  ["timed_out"]=>
+  bool(false)
+  ["blocked"]=>
+  bool(true)
+  ["eof"]=>
+  bool(false)
   ["wrapper_type"]=>
   string(9) "plainfile"
   ["stream_type"]=>
@@ -80,17 +86,17 @@ array(9) {
   bool(true)
   ["uri"]=>
   string(%i) "%s.tmp"
+}
+
+
+Read 20 bytes from the file:
+array(9) {
   ["timed_out"]=>
   bool(false)
   ["blocked"]=>
   bool(true)
   ["eof"]=>
   bool(false)
-}
-
-
-Read 20 bytes from the file:
-array(9) {
   ["wrapper_type"]=>
   string(9) "plainfile"
   ["stream_type"]=>
@@ -103,17 +109,17 @@ array(9) {
   bool(true)
   ["uri"]=>
   string(%i) "%s.tmp"
-  ["timed_out"]=>
-  bool(false)
-  ["blocked"]=>
-  bool(true)
-  ["eof"]=>
-  bool(false)
 }
 
 
 Read entire file:
 array(9) {
+  ["timed_out"]=>
+  bool(false)
+  ["blocked"]=>
+  bool(true)
+  ["eof"]=>
+  bool(true)
   ["wrapper_type"]=>
   string(9) "plainfile"
   ["stream_type"]=>
@@ -126,10 +132,4 @@ array(9) {
   bool(true)
   ["uri"]=>
   string(%i) "%s.tmp"
-  ["timed_out"]=>
-  bool(false)
-  ["blocked"]=>
-  bool(true)
-  ["eof"]=>
-  bool(true)
 }

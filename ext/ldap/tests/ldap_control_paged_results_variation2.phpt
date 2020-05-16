@@ -12,27 +12,27 @@ require_once('skipifbindfailure.inc');
 include "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-insert_dummy_data($link);
+insert_dummy_data($link, $base);
 
-$dn = "dc=my-domain,dc=com";
-$filter = "(cn=*)";
+$dn = "$base";
+$filter = "(cn=user*)";
 var_dump(
-	ldap_control_paged_result($link, 2),
-	$result = ldap_search($link, $dn, $filter, array('cn')),
-	ldap_get_entries($link, $result)
+    ldap_control_paged_result($link, 2),
+    $result = ldap_search($link, $dn, $filter, array('cn')),
+    ldap_get_entries($link, $result)
 );
 ?>
-===DONE===
 --CLEAN--
 <?php
 include "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-remove_dummy_data($link);
+remove_dummy_data($link, $base);
 ?>
 --EXPECTF--
+Deprecated: Function ldap_control_paged_result() is deprecated in %s.php on line %d
 bool(true)
-resource(6) of type (ldap result)
+resource(%d) of type (ldap result)
 array(3) {
   ["count"]=>
   int(2)
@@ -50,7 +50,7 @@ array(3) {
     ["count"]=>
     int(1)
     ["dn"]=>
-    string(28) "cn=userA,dc=my-domain,dc=com"
+    string(%d) "cn=userA,%s"
   }
   [1]=>
   array(4) {
@@ -66,7 +66,6 @@ array(3) {
     ["count"]=>
     int(1)
     ["dn"]=>
-    string(28) "cn=userB,dc=my-domain,dc=com"
+    string(%d) "cn=userB,%s"
   }
 }
-===DONE===

@@ -1,5 +1,5 @@
 --TEST--
-Test date_create() function : basic functionality 
+Test date_create() function : basic functionality
 --FILE--
 <?php
 /* Prototype  : DateTime date_create  ([ string $time  [, DateTimeZone $timezone  ]] )
@@ -8,7 +8,7 @@ Test date_create() function : basic functionality
  * Alias to functions: DateTime::__construct
  */
 
-//Set the default time zone 
+//Set the default time zone
 date_default_timezone_set("Europe/London");
 
 echo "*** Testing date_create() : basic functionality ***\n";
@@ -20,12 +20,11 @@ var_dump( date_create("2005-07-14 22:30:41") );
 var_dump( date_create("2005-07-14 22:30:41 GMT") );
 
 ?>
-===DONE===
 --EXPECTF--
 *** Testing date_create() : basic functionality ***
 object(DateTime)#%d (3) {
   ["date"]=>
-  string(19) "%s"
+  string(26) "%s"
   ["timezone_type"]=>
   int(3)
   ["timezone"]=>
@@ -33,7 +32,7 @@ object(DateTime)#%d (3) {
 }
 object(DateTime)#%d (3) {
   ["date"]=>
-  string(19) "%s"
+  string(26) "%s"
   ["timezone_type"]=>
   int(2)
   ["timezone"]=>
@@ -41,7 +40,7 @@ object(DateTime)#%d (3) {
 }
 object(DateTime)#%d (3) {
   ["date"]=>
-  string(19) "2005-07-14 22:30:41"
+  string(26) "2005-07-14 22:30:41.000000"
   ["timezone_type"]=>
   int(3)
   ["timezone"]=>
@@ -49,10 +48,9 @@ object(DateTime)#%d (3) {
 }
 object(DateTime)#%d (3) {
   ["date"]=>
-  string(19) "2005-07-14 22:30:41"
+  string(26) "2005-07-14 22:30:41.000000"
   ["timezone_type"]=>
   int(2)
   ["timezone"]=>
   string(3) "GMT"
 }
-===DONE===

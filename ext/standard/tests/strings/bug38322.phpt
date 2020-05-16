@@ -1,5 +1,5 @@
 --TEST--
-Bug #38322 (reading past array in sscanf() leads to segfault/arbitary code execution)
+Bug #38322 (reading past array in sscanf() leads to segfault/arbitrary code execution)
 --FILE--
 <?php
 
@@ -8,6 +8,6 @@ var_dump(sscanf("a ",'%1$s',$str));
 
 echo "Done\n";
 ?>
---EXPECTF--	
+--EXPECT--
 int(1)
 Done

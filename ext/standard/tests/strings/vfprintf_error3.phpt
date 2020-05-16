@@ -7,24 +7,27 @@ precision=14
 --FILE--
 <?php
 /* Prototype  : int vfprintf(resource stream, string format, array args)
- * Description: Output a formatted string into a stream 
+ * Description: Output a formatted string into a stream
  * Source code: ext/standard/formatted_print.c
- * Alias to functions: 
+ * Alias to functions:
  */
 
 // Open handle
-$file = 'vfprintf_test.txt';
+$file = 'vfprintf_error3.txt';
 $fp = fopen( $file, "a+" );
 
 echo "\n-- Testing vfprintf() function with wrong variable types as argument --\n";
-var_dump( vfprintf( $fp, array( 'foo %d', 'bar %s' ), 3.55552 ) );
+try {
+  vfprintf($fp, array( 'foo %d', 'bar %s' ), 3.55552);
+} catch (TypeError $exception) {
+  echo $exception->getMessage() . "\n";
+}
 
-rewind( $fp );
-var_dump( stream_get_contents( $fp ) );
-ftruncate( $fp, 0 );
-rewind( $fp );
-
-var_dump( vfprintf( $fp, "Foo %y fake", "not available" ) );
+try {
+    var_dump( vfprintf( $fp, "Foo %y fake", "not available" ) );
+} catch (ValueError $e) {
+    echo $e->getMessage(), "\n";
+}
 
 rewind( $fp );
 var_dump( stream_get_contents( $fp ) );
@@ -35,20 +38,15 @@ rewind( $fp );
 fclose( $fp );
 
 ?>
-===DONE===
 --CLEAN--
 <?php
 
-$file = 'vfprintf_test.txt';
+$file = 'vfprintf_error3.txt';
 unlink( $file );
 
 ?>
---EXPECTF--
+--EXPECT--
 -- Testing vfprintf() function with wrong variable types as argument --
-
-Notice: Array to string conversion in %s on line %d
-int(5)
-string(5) "Array"
-int(9)
-string(9) "Foo  fake"
-===DONE===
+vfprintf(): Argument #2 ($format) must be of type string, array given
+Unknown format specifier 'y'
+string(0) ""

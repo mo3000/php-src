@@ -5,7 +5,7 @@ oci_field_*() family: error cases
 --FILE--
 <?php
 
-require(dirname(__FILE__)."/connect.inc");
+require(__DIR__."/connect.inc");
 
 // Initialize
 
@@ -85,9 +85,9 @@ echo "Done\n";
 --EXPECTF--
 array(2) {
   [0]=>
-  %unicode|string%(1) "1"
+  string(1) "1"
   [1]=>
-  %unicode|string%(1) "1"
+  string(1) "1"
 }
 Test 1
 

@@ -1,10 +1,7 @@
 --TEST--
 ReflectionFunction basic tests
---SKIPIF--
-<?php extension_loaded('reflection') or die('skip'); ?>
 --INI--
 opcache.save_comments=1
-opcache.load_comments=1
 --FILE--
 <?php
 
@@ -12,12 +9,12 @@ opcache.load_comments=1
 hoho
 */
 function test ($a, $b = 1, $c = "") {
-	static $var = 1;
+    static $var = 1;
 }
 
 $func = new ReflectionFunction("test");
 
-var_dump($func->export("test"));
+echo $func;
 echo "--getName--\n";
 var_dump($func->getName());
 echo "--isInternal--\n";
@@ -50,7 +47,7 @@ var_dump($func->getNumberOfRequiredParameters());
 echo "Done\n";
 
 ?>
---EXPECTF--	
+--EXPECTF--
 /**
 hoho
 */
@@ -63,8 +60,6 @@ Function [ <user> function test ] {
     Parameter #2 [ <optional> $c = '' ]
   }
 }
-
-NULL
 --getName--
 string(4) "test"
 --isInternal--
@@ -78,7 +73,7 @@ int(6)
 --getEndline--
 int(8)
 --getDocComment--
-string(11) "/**
+string(%d) "/**
 hoho
 */"
 --getStaticVariables--
@@ -95,17 +90,17 @@ bool(false)
 --getParameters--
 array(3) {
   [0]=>
-  &object(ReflectionParameter)#2 (1) {
+  object(ReflectionParameter)#2 (1) {
     ["name"]=>
     string(1) "a"
   }
   [1]=>
-  &object(ReflectionParameter)#3 (1) {
+  object(ReflectionParameter)#3 (1) {
     ["name"]=>
     string(1) "b"
   }
   [2]=>
-  &object(ReflectionParameter)#4 (1) {
+  object(ReflectionParameter)#4 (1) {
     ["name"]=>
     string(1) "c"
   }

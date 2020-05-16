@@ -5,13 +5,13 @@ Test token_get_all() function : usage variations - with exception keywords
 --FILE--
 <?php
 /* Prototype  : array token_get_all(string $source)
- * Description: splits the given source into an array of PHP languange tokens
+ * Description: splits the given source into an array of PHP language tokens
  * Source code: ext/tokenizer/tokenizer.c
 */
 
 /*
  * Testing token_get_all() with different exception keywords
- *   try - T_TRY(336), 
+ *   try - T_TRY(336),
  *   catch - T_CATCH(337),
  *   throw - T_THROW(338)
 */
@@ -22,7 +22,7 @@ $source = '<?php
 function inverse($x)
 {
   if($x == 0) {
-    throw new Exception("Divison by zero");
+    throw new Exception("Division by zero");
   else
     return 1/$x;
 }
@@ -32,6 +32,7 @@ try {
 } catch(Exception $e) {
     echo "caught exception:";
 }
+}
 ?>';
 $tokens =  token_get_all($source);
 var_dump($tokens);
@@ -40,7 +41,7 @@ echo "Done"
 ?>
 --EXPECTF--
 *** Testing token_get_all() : with exception keywords ***
-array(81) {
+array(83) {
   [0]=>
   array(3) {
     [0]=>
@@ -244,7 +245,7 @@ array(81) {
     [0]=>
     int(%d)
     [1]=>
-    string(17) ""Divison by zero""
+    string(18) ""Division by zero""
     [2]=>
     int(5)
   }
@@ -601,13 +602,25 @@ array(81) {
     int(14)
   }
   [80]=>
+  string(1) "}"
+  [81]=>
+  array(3) {
+    [0]=>
+    int(%d)
+    [1]=>
+    string(1) "
+"
+    [2]=>
+    int(15)
+  }
+  [82]=>
   array(3) {
     [0]=>
     int(%d)
     [1]=>
     string(2) "?>"
     [2]=>
-    int(15)
+    int(16)
   }
 }
 Done

@@ -16,15 +16,15 @@ $unreadable = __DIR__ . '/unreadable.db';
 touch($unreadable);
 chmod($unreadable,  0200);
 try {
-	$db = new SQLite3($unreadable);
+    $db = new SQLite3($unreadable);
 } catch (Exception $e) {
-	echo $e . "\n";
+    echo $e . "\n";
 }
 echo "Done\n";
 unlink($unreadable);
 ?>
 --EXPECTF--
-exception 'Exception' with message 'Unable to open database: %s' in %ssqlite3_15_open_error.php:%d
+Exception: Unable to open database: %s in %ssqlite3_15_open_error.php:%d
 Stack trace:
 #0 %ssqlite3_15_open_error.php(%d): SQLite3->__construct('%s')
 #1 {main}

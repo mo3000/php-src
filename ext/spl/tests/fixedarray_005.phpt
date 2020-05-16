@@ -1,12 +1,28 @@
 --TEST--
-SPL: FixedArray: Trying to instantiate passing object to constructor parameter
+SPL: FixedArray: Invalid arguments
 --FILE--
 <?php
 
-$b = new stdClass;
+try {
+    $a = new SplFixedArray(new stdClass);
+} catch (TypeError $iae) {
+    echo "Ok - ".$iae->getMessage().PHP_EOL;
+}
 
-$a = new SplFixedArray($b);
+try {
+    $a = new SplFixedArray('FOO');
+} catch (TypeError $iae) {
+    echo "Ok - ".$iae->getMessage().PHP_EOL;
+}
+
+try {
+    $a = new SplFixedArray('');
+} catch (TypeError $iae) {
+    echo "Ok - ".$iae->getMessage().PHP_EOL;
+}
 
 ?>
---EXPECTF--
-Warning: SplFixedArray::__construct() expects parameter 1 to be long, object given in %s on line %d
+--EXPECT--
+Ok - SplFixedArray::__construct(): Argument #1 ($size) must be of type int, object given
+Ok - SplFixedArray::__construct(): Argument #1 ($size) must be of type int, string given
+Ok - SplFixedArray::__construct(): Argument #1 ($size) must be of type int, string given

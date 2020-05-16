@@ -7,7 +7,7 @@ Bug #51997 (SEEK_CUR with 0 value, returns a warning)
 
 error_reporting(E_ALL);
 
-$filename = "testfile.bz2";
+$filename = "bug51997.bz2";
 $str = "This is a test string.\n";
 $bz = bzopen($filename, "w");
 bzwrite($bz, $str);
@@ -19,6 +19,5 @@ print bzread($bz, 10);
 print bzread($bz);
 bzclose($bz);
 unlink($filename);
-
 --EXPECT--
 This is a test string.

@@ -5,7 +5,7 @@
  * LICENSE NOTICES
  *
  * This file is part of "streamable kanji code filter and converter",
- * which is distributed under the terms of GNU Lesser General Public 
+ * which is distributed under the terms of GNU Lesser General Public
  * License (version 2) as published by the Free Software Foundation.
  *
  * This software is distributed in the hope that it will be useful,
@@ -24,7 +24,7 @@
 /*
  * The source code included in this files was separated from mbfilter.c
  * by moriyoshi koizumi <moriyoshi@php.net> on 4 dec 2002.
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -43,7 +43,9 @@ const mbfl_encoding mbfl_encoding_8859_6 = {
 	"ISO-8859-6",
 	(const char *(*)[])&mbfl_encoding_8859_6_aliases,
 	NULL,
-	MBFL_ENCTYPE_SBCS
+	MBFL_ENCTYPE_SBCS,
+	&vtbl_8859_6_wchar,
+	&vtbl_wchar_8859_6
 };
 
 const struct mbfl_identify_vtbl vtbl_identify_8859_6 = {
@@ -59,7 +61,8 @@ const struct mbfl_convert_vtbl vtbl_8859_6_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_8859_6_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_8859_6 = {
@@ -68,7 +71,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_8859_6 = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_8859_6,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 
@@ -128,12 +132,8 @@ int mbfl_filt_conv_wchar_8859_6(int c, mbfl_convert_filter *filter)
 	if (s >= 0) {
 		CK((*filter->output_function)(s, filter->data));
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
 }
-
-

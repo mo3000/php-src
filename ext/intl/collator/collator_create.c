@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -21,41 +19,38 @@
 
 #include "php_intl.h"
 #include "collator_class.h"
-#include "collator_create.h"
 #include "intl_data.h"
 
 /* {{{ */
-static void collator_ctor(INTERNAL_FUNCTION_PARAMETERS)
+static int collator_ctor(INTERNAL_FUNCTION_PARAMETERS)
 {
-	char*            locale;
-	int              locale_len = 0;
+	const char*      locale;
+	size_t           locale_len = 0;
 	zval*            object;
 	Collator_object* co;
 
-	intl_error_reset( NULL TSRMLS_CC );
+	intl_error_reset( NULL );
 	object = return_value;
 	/* Parse parameters. */
-	if( zend_parse_parameters( ZEND_NUM_ARGS() TSRMLS_CC, "s",
+	if( zend_parse_parameters( ZEND_NUM_ARGS(), "s",
 		&locale, &locale_len ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,
-			"collator_create: unable to parse input params", 0 TSRMLS_CC );
-		zval_dtor(return_value);
-		RETURN_NULL();
+		return FAILURE;
 	}
 
-	INTL_CHECK_LOCALE_LEN_OBJ(locale_len, return_value);
+	INTL_CHECK_LOCALE_LEN_OR_FAILURE(locale_len);
 	COLLATOR_METHOD_FETCH_OBJECT;
 
 	if(locale_len == 0) {
-		locale = intl_locale_get_default(TSRMLS_C);
+		locale = intl_locale_get_default();
 	}
 
 	/* Open ICU collator. */
 	co->ucoll = ucol_open( locale, COLLATOR_ERROR_CODE_P( co ) );
 	INTL_CTOR_CHECK_STATUS(co, "collator_create: unable to open ICU collator");
+	return SUCCESS;
 }
-/* }}} */ 
+/* }}} */
 
 /* {{{ proto Collator collator_create( string $locale )
  * Create collator.
@@ -63,25 +58,27 @@ static void collator_ctor(INTERNAL_FUNCTION_PARAMETERS)
 PHP_FUNCTION( collator_create )
 {
 	object_init_ex( return_value, Collator_ce_ptr );
-	collator_ctor(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	if (collator_ctor(INTERNAL_FUNCTION_PARAM_PASSTHRU) == FAILURE) {
+		zval_ptr_dtor(return_value);
+		RETURN_NULL();
+	}
 }
 /* }}} */
 
-/* {{{ proto Collator Collator::__construct( string $locale )
+/* {{{ proto Collator::__construct( string $locale )
  * Collator object constructor.
  */
 PHP_METHOD( Collator, __construct )
 {
-	return_value = getThis();
-	collator_ctor(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+	zend_error_handling error_handling;
+
+	zend_replace_error_handling(EH_THROW, IntlException_ce_ptr, &error_handling);
+	return_value = ZEND_THIS;
+	if (collator_ctor(INTERNAL_FUNCTION_PARAM_PASSTHRU) == FAILURE) {
+		if (!EG(exception)) {
+			zend_throw_exception(IntlException_ce_ptr, "Constructor failed", 0);
+		}
+	}
+	zend_restore_error_handling(&error_handling);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

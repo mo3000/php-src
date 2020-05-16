@@ -1,10 +1,13 @@
 --TEST--
-SPL: FixedArray: Trying to instantiate passing string to construtor parameter
+SPL: FixedArray: Trying to instantiate passing string to constructor parameter
 --FILE--
 <?php
 
-$a = new SplFixedArray('FOO');
-
+try {
+    $a = new SplFixedArray('FOO');
+} catch (TypeError $iae) {
+    echo "Ok - ".$iae->getMessage().PHP_EOL;
+}
 ?>
---EXPECTF--
-Warning: SplFixedArray::__construct() expects parameter 1 to be long, string given in %s on line %d
+--EXPECT--
+Ok - SplFixedArray::__construct(): Argument #1 ($size) must be of type int, string given

@@ -1,5 +1,5 @@
 --TEST--
-Test mail() function : basic functionality 
+Test mail() function : basic functionality
 --SKIPIF--
 <?php
 if(substr(PHP_OS, 0, 3) == "WIN")
@@ -11,16 +11,16 @@ mail.add_x_header = Off
 --FILE--
 <?php
 /* Prototype  : int mail(string to, string subject, string message [, string additional_headers [, string additional_parameters]])
- * Description: Send an email message 
+ * Description: Send an email message
  * Source code: ext/standard/mail.c
- * Alias to functions: 
+ * Alias to functions:
  */
 
 echo "*** Testing mail() : basic functionality ***\n";
 
 
 // Initialise all required variables
-$to = 'user@company.com';
+$to = 'user@example.com';
 $subject = 'Test Subject';
 $message = 'A Message';
 $additional_headers = 'KHeaders';
@@ -35,14 +35,12 @@ var_dump( mail($to, $subject, $message, $additional_headers, $additional_paramet
 echo file_get_contents($outFile);
 unlink($outFile);
 ?>
-===DONE===
 --EXPECTF--
 *** Testing mail() : basic functionality ***
 -- extra parameters --
 bool(true)
-%w1%wTo: user@company.com
+%w1%wTo: user@example.com
 %w2%wSubject: Test Subject
 %w3%wKHeaders
 %w4%w
 %w5%wA Message
-===DONE===

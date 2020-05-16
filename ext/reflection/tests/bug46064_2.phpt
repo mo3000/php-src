@@ -3,7 +3,7 @@ Bug #46064.2 (Exception when creating ReflectionProperty object on dynamicly cre
 --FILE--
 <?php
 
-class foo { 
+class foo {
 }
 
 $x = new foo;
@@ -15,28 +15,27 @@ var_dump($p->getProperty('test'));
 
 
 class bar {
-	public function __construct() {
-		$this->a = 1;
-	}
+    public function __construct() {
+        $this->a = 1;
+    }
 }
 
 class test extends bar {
-	private $b = 2;
+    private $b = 2;
 
-	public function __construct() {
-		parent::__construct();
-		
-		$p = new reflectionobject($this);
-		var_dump($h = $p->getProperty('a'));
-		var_dump($h->isDefault(), $h->isProtected(), $h->isPrivate(), $h->isPublic(), $h->isStatic());
-		var_dump($p->getProperties());
-	}
+    public function __construct() {
+        parent::__construct();
+
+        $p = new reflectionobject($this);
+        var_dump($h = $p->getProperty('a'));
+        var_dump($h->isDefault(), $h->isProtected(), $h->isPrivate(), $h->isPublic(), $h->isStatic());
+        var_dump($p->getProperties());
+    }
 }
 
 new test;
 
 ?>
-===DONE===
 --EXPECTF--
 object(ReflectionProperty)#%d (2) {
   ["name"]=>
@@ -57,18 +56,17 @@ bool(true)
 bool(false)
 array(2) {
   [0]=>
-  &object(ReflectionProperty)#%d (2) {
+  object(ReflectionProperty)#%d (2) {
     ["name"]=>
     string(1) "b"
     ["class"]=>
     string(4) "test"
   }
   [1]=>
-  &object(ReflectionProperty)#%d (2) {
+  object(ReflectionProperty)#%d (2) {
     ["name"]=>
     string(1) "a"
     ["class"]=>
     string(4) "test"
   }
 }
-===DONE===

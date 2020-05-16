@@ -21,6 +21,8 @@ object(DateInterval)#1 (%d) {
   int(0)
   ["s"]=>
   int(0)
+  ["f"]=>
+  float(0)
   ["weekday"]=>
   int(0)
   ["weekday_behavior"]=>
@@ -34,7 +36,7 @@ object(DateInterval)#1 (%d) {
   ["special_type"]=>
   int(0)
   ["special_amount"]=>
-  string(1) "0"
+  int(0)
   ["have_weekday_relative"]=>
   int(0)
   ["have_special_relative"]=>

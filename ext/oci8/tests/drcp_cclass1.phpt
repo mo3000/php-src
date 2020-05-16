@@ -1,16 +1,31 @@
 --TEST--
 DRCP: Test setting connection class inline
 --SKIPIF--
-<?php 
-if (!extension_loaded('oci8')) die ("skip no oci8 extension"); 
-require(dirname(__FILE__)."/details.inc");
+<?php
+if (!extension_loaded('oci8')) die ("skip no oci8 extension");
+require(__DIR__.'/connect.inc');
 if (!$test_drcp) die("skip testing DRCP connection class only works in DRCP mode");
-if (strcasecmp($user, "system") && strcasecmp($user, "sys")) die("skip needs to be run as a DBA user"); 
+// Looked for :pooled in EZ connect string
+if (strpos($dbase, "/") !== false && stripos($dbase, ":pooled") === false)
+    die('skip DRCP test requires a DRCP pooled server connection');
+if (strcasecmp($user, "system") && strcasecmp($user, "sys")) die("skip needs to be run as a DBA user");
+
+preg_match('/.*Release ([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)*/', oci_server_version($c), $matches_sv);
+// This test in Oracle 12c needs a non-CDB or the root container
+if (isset($matches_sv[0]) && $matches_sv[1] >= 12) {
+    $s = oci_parse($c, "select nvl(sys_context('userenv', 'con_name'), 'notacdb') as dbtype from dual");
+    $r = @oci_execute($s);
+    if (!$r)
+        die('skip could not identify container type');
+    $r = oci_fetch_array($s);
+    if ($r['DBTYPE'] !== 'CDB$ROOT')
+        die('skip cannot run test using a PDB');
+}
 ?>
 --FILE--
 <?php
 
-require(dirname(__FILE__)."/details.inc");
+require(__DIR__."/details.inc");
 
 // Initialization
 

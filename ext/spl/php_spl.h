@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -20,18 +18,9 @@
 #define PHP_SPL_H
 
 #include "php.h"
-#if defined(PHP_WIN32)
-# include "win32/php_stdint.h"
-#elif defined(HAVE_STDINT_H)
-# include <stdint.h>
-#endif
 #include <stdarg.h>
 
-#if 0
-#define SPL_DEBUG(x)	x
-#else
-#define SPL_DEBUG(x)
-#endif
+#define PHP_SPL_VERSION PHP_VERSION
 
 extern zend_module_entry spl_module_entry;
 #define phpext_spl_ptr &spl_module_entry
@@ -63,37 +52,17 @@ PHP_MINFO_FUNCTION(spl);
 
 
 ZEND_BEGIN_MODULE_GLOBALS(spl)
-	char *       autoload_extensions;
-	HashTable *  autoload_functions;
-	int          autoload_running;
-	int          autoload_extensions_len;
+	zend_string *autoload_extensions;
+	HashTable   *autoload_functions;
 	intptr_t     hash_mask_handle;
 	intptr_t     hash_mask_handlers;
 	int          hash_mask_init;
+	int          autoload_running;
 ZEND_END_MODULE_GLOBALS(spl)
 
-#ifdef ZTS
-# define SPL_G(v) TSRMG(spl_globals_id, zend_spl_globals *, v)
-extern int spl_globals_id;
-#else
-# define SPL_G(v) (spl_globals.v)
-extern zend_spl_globals spl_globals;
-#endif
+ZEND_EXTERN_MODULE_GLOBALS(spl)
+#define SPL_G(v) ZEND_MODULE_GLOBALS_ACCESSOR(spl, v)
 
-PHP_FUNCTION(spl_classes);
-PHP_FUNCTION(class_parents);
-PHP_FUNCTION(class_implements);
-PHP_FUNCTION(class_uses);
-
-PHPAPI void php_spl_object_hash(zval *obj, char* md5str TSRMLS_DC);
+PHPAPI zend_string *php_spl_object_hash(zval *obj);
 
 #endif /* PHP_SPL_H */
-
-/*
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 4
- * End:
- * vim600: fdm=marker
- * vim: noet sw=4 ts=4
- */

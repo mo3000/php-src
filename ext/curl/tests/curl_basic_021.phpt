@@ -3,14 +3,12 @@ Test curl_getinfo() function with CURLINFO_CONTENT_TYPE parameter
 --CREDITS--
 Jean-Marc Fontaine <jmf@durcommefaire.net>
 --SKIPIF--
-<?php
-if (!extension_loaded("curl")) exit("skip curl extension not loaded");
-if (false === getenv('PHP_CURL_HTTP_REMOTE_SERVER'))  exit("skip PHP_CURL_HTTP_REMOTE_SERVER env variable is not defined");
-?>
+<?php include 'skipif.inc'; ?>
 --FILE--
 <?php
-  $host = getenv('PHP_CURL_HTTP_REMOTE_SERVER');
-  $url  = "{$host}/get.php?test=contenttype";
+  include 'server.inc';
+  $host = curl_cli_server_start();
+  $url  = "{$host}/get.inc?test=contenttype";
 
   $ch = curl_init();
   curl_setopt($ch, CURLOPT_URL, $url);
@@ -18,7 +16,5 @@ if (false === getenv('PHP_CURL_HTTP_REMOTE_SERVER'))  exit("skip PHP_CURL_HTTP_R
   var_dump(curl_getinfo($ch, CURLINFO_CONTENT_TYPE));
   curl_close($ch);
 ?>
-===DONE===
---EXPECTF--
-%unicode|string%(24) "text/plain;charset=utf-8"
-===DONE===
+--EXPECT--
+string(24) "text/plain;charset=utf-8"

@@ -4,21 +4,24 @@ Indirect method call by array - Calling __call() and __callStatic()
 <?php
 
 class foo {
-	public function __call($a, $b) {
-		printf("From %s:\n", __METHOD__);
-		var_dump($a);
-		var_dump($this);
-	}
-	static public function __callStatic($a, $b) {
-		printf("From %s:\n", __METHOD__);
-		var_dump($a);
-		var_dump($this);
-	}
+    public function __call($a, $b) {
+        printf("From %s:\n", __METHOD__);
+        var_dump($a);
+        var_dump($this);
+    }
+    static public function __callStatic($a, $b) {
+        printf("From %s:\n", __METHOD__);
+        var_dump($a);
+        var_dump($this);
+    }
 }
 
 $arr = array('foo', 'abc');
-$arr();
-
+try {
+    $arr();
+} catch (Throwable $e) {
+    echo "Exception: " . $e->getMessage() . "\n";
+}
 $foo = new foo;
 $arr = array($foo, 'abc');
 $arr();
@@ -28,11 +31,8 @@ $arr();
 --EXPECTF--
 From foo::__callStatic:
 string(3) "abc"
-
-Notice: Undefined variable: this in %s on line %d
-NULL
+Exception: Using $this when not in object context
 From foo::__call:
 string(3) "abc"
 object(foo)#%d (0) {
 }
-

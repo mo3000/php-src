@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -15,8 +13,6 @@
    | Author: Marcus Boerger <helly@php.net>                               |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #ifndef PHP_LIB_FLATFILE_H
 #define PHP_LIB_FLATFILE_H
@@ -37,12 +33,12 @@ typedef struct {
 #define FLATFILE_INSERT 1
 #define FLATFILE_REPLACE 0
 
-int flatfile_store(flatfile *dba, datum key_datum, datum value_datum, int mode TSRMLS_DC);
-datum flatfile_fetch(flatfile *dba, datum key_datum TSRMLS_DC);
-int flatfile_delete(flatfile *dba, datum key_datum TSRMLS_DC);
-int flatfile_findkey(flatfile *dba, datum key_datum TSRMLS_DC);
-datum flatfile_firstkey(flatfile *dba TSRMLS_DC);
-datum flatfile_nextkey(flatfile *dba TSRMLS_DC);
+int flatfile_store(flatfile *dba, datum key_datum, datum value_datum, int mode);
+datum flatfile_fetch(flatfile *dba, datum key_datum);
+int flatfile_delete(flatfile *dba, datum key_datum);
+int flatfile_findkey(flatfile *dba, datum key_datum);
+datum flatfile_firstkey(flatfile *dba);
+datum flatfile_nextkey(flatfile *dba);
 char *flatfile_version();
 
 #endif

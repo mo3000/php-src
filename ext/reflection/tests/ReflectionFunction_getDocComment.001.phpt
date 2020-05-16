@@ -5,7 +5,6 @@ Robin Fernandes <robinf@php.net>
 Steve Seear <stevseea@php.net>
 --INI--
 opcache.save_comments=1
-opcache.load_comments=1
 --FILE--
 <?php
 
@@ -13,10 +12,10 @@ opcache.load_comments=1
  * my doc comment
  */
 function foo () {
-	static $c;
-	static $a = 1;
-	static $b = "hello";
-	$d = 5;
+    static $c;
+    static $a = 1;
+    static $b = "hello";
+    $d = 5;
 }
 
 /***
@@ -26,8 +25,8 @@ function bar () {}
 
 
 function dumpFuncInfo($name) {
-	$funcInfo = new ReflectionFunction($name);
-	var_dump($funcInfo->getDocComment());
+    $funcInfo = new ReflectionFunction($name);
+    var_dump($funcInfo->getDocComment());
 }
 
 dumpFuncInfo('foo');
@@ -41,4 +40,3 @@ string(%d) "/**
  */"
 bool(false)
 bool(false)
-

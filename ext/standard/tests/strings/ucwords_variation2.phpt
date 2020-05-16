@@ -29,7 +29,7 @@ multiline string using
 heredoc
 EOT;
 
-// here doc with diferent whitespaces
+// here doc with different whitespaces
 $diff_whitespaces = <<<EOT
 testing\rucword(str)\twith
 multiline   string\t\tusing
@@ -69,7 +69,7 @@ for($index =0; $index < count($heredoc_strings); $index ++) {
 
 echo "Done\n";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing ucwords() : usage variations ***
 -- Iteration 1 --
 string(0) ""

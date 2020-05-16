@@ -27,14 +27,16 @@ unset($attr);
 $doc->registerNodeClass('DOMAttr', NULL);
 $attr = $root->getAttributeNode('a');
 echo get_class($attr), "\n";
-print $attr->testit()."\n";
+try {
+    print $attr->testit()."\n";
+} catch (Error $e) {
+    echo $e->getMessage();
+}
 ?>
---EXPECTF--
-
+--EXPECT--
 myElement
 HELLO Element
 myAttribute
 HELLO Attribute
 DOMAttr
-
-Fatal error: Call to undefined method DOMAttr::testit() in %s on line 25
+Call to undefined method DOMAttr::testit()

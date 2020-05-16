@@ -2,24 +2,23 @@
 ReflectionMethod::getDocComment() uses wrong comment block
 --INI--
 opcache.save_comments=1
-opcache.load_comments=1
 --FILE--
 <?php
 
 function strip_doc_comment($c)
 {
-	if (!strlen($c) || $c === false) return $c;
-	return trim(substr($c, 3, -2));
+    if (!strlen($c) || $c === false) return $c;
+    return trim(substr($c, 3, -2));
 }
 
 /** Comment for class A */
 class A
 {
-	/** Method A::bla()
-	 */
-	function bla()
-	{
-	}
+    /** Method A::bla()
+     */
+    function bla()
+    {
+    }
 
     function foo() {
         /**
@@ -43,15 +42,13 @@ var_dump(strip_doc_comment($r->getDocComment()));
 
 foreach($r->getMethods() as $m)
 {
-	var_dump(strip_doc_comment($m->getDocComment()));
+    var_dump(strip_doc_comment($m->getDocComment()));
 }
 
 ?>
-===DONE===
 --EXPECT--
 string(19) "Comment for class A"
 string(15) "Method A::bla()"
 bool(false)
 bool(false)
 string(22) "* Comment for A::baz()"
-===DONE===

@@ -1,17 +1,11 @@
 --TEST--
-Test strftime() function : usage variation - Checking newline and tab formats which are not supported on Windows.
---SKIPIF--
-<?php
-if (strtoupper(substr(PHP_OS, 0, 3)) != 'WIN') {
-    die("skip Test is valid for Windows");
-}
-?>
+Test strftime() function : usage variation - Checking newline and tab formats which was not supported on Windows before VC14.
 --FILE--
 <?php
 /* Prototype  : string strftime(string format [, int timestamp])
- * Description: Format a local time/date according to locale settings 
+ * Description: Format a local time/date according to locale settings
  * Source code: ext/date/php_date.c
- * Alias to functions: 
+ * Alias to functions:
  */
 
 echo "*** Testing strftime() : usage variation ***\n";
@@ -23,28 +17,28 @@ $timestamp = mktime(8, 8, 8, 8, 8, 2008);
 
 //array of values to iterate over
 $inputs = array(
-	  'Newline character' => "%n",
-	  'Tab character' => "%t"
+      'Newline character' => "%n",
+      'Tab character' => "%t"
 );
 
 // loop through each element of the array for timestamp
 
 foreach($inputs as $key =>$value) {
       echo "\n--$key--\n";
-	  var_dump( strftime($value) );
-	  var_dump( strftime($value, $timestamp) );
-}	  
+      var_dump( strftime($value) );
+      var_dump( strftime($value, $timestamp) );
+}
 
 ?>
-===DONE===
---EXPECTF--
+--EXPECT--
 *** Testing strftime() : usage variation ***
 
 --Newline character--
-bool(false)
-bool(false)
+string(1) "
+"
+string(1) "
+"
 
 --Tab character--
-bool(false)
-bool(false)
-===DONE===
+string(1) "	"
+string(1) "	"

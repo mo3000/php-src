@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -17,10 +15,8 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "php.h"
-#include "ext/standard/php_smart_str.h"
+#include "zend_smart_str_public.h"
 
 ZEND_BEGIN_MODULE_GLOBALS(cli_readline)
 	char *pager;
@@ -39,5 +35,3 @@ extern PHP_MSHUTDOWN_FUNCTION(cli_readline);
 extern PHP_MINFO_FUNCTION(cli_readline);
 
 ZEND_EXTERN_MODULE_GLOBALS(cli_readline)
-
-

@@ -1,9 +1,9 @@
 --TEST--
-Test array_filter() function : basic functionality 
+Test array_filter() function : basic functionality
 --FILE--
 <?php
 /* Prototype  : array array_filter(array $input [, callback $callback])
- * Description: Filters elements from the array via the callback. 
+ * Description: Filters elements from the array via the callback.
  * Source code: ext/standard/array.c
 */
 
@@ -31,16 +31,28 @@ var_dump( array_filter($input,"even") );
 
 // with default arguments
 var_dump( array_filter($input) );
+// same as with default arguments
+var_dump( array_filter($input, null) );
 
 echo "Done"
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing array_filter() : basic functionality ***
 array(2) {
   [1]=>
   int(2)
   [3]=>
   int(0)
+}
+array(4) {
+  [0]=>
+  int(1)
+  [1]=>
+  int(2)
+  [2]=>
+  int(3)
+  [4]=>
+  int(-1)
 }
 array(4) {
   [0]=>

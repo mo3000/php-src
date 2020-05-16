@@ -36,5 +36,6 @@ unlink($test_file);
 unlink($log_file);
 
 ?>
+
 --EXPECT--
 testtest

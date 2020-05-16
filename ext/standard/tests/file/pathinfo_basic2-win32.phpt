@@ -16,22 +16,22 @@ if(substr(PHP_OS, 0, 3) != "WIN")
 echo "*** Testing basic functions of pathinfo() ***\n";
 
 $paths = array (
-			'c:\..\dir1',
-			'c:\test\..\test2\.\adir\afile.txt',
-			'/usr/include/../arpa/./inet.h',
-			'c:\test\adir\afile..txt',
-			'/usr/include/arpa/inet..h',
-			'c:\test\adir\afile.',
-			'/usr/include/arpa/inet.',
-			'/usr/include/arpa/inet,h',
-			'c:afile.txt',
-			'..\.\..\test\afile.txt',
-			'.././../test/afile',
-			'.',
-			'..',
-			'...',
-			'/usr/lib/.../afile'
-						
+            'c:\..\dir1',
+            'c:\test\..\test2\.\adir\afile.txt',
+            '/usr/include/../arpa/./inet.h',
+            'c:\test\adir\afile..txt',
+            '/usr/include/arpa/inet..h',
+            'c:\test\adir\afile.',
+            '/usr/include/arpa/inet.',
+            '/usr/include/arpa/inet,h',
+            'c:afile.txt',
+            '..\.\..\test\afile.txt',
+            '.././../test/afile',
+            '.',
+            '..',
+            '...',
+            '/usr/lib/.../afile'
+
 );
 
 $counter = 1;
@@ -168,18 +168,18 @@ array(3) {
 }
 -- Iteration 9 --
 string(3) "c:."
-string(11) "c:afile.txt"
+string(9) "afile.txt"
 string(3) "txt"
-string(7) "c:afile"
+string(5) "afile"
 array(4) {
   ["dirname"]=>
   string(3) "c:."
   ["basename"]=>
-  string(11) "c:afile.txt"
+  string(9) "afile.txt"
   ["extension"]=>
   string(3) "txt"
   ["filename"]=>
-  string(7) "c:afile"
+  string(5) "afile"
 }
 -- Iteration 10 --
 string(12) "..\.\..\test"

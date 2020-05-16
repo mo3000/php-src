@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -23,15 +21,15 @@
 #include "intl_error.h"
 
 typedef struct {
-	// error hangling
+	// error handling
 	intl_error      error;
 
 	// formatter handling
 	UDateFormat *  udatf;
 } dateformat_data;
 
-dateformat_data* dateformat_data_create( TSRMLS_D );
-void dateformat_data_init( dateformat_data* datef_data TSRMLS_DC );
-void dateformat_data_free( dateformat_data* datef_data TSRMLS_DC );
+dateformat_data* dateformat_data_create( void );
+void dateformat_data_init( dateformat_data* datef_data );
+void dateformat_data_free( dateformat_data* datef_data );
 
 #endif // DATE_FORMAT_DATA_H

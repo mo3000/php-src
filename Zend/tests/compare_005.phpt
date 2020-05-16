@@ -9,46 +9,46 @@ class test {
 }
 
 $a = array(
-	array(1,2,3),
-	"",
-	1,
-	2.5,
-	0,
-	"string",
-	"123",
-	"2.5",
-	NULL,
-	true,
-	false,
-	new stdclass,
-	new stdclass,
-	new test,
-	array(),
-	-PHP_INT_MAX-1,
-	(string)(-PHP_INT_MAX-1),
+    array(1,2,3),
+    "",
+    1,
+    2.5,
+    0,
+    "string",
+    "123",
+    "2.5",
+    NULL,
+    true,
+    false,
+    new stdclass,
+    new stdclass,
+    new test,
+    array(),
+    -PHP_INT_MAX-1,
+    (string)(-PHP_INT_MAX-1),
 );
 
 $var_cnt = count($a);
 
 function my_dump($var) {
-	ob_start();
-	var_dump($var);
-	$buf = ob_get_clean();
-	echo str_replace("\n", "", $buf);
+    ob_start();
+    var_dump($var);
+    $buf = ob_get_clean();
+    echo str_replace("\n", "", $buf);
 }
 
 foreach($a as $var) {
-	for ($i = 0; $i < $var_cnt; $i++) {
-		my_dump($var);
-		echo ($var >= $a[$i]) ? " >= " : " < ";
-		my_dump($a[$i]);
-		echo "\n";
-	}
-}	
+    for ($i = 0; $i < $var_cnt; $i++) {
+        my_dump($var);
+        echo ($var >= $a[$i]) ? " >= " : " < ";
+        my_dump($a[$i]);
+        echo "\n";
+    }
+}
 
 echo "Done\n";
 ?>
---EXPECTF--	
+--EXPECTF--
 array(3) {  [0]=>  int(1)  [1]=>  int(2)  [2]=>  int(3)} >= array(3) {  [0]=>  int(1)  [1]=>  int(2)  [2]=>  int(3)}
 array(3) {  [0]=>  int(1)  [1]=>  int(2)  [2]=>  int(3)} >= string(0) ""
 array(3) {  [0]=>  int(1)  [1]=>  int(2)  [2]=>  int(3)} >= int(1)
@@ -118,13 +118,13 @@ float(2.5) >= NULL
 float(2.5) >= bool(true)
 float(2.5) >= bool(false)
 float(2.5)
-Notice: Object of class stdClass could not be converted to double in %s on line %d
+Notice: Object of class stdClass could not be converted to float in %s on line %d
  >= object(stdClass)#1 (0) {}
 float(2.5)
-Notice: Object of class stdClass could not be converted to double in %s on line %d
+Notice: Object of class stdClass could not be converted to float in %s on line %d
  >= object(stdClass)#2 (0) {}
 float(2.5)
-Notice: Object of class test could not be converted to double in %s on line %d
+Notice: Object of class test could not be converted to float in %s on line %d
  >= object(test)#3 (0) {}
 float(2.5) < array(0) {}
 float(2.5) >= int(-2147483648)
@@ -260,7 +260,7 @@ object(stdClass)#1 (0) {}
 Notice: Object of class stdClass could not be converted to int in %s on line %d
  >= int(1)
 object(stdClass)#1 (0) {}
-Notice: Object of class stdClass could not be converted to double in %s on line %d
+Notice: Object of class stdClass could not be converted to float in %s on line %d
  < float(2.5)
 object(stdClass)#1 (0) {}
 Notice: Object of class stdClass could not be converted to int in %s on line %d
@@ -285,7 +285,7 @@ object(stdClass)#2 (0) {}
 Notice: Object of class stdClass could not be converted to int in %s on line %d
  >= int(1)
 object(stdClass)#2 (0) {}
-Notice: Object of class stdClass could not be converted to double in %s on line %d
+Notice: Object of class stdClass could not be converted to float in %s on line %d
  < float(2.5)
 object(stdClass)#2 (0) {}
 Notice: Object of class stdClass could not be converted to int in %s on line %d
@@ -310,7 +310,7 @@ object(test)#3 (0) {}
 Notice: Object of class test could not be converted to int in %s on line %d
  >= int(1)
 object(test)#3 (0) {}
-Notice: Object of class test could not be converted to double in %s on line %d
+Notice: Object of class test could not be converted to float in %s on line %d
  < float(2.5)
 object(test)#3 (0) {}
 Notice: Object of class test could not be converted to int in %s on line %d

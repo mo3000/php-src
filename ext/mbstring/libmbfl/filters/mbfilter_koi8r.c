@@ -5,7 +5,7 @@
  * LICENSE NOTICES
  *
  * This file is part of "streamable kanji code filter and converter",
- * which is distributed under the terms of GNU Lesser General Public 
+ * which is distributed under the terms of GNU Lesser General Public
  * License (version 2) as published by the Free Software Foundation.
  *
  * This software is distributed in the hope that it will be useful,
@@ -24,7 +24,7 @@
 /*
  * The source code included in this files was separated from mbfilter_ru.c
  * by moriyoshi koizumi <moriyoshi@php.net> on 4 dec 2002.
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -45,7 +45,9 @@ const mbfl_encoding mbfl_encoding_koi8r = {
 	"KOI8-R",
 	(const char *(*)[])&mbfl_encoding_koi8r_aliases,
 	NULL,
-	MBFL_ENCTYPE_SBCS
+	MBFL_ENCTYPE_SBCS,
+	&vtbl_koi8r_wchar,
+	&vtbl_wchar_koi8r
 };
 
 const struct mbfl_identify_vtbl vtbl_identify_koi8r = {
@@ -61,7 +63,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_koi8r = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_koi8r,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_koi8r_wchar = {
@@ -70,7 +73,8 @@ const struct mbfl_convert_vtbl vtbl_koi8r_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_koi8r_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 #define CK(statement)	do { if ((statement) < 0) return (-1); } while (0)
@@ -131,9 +135,7 @@ mbfl_filt_conv_wchar_koi8r(int c, mbfl_convert_filter *filter)
 	if (s >= 0) {
 		CK((*filter->output_function)(s, filter->data));
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
@@ -145,5 +147,5 @@ static int mbfl_filt_ident_koi8r(int c, mbfl_identify_filter *filter)
 		filter->flag = 0;
 	else
 		filter->flag = 1; /* not it */
-	return c;	
+	return c;
 }

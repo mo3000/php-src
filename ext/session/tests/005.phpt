@@ -4,16 +4,17 @@ custom save handler, multiple session_start()s, complex data structure test.
 <?php include('skipif.inc'); ?>
 --INI--
 session.use_cookies=0
+session.use_strict_mode=0
 session.cache_limiter=
 session.name=PHPSESSID
 session.serialize_handler=php
 --FILE--
 <?php
-
 error_reporting(E_ALL);
+ob_start();
 
 class handler {
-	public $data = 'baz|O:3:"foo":2:{s:3:"bar";s:2:"ok";s:3:"yes";i:1;}arr|a:1:{i:3;O:3:"foo":2:{s:3:"bar";s:2:"ok";s:3:"yes";i:1;}}';
+    public $data = 'baz|O:3:"foo":2:{s:3:"bar";s:2:"ok";s:3:"yes";i:1;}arr|a:1:{i:3;O:3:"foo":2:{s:3:"bar";s:2:"ok";s:3:"yes";i:1;}}';
     function open($save_path, $session_name)
     {
         print "OPEN: $session_name\n";
@@ -21,7 +22,7 @@ class handler {
     }
     function close()
     {
-		print "CLOSE\n";
+        print "CLOSE\n";
         return true;
     }
     function read($key)
@@ -33,7 +34,7 @@ class handler {
     function write($key, $val)
     {
         print "WRITE: $key, $val\n";
-		$GLOBALS["hnd"]->data = $val;
+        $GLOBALS["hnd"]->data = $val;
         return true;
     }
 
@@ -88,7 +89,7 @@ var_dump($_SESSION["c"]);
 
 session_destroy();
 ?>
---EXPECTF--
+--EXPECT--
 OPEN: PHPSESSID
 READ: abtest
 object(foo)#4 (2) {
@@ -148,4 +149,3 @@ array(1) {
 int(123)
 DESTROY: abtest
 CLOSE
-

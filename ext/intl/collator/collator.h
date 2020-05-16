@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -16,7 +14,7 @@
  */
 
 #ifndef COLLATOR_COLLATOR_H
-#define CCOLLATOR_COLLATOR_H
+#define COLLATOR_COLLATOR_H
 
 #include <php.h>
 

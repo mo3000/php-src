@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -13,8 +11,6 @@
    | Authors: Kirti Velankar <kirtig@yahoo-inc.com>                       |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef LOCALE_CLASS_H
 #define LOCALE_CLASS_H
@@ -35,7 +31,7 @@ typedef struct {
 } Locale_object;
 
 
-void locale_register_Locale_class( TSRMLS_D );
+void locale_register_Locale_class( void );
 
 extern zend_class_entry *Locale_ce_ptr;
 
@@ -43,6 +39,6 @@ extern zend_class_entry *Locale_ce_ptr;
 
 #define LOCALE_METHOD_INIT_VARS       \
     zval*             	object  = NULL;   \
-    intl_error_reset( NULL TSRMLS_CC ); \
+    intl_error_reset( NULL ); \
 
 #endif // #ifndef LOCALE_CLASS_H

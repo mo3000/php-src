@@ -5,7 +5,6 @@ json_decode() tests
 --FILE--
 <?php
 
-var_dump(json_decode());
 var_dump(json_decode(""));
 var_dump(json_decode("", 1));
 var_dump(json_decode("", 0));
@@ -24,10 +23,7 @@ var_dump(json_decode('{ "": { "": "" }'));
 var_dump(json_decode('{ "": "": "" } }'));
 
 ?>
-===DONE===
 --EXPECTF--
-Warning: json_decode() expects at least 1 parameter, 0 given in %s on line %d
-NULL
 NULL
 NULL
 NULL
@@ -53,19 +49,18 @@ object(stdClass)#%d (1) {
   }
 }
 object(stdClass)#%d (1) {
-  ["_empty_"]=>
+  [""]=>
   object(stdClass)#%d (1) {
     ["foo"]=>
     string(0) ""
   }
 }
 object(stdClass)#%d (1) {
-  ["_empty_"]=>
+  [""]=>
   object(stdClass)#%d (1) {
-    ["_empty_"]=>
+    [""]=>
     string(0) ""
   }
 }
 NULL
 NULL
-===DONE===

@@ -5,14 +5,14 @@ SPL: RegexIterator::GET_MATCH
 
 class MyRegexIterator extends RegexIterator
 {
-	function show()
-	{
-		foreach($this as $k => $v)
-		{
-			var_dump($k);
-			var_dump($v);
-		}
-	}
+    function show()
+    {
+        foreach($this as $k => $v)
+        {
+            var_dump($k);
+            var_dump($v);
+        }
+    }
 }
 
 $ar = new ArrayIterator(array('1','1,2','1,2,3','',NULL,array(),'FooBar',',',',,'));
@@ -25,8 +25,6 @@ $it->show();
 var_dump($ar);
 
 ?>
-===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 int(1)
 array(3) {
@@ -46,8 +44,6 @@ array(3) {
   [2]=>
   %s(1) "2"
 }
-
-Notice: Array to string conversion in %siterator_050.php on line %d
 int(0)
 array(2) {
   [0]=>
@@ -69,8 +65,6 @@ array(2) {
   [1]=>
   %s(1) "1"
 }
-
-Notice: Array to string conversion in %siterator_050.php on line %d
 object(ArrayIterator)#%d (1) {
   %s"storage"%s"ArrayIterator":private]=>
   array(9) {
@@ -95,4 +89,3 @@ object(ArrayIterator)#%d (1) {
     %s(2) ",,"
   }
 }
-===DONE===

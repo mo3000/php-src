@@ -1,8 +1,6 @@
-/* 
+/*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,14 +14,12 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #ifndef MOD_USER_H
 #define MOD_USER_H
 
-extern ps_module ps_mod_user;
+extern const ps_module ps_mod_user;
 #define ps_user_ptr &ps_mod_user
 
-PS_FUNCS(user);
+PS_FUNCS_UPDATE_TIMESTAMP(user);
 
 #endif

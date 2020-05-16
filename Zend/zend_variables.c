@@ -2,242 +2,132 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2013 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
-   | that is bundled with this package in the file LICENSE, and is        | 
+   | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
    | http://www.zend.com/license/2_00.txt.                                |
    | If you did not receive a copy of the Zend license and are unable to  |
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
+   |          Dmitry Stogov <dmitry@php.net>                              |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #include <stdio.h>
 #include "zend.h"
 #include "zend_API.h"
+#include "zend_ast.h"
 #include "zend_globals.h"
 #include "zend_constants.h"
 #include "zend_list.h"
 
+#if ZEND_DEBUG
+static void ZEND_FASTCALL zend_string_destroy(zend_string *str);
+#else
+# define zend_string_destroy _efree
+#endif
+static void ZEND_FASTCALL zend_reference_destroy(zend_reference *ref);
+static void ZEND_FASTCALL zend_empty_destroy(zend_reference *ref);
 
-ZEND_API void _zval_dtor_func(zval *zvalue ZEND_FILE_LINE_DC)
+typedef void (ZEND_FASTCALL *zend_rc_dtor_func_t)(zend_refcounted *p);
+
+static const zend_rc_dtor_func_t zend_rc_dtor_func[] = {
+	/* IS_UNDEF        */ (zend_rc_dtor_func_t)zend_empty_destroy,
+	/* IS_NULL         */ (zend_rc_dtor_func_t)zend_empty_destroy,
+	/* IS_FALSE        */ (zend_rc_dtor_func_t)zend_empty_destroy,
+	/* IS_TRUE         */ (zend_rc_dtor_func_t)zend_empty_destroy,
+	/* IS_LONG         */ (zend_rc_dtor_func_t)zend_empty_destroy,
+	/* IS_DOUBLE       */ (zend_rc_dtor_func_t)zend_empty_destroy,
+	/* IS_STRING       */ (zend_rc_dtor_func_t)zend_string_destroy,
+	/* IS_ARRAY        */ (zend_rc_dtor_func_t)zend_array_destroy,
+	/* IS_OBJECT       */ (zend_rc_dtor_func_t)zend_objects_store_del,
+	/* IS_RESOURCE     */ (zend_rc_dtor_func_t)zend_list_free,
+	/* IS_REFERENCE    */ (zend_rc_dtor_func_t)zend_reference_destroy,
+	/* IS_CONSTANT_AST */ (zend_rc_dtor_func_t)zend_ast_ref_destroy
+};
+
+ZEND_API void ZEND_FASTCALL rc_dtor_func(zend_refcounted *p)
 {
-	switch (Z_TYPE_P(zvalue) & IS_CONSTANT_TYPE_MASK) {
-		case IS_STRING:
-		case IS_CONSTANT:
-			CHECK_ZVAL_STRING_REL(zvalue);
-			STR_FREE_REL(zvalue->value.str.val);
-			break;
-		case IS_ARRAY:
-		case IS_CONSTANT_ARRAY: {
-				TSRMLS_FETCH();
-
-				if (zvalue->value.ht && (zvalue->value.ht != &EG(symbol_table))) {
-					/* break possible cycles */
-					Z_TYPE_P(zvalue) = IS_NULL;
-					zend_hash_destroy(zvalue->value.ht);
-					FREE_HASHTABLE(zvalue->value.ht);
-				}
-			}
-			break;
-		case IS_OBJECT:
-			{
-				TSRMLS_FETCH();
-
-				Z_OBJ_HT_P(zvalue)->del_ref(zvalue TSRMLS_CC);
-			}
-			break;
-		case IS_RESOURCE:
-			{
-				TSRMLS_FETCH();
-
-				/* destroy resource */
-				zend_list_delete(zvalue->value.lval);
-			}
-			break;
-		case IS_LONG:
-		case IS_DOUBLE:
-		case IS_BOOL:
-		case IS_NULL:
-		default:
-			return;
-			break;
-	}
+	ZEND_ASSERT(GC_TYPE(p) <= IS_CONSTANT_AST);
+	zend_rc_dtor_func[GC_TYPE(p)](p);
 }
-
-
-ZEND_API void _zval_internal_dtor(zval *zvalue ZEND_FILE_LINE_DC)
-{
-	switch (Z_TYPE_P(zvalue) & IS_CONSTANT_TYPE_MASK) {
-		case IS_STRING:
-		case IS_CONSTANT:
-			CHECK_ZVAL_STRING_REL(zvalue);
-			str_free(zvalue->value.str.val);
-			break;
-		case IS_ARRAY:
-		case IS_CONSTANT_ARRAY:
-		case IS_OBJECT:
-		case IS_RESOURCE:
-			zend_error(E_CORE_ERROR, "Internal zval's can't be arrays, objects or resources");
-			break;
-		case IS_LONG:
-		case IS_DOUBLE:
-		case IS_BOOL:
-		case IS_NULL:
-		default:
-			break;
-	}
-}
-
-
-ZEND_API void zval_add_ref(zval **p)
-{
-	Z_ADDREF_PP(p);
-}
-
-
-ZEND_API void _zval_copy_ctor_func(zval *zvalue ZEND_FILE_LINE_DC)
-{
-	switch (Z_TYPE_P(zvalue) & IS_CONSTANT_TYPE_MASK) {
-		case IS_RESOURCE: {
-				TSRMLS_FETCH();
-
-				zend_list_addref(zvalue->value.lval);
-			}
-			break;
-		case IS_BOOL:
-		case IS_LONG:
-		case IS_NULL:
-			break;
-		case IS_CONSTANT:
-		case IS_STRING:
-			CHECK_ZVAL_STRING_REL(zvalue);
-			if (!IS_INTERNED(zvalue->value.str.val)) {
-				zvalue->value.str.val = (char *) estrndup_rel(zvalue->value.str.val, zvalue->value.str.len);
-			}
-			break;
-		case IS_ARRAY:
-		case IS_CONSTANT_ARRAY: {
-				zval *tmp;
-				HashTable *original_ht = zvalue->value.ht;
-				HashTable *tmp_ht = NULL;
-				TSRMLS_FETCH();
-
-				if (zvalue->value.ht == &EG(symbol_table)) {
-					return; /* do nothing */
-				}
-				ALLOC_HASHTABLE_REL(tmp_ht);
-				zend_hash_init(tmp_ht, zend_hash_num_elements(original_ht), NULL, ZVAL_PTR_DTOR, 0);
-				zend_hash_copy(tmp_ht, original_ht, (copy_ctor_func_t) zval_add_ref, (void *) &tmp, sizeof(zval *));
-				zvalue->value.ht = tmp_ht;
-			}
-			break;
-		case IS_OBJECT:
-			{
-				TSRMLS_FETCH();
-				Z_OBJ_HT_P(zvalue)->add_ref(zvalue TSRMLS_CC);
-			}
-			break;
-	}
-}
-
-
-ZEND_API int zend_print_variable(zval *var) 
-{
-	return zend_print_zval(var, 0);
-}
-
-
-ZEND_API void _zval_dtor_wrapper(zval *zvalue)
-{
-	TSRMLS_FETCH();
-
-	GC_REMOVE_ZVAL_FROM_BUFFER(zvalue);
-	zval_dtor(zvalue);
-}
-
 
 #if ZEND_DEBUG
-ZEND_API void _zval_copy_ctor_wrapper(zval *zvalue)
+static void ZEND_FASTCALL zend_string_destroy(zend_string *str)
 {
-	zval_copy_ctor(zvalue);
-}
-
-
-ZEND_API void _zval_internal_dtor_wrapper(zval *zvalue)
-{
-	zval_internal_dtor(zvalue);
-}
-
-
-ZEND_API void _zval_ptr_dtor_wrapper(zval **zval_ptr)
-{
-	zval_ptr_dtor(zval_ptr);
-}
-
-
-ZEND_API void _zval_internal_ptr_dtor_wrapper(zval **zval_ptr)
-{
-	zval_internal_ptr_dtor(zval_ptr);
+	CHECK_ZVAL_STRING(str);
+	ZEND_ASSERT(!ZSTR_IS_INTERNED(str));
+	ZEND_ASSERT(GC_REFCOUNT(str) == 0);
+	ZEND_ASSERT(!(GC_FLAGS(str) & IS_STR_PERSISTENT));
+	efree(str);
 }
 #endif
 
-ZEND_API int zval_copy_static_var(zval **p TSRMLS_DC, int num_args, va_list args, zend_hash_key *key) /* {{{ */
+static void ZEND_FASTCALL zend_reference_destroy(zend_reference *ref)
 {
-	HashTable *target = va_arg(args, HashTable*);
-	zend_bool is_ref;
-	zval *tmp;
-  
-	if (Z_TYPE_PP(p) & (IS_LEXICAL_VAR|IS_LEXICAL_REF)) {
-		is_ref = Z_TYPE_PP(p) & IS_LEXICAL_REF;
-    
-		if (!EG(active_symbol_table)) {
-			zend_rebuild_symbol_table(TSRMLS_C);
-		}
-		if (zend_hash_quick_find(EG(active_symbol_table), key->arKey, key->nKeyLength, key->h, (void **) &p) == FAILURE) {
-			if (is_ref) {        
-				ALLOC_INIT_ZVAL(tmp);
-				Z_SET_ISREF_P(tmp);
-				zend_hash_quick_add(EG(active_symbol_table), key->arKey, key->nKeyLength, key->h, &tmp, sizeof(zval*), (void**)&p);
-			} else {
-				tmp = EG(uninitialized_zval_ptr);
-				zend_error(E_NOTICE,"Undefined variable: %s", key->arKey);
-			}
-		} else {
-			if (is_ref) {
-				SEPARATE_ZVAL_TO_MAKE_IS_REF(p);
-				tmp = *p;
-			} else if (Z_ISREF_PP(p)) {
-				ALLOC_INIT_ZVAL(tmp);
-				ZVAL_COPY_VALUE(tmp, *p);
-				zval_copy_ctor(tmp);
-				Z_SET_REFCOUNT_P(tmp, 0);
-				Z_UNSET_ISREF_P(tmp);
-			} else {
-				tmp = *p;
-			}
-		}
-	} else {
-		tmp = *p;
-	}
-	if (zend_hash_quick_add(target, key->arKey, key->nKeyLength, key->h, &tmp, sizeof(zval*), NULL) == SUCCESS) {
-		Z_ADDREF_P(tmp);
-	}
-	return ZEND_HASH_APPLY_KEEP;
+	ZEND_ASSERT(!ZEND_REF_HAS_TYPE_SOURCES(ref));
+	i_zval_ptr_dtor(&ref->val);
+	efree_size(ref, sizeof(zend_reference));
+}
+
+static void ZEND_FASTCALL zend_empty_destroy(zend_reference *ref)
+{
+}
+
+ZEND_API void zval_ptr_dtor(zval *zval_ptr) /* {{{ */
+{
+	i_zval_ptr_dtor(zval_ptr);
 }
 /* }}} */
 
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */
+ZEND_API void zval_internal_ptr_dtor(zval *zval_ptr) /* {{{ */
+{
+	if (Z_REFCOUNTED_P(zval_ptr)) {
+		zend_refcounted *ref = Z_COUNTED_P(zval_ptr);
+
+		if (GC_DELREF(ref) == 0) {
+			if (Z_TYPE_P(zval_ptr) == IS_STRING) {
+				zend_string *str = (zend_string*)ref;
+
+				CHECK_ZVAL_STRING(str);
+				ZEND_ASSERT(!ZSTR_IS_INTERNED(str));
+				ZEND_ASSERT((GC_FLAGS(str) & IS_STR_PERSISTENT));
+				free(str);
+			} else {
+				zend_error_noreturn(E_CORE_ERROR, "Internal zval's can't be arrays, objects, resources or reference");
+			}
+		}
+	}
+}
+/* }}} */
+
+/* This function should only be used as a copy constructor, i.e. it
+ * should only be called AFTER a zval has been copied to another
+ * location using ZVAL_COPY_VALUE. Do not call it before copying,
+ * otherwise a reference may be leaked. */
+ZEND_API void zval_add_ref(zval *p)
+{
+	if (Z_REFCOUNTED_P(p)) {
+		if (Z_ISREF_P(p) && Z_REFCOUNT_P(p) == 1) {
+			ZVAL_COPY(p, Z_REFVAL_P(p));
+		} else {
+			Z_ADDREF_P(p);
+		}
+	}
+}
+
+ZEND_API void ZEND_FASTCALL zval_copy_ctor_func(zval *zvalue)
+{
+	if (EXPECTED(Z_TYPE_P(zvalue) == IS_ARRAY)) {
+		ZVAL_ARR(zvalue, zend_array_dup(Z_ARRVAL_P(zvalue)));
+	} else if (EXPECTED(Z_TYPE_P(zvalue) == IS_STRING)) {
+		ZEND_ASSERT(!ZSTR_IS_INTERNED(Z_STR_P(zvalue)));
+		CHECK_ZVAL_STRING(Z_STR_P(zvalue));
+		ZVAL_NEW_STR(zvalue, zend_string_dup(Z_STR_P(zvalue), 0));
+	}
+}

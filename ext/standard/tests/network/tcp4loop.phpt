@@ -1,33 +1,40 @@
 --TEST--
 Streams Based IPv4 TCP Loopback test
 --FILE--
-<?php # vim:ft=php:
-	/* Setup socket server */
-	$server = stream_socket_server('tcp://127.0.0.1:31337');
-	if (!$server) {
-		die('Unable to create AF_INET socket [server]');
-	}
+<?php
 
-	/* Connect to it */
-	$client = stream_socket_client('tcp://127.0.0.1:31337');
-	if (!$client) {
-		die('Unable to create AF_INET socket [client]');
-	}
+  for ($i=0; $i<100; $i++) {
+    $port = rand(10000, 65000);
+    /* Setup socket server */
+    $server = @stream_socket_server("tcp://127.0.0.1:$port");
+    if ($server) {
+      break;
+    }
+  }
+    if (!$server) {
+        die('Unable to create AF_INET socket [server]');
+    }
 
-	/* Accept that connection */
-	$socket = stream_socket_accept($server);
-	if (!$socket) {
-		die('Unable to accept connection');
-	}
+    /* Connect to it */
+    $client = stream_socket_client("tcp://127.0.0.1:$port");
+    if (!$client) {
+        die('Unable to create AF_INET socket [client]');
+    }
 
-	fwrite($client, "ABCdef123\n");
+    /* Accept that connection */
+    $socket = stream_socket_accept($server);
+    if (!$socket) {
+        die('Unable to accept connection');
+    }
 
-	$data = fread($socket, 10);
-	var_dump($data);
+    fwrite($client, "ABCdef123\n");
 
-	fclose($client);
-	fclose($socket);
-	fclose($server);
+    $data = fread($socket, 10);
+    var_dump($data);
+
+    fclose($client);
+    fclose($socket);
+    fclose($server);
 ?>
 --EXPECT--
 string(10) "ABCdef123

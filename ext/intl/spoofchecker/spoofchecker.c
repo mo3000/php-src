@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -35,7 +33,7 @@ void spoofchecker_register_constants(INIT_FUNC_ARGS)
 		return;
 	}
 
-	#define SPOOFCHECKER_EXPOSE_CLASS_CONST(x) zend_declare_class_constant_long(Spoofchecker_ce_ptr, ZEND_STRS( #x ) - 1, USPOOF_##x TSRMLS_CC);
+	#define SPOOFCHECKER_EXPOSE_CLASS_CONST(x) zend_declare_class_constant_long(Spoofchecker_ce_ptr, ZEND_STRS( #x ) - 1, USPOOF_##x);
 
 	SPOOFCHECKER_EXPOSE_CLASS_CONST(SINGLE_SCRIPT_CONFUSABLE)
 	SPOOFCHECKER_EXPOSE_CLASS_CONST(MIXED_SCRIPT_CONFUSABLE)
@@ -45,16 +43,15 @@ void spoofchecker_register_constants(INIT_FUNC_ARGS)
 	SPOOFCHECKER_EXPOSE_CLASS_CONST(INVISIBLE)
 	SPOOFCHECKER_EXPOSE_CLASS_CONST(CHAR_LIMIT)
 
+#if U_ICU_VERSION_MAJOR_NUM >= 58
+	SPOOFCHECKER_EXPOSE_CLASS_CONST(ASCII)
+	SPOOFCHECKER_EXPOSE_CLASS_CONST(HIGHLY_RESTRICTIVE)
+	SPOOFCHECKER_EXPOSE_CLASS_CONST(MODERATELY_RESTRICTIVE)
+	SPOOFCHECKER_EXPOSE_CLASS_CONST(MINIMALLY_RESTRICTIVE)
+	SPOOFCHECKER_EXPOSE_CLASS_CONST(UNRESTRICTIVE)
+	SPOOFCHECKER_EXPOSE_CLASS_CONST(SINGLE_SCRIPT_RESTRICTIVE)
+#endif
 
 	#undef SPOOFCHECKER_EXPOSE_CLASS_CONST
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

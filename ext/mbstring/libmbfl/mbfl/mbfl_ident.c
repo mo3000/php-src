@@ -5,7 +5,7 @@
  * LICENSE NOTICES
  *
  * This file is part of "streamable kanji code filter and converter",
- * which is distributed under the terms of GNU Lesser General Public 
+ * which is distributed under the terms of GNU Lesser General Public
  * License (version 2) as published by the Free Software Foundation.
  *
  * This software is distributed in the hope that it will be useful,
@@ -32,9 +32,7 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_STDDEF_H
 #include <stddef.h>
-#endif
 
 #include "mbfl_ident.h"
 #include "mbfl_allocators.h"
@@ -193,14 +191,7 @@ const struct mbfl_identify_vtbl * mbfl_identify_filter_get_vtbl(enum mbfl_no_enc
 
 mbfl_identify_filter *mbfl_identify_filter_new(enum mbfl_no_encoding encoding)
 {
-	mbfl_identify_filter *filter;
-
-	/* allocate */
-	filter = (mbfl_identify_filter *)mbfl_malloc(sizeof(mbfl_identify_filter));
-	if (filter == NULL) {
-		return NULL;
-	}
-
+	mbfl_identify_filter *filter = mbfl_malloc(sizeof(mbfl_identify_filter));
 	if (mbfl_identify_filter_init(filter, encoding)) {
 		mbfl_free(filter);
 		return NULL;
@@ -211,14 +202,7 @@ mbfl_identify_filter *mbfl_identify_filter_new(enum mbfl_no_encoding encoding)
 
 mbfl_identify_filter *mbfl_identify_filter_new2(const mbfl_encoding *encoding)
 {
-	mbfl_identify_filter *filter;
-
-	/* allocate */
-	filter = (mbfl_identify_filter *)mbfl_malloc(sizeof(mbfl_identify_filter));
-	if (filter == NULL) {
-		return NULL;
-	}
-
+	mbfl_identify_filter *filter = mbfl_malloc(sizeof(mbfl_identify_filter));
 	if (mbfl_identify_filter_init2(filter, encoding)) {
 		mbfl_free(filter);
 		return NULL;

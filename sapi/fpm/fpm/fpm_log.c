@@ -1,5 +1,3 @@
-
-	/* $Id: fpm_status.c 312262 2011-06-18 17:41:56Z felipe $ */
 	/* (c) 2009 Jerome Loyet */
 
 #include "php.h"
@@ -34,18 +32,20 @@ int fpm_log_open(int reopen) /* {{{ */
 {
 	struct fpm_worker_pool_s *wp;
 	int ret = 1;
-	
+
 	int fd;
 	for (wp = fpm_worker_all_pools; wp; wp = wp->next) {
 		if (!wp->config->access_log) {
 			continue;
 		}
 		ret = 0;
-		
+
 		fd = open(wp->config->access_log, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
 		if (0 > fd) {
 			zlog(ZLOG_SYSERROR, "failed to open access log (%s)", wp->config->access_log);
 			return -1;
+		} else {
+			zlog(ZLOG_DEBUG, "open access log (%s)", wp->config->access_log);
 		}
 
 		if (reopen) {
@@ -57,7 +57,9 @@ int fpm_log_open(int reopen) /* {{{ */
 			wp->log_fd = fd;
 		}
 
-		fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
+		if (0 > fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC)) {
+			zlog(ZLOG_WARNING, "failed to change attribute of access_log");
+		}
 	}
 
 	return ret;
@@ -93,7 +95,7 @@ int fpm_log_init_child(struct fpm_worker_pool_s *wp)  /* {{{ */
 }
 /* }}} */
 
-int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
+int fpm_log_write(char *log_format) /* {{{ */
 {
 	char *s, *b;
 	char buffer[FPM_LOG_BUFFER+1];
@@ -237,7 +239,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 
 				case 'f': /* script */
 					if (!test) {
-						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s",  proc.script_filename && *proc.script_filename ? proc.script_filename : "-");
+						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s",  *proc.script_filename ? proc.script_filename : "-");
 					}
 					break;
 
@@ -249,7 +251,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 
 				case 'm': /* method */
 					if (!test) {
-						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.request_method && *proc.request_method ? proc.request_method : "-");
+						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", *proc.request_method ? proc.request_method : "-");
 					}
 					break;
 
@@ -263,13 +265,13 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 					/* kilobytes */
 					} else if (!strcasecmp(format, "kilobytes") || !strcasecmp(format, "kilo")) {
 						if (!test) {
-							len2 = snprintf(b, FPM_LOG_BUFFER - len, "%lu", proc.memory / 1024);
+							len2 = snprintf(b, FPM_LOG_BUFFER - len, "%zu", proc.memory / 1024);
 						}
 
 					/* megabytes */
 					} else if (!strcasecmp(format, "megabytes") || !strcasecmp(format, "mega")) {
 						if (!test) {
-							len2 = snprintf(b, FPM_LOG_BUFFER - len, "%lu", proc.memory / 1024 / 1024);
+							len2 = snprintf(b, FPM_LOG_BUFFER - len, "%zu", proc.memory / 1024 / 1024);
 						}
 
 					} else {
@@ -308,7 +310,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 								continue;
 							}
 
-							/* test if enought char after the header name + ': ' */
+							/* test if enough char after the header name + ': ' */
 							if (h->header_len <= format_len + 2) {
 								h = (sapi_header_struct*)zend_llist_get_next_ex(&sapi_headers->headers, &pos);
 								continue;
@@ -347,25 +349,25 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 
 				case 'q': /* query_string */
 					if (!test) {
-						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.query_string ? proc.query_string : "");
+						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.query_string);
 					}
 					break;
 
 				case 'Q': /* '?' */
 					if (!test) {
-						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.query_string && *proc.query_string  ? "?" : "");
+						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", *proc.query_string  ? "?" : "");
 					}
 					break;
 
 				case 'r': /* request URI */
 					if (!test) {
-						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.request_uri ? proc.request_uri : "-");
+						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.request_uri);
 					}
 					break;
 
 				case 'R': /* remote IP address */
 					if (!test) {
-						char *tmp = fcgi_get_last_client_ip();
+						const char *tmp = fcgi_get_last_client_ip();
 						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", tmp ? tmp : "-");
 					}
 					break;
@@ -397,7 +399,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 
 				case 'u': /* remote user */
 					if (!test) {
-						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.auth_user ? proc.auth_user : "-");
+						len2 = snprintf(b, FPM_LOG_BUFFER - len, "%s", proc.auth_user);
 					}
 					break;
 
@@ -406,7 +408,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 					{
 						char *start;
 						size_t l;
-						
+
 						start = ++s;
 
 						while (*s != '\0') {
@@ -444,6 +446,11 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 				b += len2;
 				len += len2;
 			}
+			if (len >= FPM_LOG_BUFFER) {
+				zlog(ZLOG_NOTICE, "the log buffer is full (%d). The access log request has been truncated.", FPM_LOG_BUFFER);
+				len = FPM_LOG_BUFFER;
+				break;
+			}
 			continue;
 		}
 
@@ -458,7 +465,7 @@ int fpm_log_write(char *log_format TSRMLS_DC) /* {{{ */
 
 	if (!test && strlen(buffer) > 0) {
 		buffer[len] = '\n';
-		write(fpm_log_fd, buffer, len + 1);
+		zend_quiet_write(fpm_log_fd, buffer, len + 1);
 	}
 
 	return 0;

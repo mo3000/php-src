@@ -1,5 +1,5 @@
 --TEST--
-Overridding Conflicting Methods should not result in a notice/warning about collisions
+Overriding Conflicting Methods should not result in a notice/warning about collisions
 --FILE--
 <?php
 error_reporting(E_ALL);
@@ -27,5 +27,5 @@ class TraitsTest {
 $test = new TraitsTest();
 $test->hello();
 ?>
---EXPECTF--	
+--EXPECT--
 Hello

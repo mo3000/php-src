@@ -2,6 +2,7 @@
 Bug #30820 (static member conflict with $this->member silently ignored)
 --INI--
 error_reporting=4095
+opcache.optimization_level=0
 --FILE--
 <?php
 class Blah {
@@ -20,8 +21,8 @@ $b = new Blah();
 $b->show();
 ?>
 --EXPECTF--
-Strict Standards: Accessing static property Blah::$x as non static in %sbug30820.php on line 7
+Notice: Accessing static property Blah::$x as non static in %sbug30820.php on line 7
 Blah::$x = 1
 
-Strict Standards: Accessing static property Blah::$x as non static in %sbug30820.php on line 10
+Notice: Accessing static property Blah::$x as non static in %sbug30820.php on line 10
 $this->x = 5

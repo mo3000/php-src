@@ -1,25 +1,25 @@
 --TEST--
-Bug #43200.2 (Interface implementation / inheritence not possible in abstract classes)
+Bug #43200.2 (Interface implementation / inheritance not possible in abstract classes)
 --FILE--
 <?php
 
 interface A {
-	function foo();
+    function foo();
 }
 
 abstract class B implements A {
-	abstract public function foo();
+    abstract public function foo();
 }
 
 class C extends B {
-	public function foo() {
-		echo 'works';
-	}
+    public function foo() {
+        echo 'works';
+    }
 }
 
 $o = new C();
 $o->foo();
 
 ?>
---EXPECTF--
+--EXPECT--
 works

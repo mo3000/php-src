@@ -6,11 +6,11 @@ SPL: ArrayObject/Iterator and reference to self
 
 class MyArrayObject extends ArrayObject
 {
-	public function __construct()
-	{
-		parent::__construct($this);
-		$this['bar'] = 'baz';
-	}
+    public function __construct()
+    {
+        parent::__construct($this);
+        $this['bar'] = 'baz';
+    }
 }
 
 $a = new MyArrayObject;
@@ -27,11 +27,11 @@ var_dump($b);
 
 class MyArrayIterator extends ArrayIterator
 {
-	public function __construct()
-	{
-		parent::__construct($this);
-		$this['bar'] = 'baz';
-	}
+    public function __construct()
+    {
+        parent::__construct($this);
+        $this['bar'] = 'baz';
+    }
 }
 
 $a = new MyArrayIterator;
@@ -43,38 +43,26 @@ var_dump($a);
 var_dump($b);
 
 ?>
-===DONE===
---EXPECTF--	
+--EXPECTF--
 ==ArrayObject===
 object(MyArrayObject)#%d (1) {
   ["bar"]=>
   string(3) "baz"
 }
-object(MyArrayObject)#%d (3) {
+object(MyArrayObject)#%d (2) {
   ["bar"]=>
   string(3) "baz"
   ["baz"]=>
   string(3) "Foo"
-  ["storage":"ArrayObject":private]=>
-  array(1) {
-    ["bar"]=>
-    string(3) "baz"
-  }
 }
 ==ArrayIterator===
 object(MyArrayIterator)#%d (1) {
   ["bar"]=>
   string(3) "baz"
 }
-object(MyArrayIterator)#%d (3) {
+object(MyArrayIterator)#%d (2) {
   ["bar"]=>
   string(3) "baz"
   ["baz"]=>
   string(3) "Foo"
-  ["storage":"ArrayIterator":private]=>
-  object(MyArrayIterator)#%d (1) {
-    ["bar"]=>
-    string(3) "baz"
-  }
 }
-===DONE===

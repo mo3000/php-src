@@ -1,5 +1,5 @@
 --TEST--
-Test fscanf() function: usage variations - unsigned int formats with integer values 
+Test fscanf() function: usage variations - unsigned int formats with integer values
 --SKIPIF--
 <?php
 if (PHP_INT_SIZE != 4) {
@@ -16,9 +16,9 @@ if (PHP_INT_SIZE != 4) {
 
 /* Test fscanf() to scan different integer values using different unsigned int format types */
 
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 
-echo "*** Test fscanf(): different unsigned int format types with different integer values ***\n"; 
+echo "*** Test fscanf(): different unsigned int format types with different integer values ***\n";
 
 // create a file
 $filename = "$file_path/fscanf_variation39.tmp";
@@ -40,10 +40,10 @@ $valid_ints = array(
   0Xfff,
   0XFA,
   -0x80000000, // max negative integer as hexadecimal
-  0x7fffffff,  // max postive integer as hexadecimal
-  0x7FFFFFFF,  // max postive integer as hexadecimal
+  0x7fffffff,  // max positive integer as hexadecimal
+  0x7FFFFFFF,  // max positive integer as hexadecimal
   0123,        // integer as octal
-  01912,       // should be quivalent to octal 1
+  01,       // should be quivalent to octal 1
   -020000000000, // max negative integer as octal
   017777777777  // max positive integer as octal
 );
@@ -73,7 +73,11 @@ foreach($unsigned_formats as $unsigned_format) {
   rewind($file_handle);
   echo "\n-- iteration $counter --\n";
   while( !feof($file_handle) ) {
-    var_dump( fscanf($file_handle,$unsigned_format) );
+    try {
+      var_dump(fscanf($file_handle,$unsigned_format));
+    } catch (ValueError $exception) {
+      echo $exception->getMessage() . "\n";
+    }
   }
   $counter++;
 }
@@ -82,11 +86,11 @@ echo "\n*** Done ***";
 ?>
 --CLEAN--
 <?php
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 $filename = "$file_path/fscanf_variation39.tmp";
 unlink($filename);
 ?>
---EXPECTF--
+--EXPECT--
 *** Test fscanf(): different unsigned int format types with different integer values ***
 
 -- iteration 1 --
@@ -540,60 +544,24 @@ array(1) {
 bool(false)
 
 -- iteration 7 --
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
-
-Warning: fscanf(): Bad scan conversion character " " in %s on line %d
-NULL
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
+Bad scan conversion character " "
 bool(false)
 
 -- iteration 8 --
@@ -1011,4 +979,3 @@ array(0) {
 bool(false)
 
 *** Done ***
-

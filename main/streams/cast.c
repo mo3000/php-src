@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -15,8 +13,6 @@
    | Authors: Wez Furlong <wez@thebrainroom.com>                          |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #define _GNU_SOURCE
 #include "php.h"
@@ -31,10 +27,18 @@
 
 /* Under BSD, emulate fopencookie using funopen */
 #if defined(HAVE_FUNOPEN) && !defined(HAVE_FOPENCOOKIE)
+
+/* NetBSD 6.0+ uses off_t instead of fpos_t in funopen */
+# if defined(__NetBSD__) && (__NetBSD_Version__ >= 600000000)
+#  define PHP_FPOS_T off_t
+# else
+#  define PHP_FPOS_T fpos_t
+# endif
+
 typedef struct {
 	int (*reader)(void *, char *, int);
 	int (*writer)(void *, const char *, int);
-	fpos_t (*seeker)(void *, fpos_t, int);
+	PHP_FPOS_T (*seeker)(void *, PHP_FPOS_T, int);
 	int (*closer)(void *);
 } COOKIE_IO_FUNCTIONS_T;
 
@@ -55,7 +59,6 @@ FILE *fopencookie(void *cookie, const char *mode, COOKIE_IO_FUNCTIONS_T *funcs)
 static int stream_cookie_reader(void *cookie, char *buffer, int size)
 {
 	int ret;
-	TSRMLS_FETCH();
 
 	ret = php_stream_read((php_stream*)cookie, buffer, size);
 	return ret;
@@ -63,32 +66,29 @@ static int stream_cookie_reader(void *cookie, char *buffer, int size)
 
 static int stream_cookie_writer(void *cookie, const char *buffer, int size)
 {
-	TSRMLS_FETCH();
 
 	return php_stream_write((php_stream *)cookie, (char *)buffer, size);
 }
 
-static fpos_t stream_cookie_seeker(void *cookie, off_t position, int whence)
+static PHP_FPOS_T stream_cookie_seeker(void *cookie, zend_off_t position, int whence)
 {
-	TSRMLS_FETCH();
 
-	return (fpos_t)php_stream_seek((php_stream *)cookie, position, whence);
+	return (PHP_FPOS_T)php_stream_seek((php_stream *)cookie, position, whence);
 }
 
 static int stream_cookie_closer(void *cookie)
 {
 	php_stream *stream = (php_stream*)cookie;
-	TSRMLS_FETCH();
 
 	/* prevent recursion */
 	stream->fclose_stdiocast = PHP_STREAM_FCLOSE_NONE;
-	return php_stream_close(stream);
+	return php_stream_free(stream,
+		PHP_STREAM_FREE_CLOSE | PHP_STREAM_FREE_KEEP_RSRC | PHP_STREAM_FREE_RSRC_DTOR);
 }
 #elif defined(HAVE_FOPENCOOKIE)
 static ssize_t stream_cookie_reader(void *cookie, char *buffer, size_t size)
 {
 	ssize_t ret;
-	TSRMLS_FETCH();
 
 	ret = php_stream_read(((php_stream *)cookie), buffer, size);
 	return ret;
@@ -96,7 +96,6 @@ static ssize_t stream_cookie_reader(void *cookie, char *buffer, size_t size)
 
 static ssize_t stream_cookie_writer(void *cookie, const char *buffer, size_t size)
 {
-	TSRMLS_FETCH();
 
 	return php_stream_write(((php_stream *)cookie), (char *)buffer, size);
 }
@@ -104,9 +103,8 @@ static ssize_t stream_cookie_writer(void *cookie, const char *buffer, size_t siz
 # ifdef COOKIE_SEEKER_USES_OFF64_T
 static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
 {
-	TSRMLS_FETCH();
 
-	*position = php_stream_seek((php_stream *)cookie, (off_t)*position, whence);
+	*position = php_stream_seek((php_stream *)cookie, (zend_off_t)*position, whence);
 
 	if (*position == -1) {
 		return -1;
@@ -114,9 +112,8 @@ static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
 	return 0;
 }
 # else
-static int stream_cookie_seeker(void *cookie, off_t position, int whence)
+static int stream_cookie_seeker(void *cookie, zend_off_t position, int whence)
 {
-	TSRMLS_FETCH();
 
 	return php_stream_seek((php_stream *)cookie, position, whence);
 }
@@ -125,11 +122,11 @@ static int stream_cookie_seeker(void *cookie, off_t position, int whence)
 static int stream_cookie_closer(void *cookie)
 {
 	php_stream *stream = (php_stream*)cookie;
-	TSRMLS_FETCH();
 
 	/* prevent recursion */
 	stream->fclose_stdiocast = PHP_STREAM_FCLOSE_NONE;
-	return php_stream_close(stream);
+	return php_stream_free(stream,
+		PHP_STREAM_FREE_CLOSE | PHP_STREAM_FREE_KEEP_RSRC | PHP_STREAM_FREE_RSRC_DTOR);
 }
 #endif /* elif defined(HAVE_FOPENCOOKIE) */
 
@@ -148,7 +145,7 @@ static COOKIE_IO_FUNCTIONS_T stream_cookie_functions =
  * Result should have at least size 5, e.g. to write wbx+\0 */
 void php_stream_mode_sanitize_fdopen_fopencookie(php_stream *stream, char *result)
 {
-	/* replace modes not supported by fdopen and fopencookie, but supported 
+	/* replace modes not supported by fdopen and fopencookie, but supported
 	 * by PHP's fread(), so that their calls won't fail */
 	const char *cur_mode = stream->mode;
 	int         has_plus = 0,
@@ -166,7 +163,7 @@ void php_stream_mode_sanitize_fdopen_fopencookie(php_stream *stream, char *resul
 		/* x is allowed (at least by glibc & compat), but not as the 1st mode
 		 * as in PHP and in any case is (at best) ignored by fdopen and fopencookie */
 	}
-	
+
 	/* assume current mode has at most length 4 (e.g. wbn+) */
 	for (i = 1; i < 4 && cur_mode[i] != '\0'; i++) {
 		if (cur_mode[i] == 'b') {
@@ -189,7 +186,7 @@ void php_stream_mode_sanitize_fdopen_fopencookie(php_stream *stream, char *resul
 /* }}} */
 
 /* {{{ php_stream_cast */
-PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show_err TSRMLS_DC)
+PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show_err)
 {
 	int flags = castas & PHP_STREAM_CAST_MASK;
 	castas &= ~PHP_STREAM_CAST_MASK;
@@ -198,9 +195,9 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 	if (ret && castas != PHP_STREAM_AS_FD_FOR_SELECT) {
 		php_stream_flush(stream);
 		if (stream->ops->seek && (stream->flags & PHP_STREAM_FLAG_NO_SEEK) == 0) {
-			off_t dummy;
+			zend_off_t dummy;
 
-			stream->ops->seek(stream, stream->position, SEEK_SET, &dummy TSRMLS_CC);
+			stream->ops->seek(stream, stream->position, SEEK_SET, &dummy);
 			stream->readpos = stream->writepos = 0;
 		}
 	}
@@ -220,7 +217,7 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 		if (php_stream_is(stream, PHP_STREAM_IS_STDIO) &&
 			stream->ops->cast &&
 			!php_stream_is_filtered(stream) &&
-			stream->ops->cast(stream, castas, ret TSRMLS_CC) == SUCCESS
+			stream->ops->cast(stream, castas, ret) == SUCCESS
 		) {
 			goto exit_success;
 		}
@@ -238,7 +235,7 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 		}
 
 		if (*ret != NULL) {
-			off_t pos;
+			zend_off_t pos;
 
 			stream->fclose_stdiocast = PHP_STREAM_FCLOSE_FOPENCOOKIE;
 
@@ -246,7 +243,7 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 			 * the stdio layer to believe it's real location. */
 			pos = php_stream_tell(stream);
 			if (pos > 0) {
-				fseek(*ret, pos, SEEK_SET);
+				zend_fseek(*ret, pos, SEEK_SET);
 			}
 
 			goto exit_success;
@@ -257,12 +254,12 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 			b) no memory
 			-> lets bail
 		*/
-		php_error_docref(NULL TSRMLS_CC, E_ERROR, "fopencookie failed");
+		php_error_docref(NULL, E_ERROR, "fopencookie failed");
 		return FAILURE;
 #endif
 
-		if (!php_stream_is_filtered(stream) && stream->ops->cast && stream->ops->cast(stream, castas, NULL TSRMLS_CC) == SUCCESS) {
-			if (FAILURE == stream->ops->cast(stream, castas, ret TSRMLS_CC)) {
+		if (!php_stream_is_filtered(stream) && stream->ops->cast && stream->ops->cast(stream, castas, NULL) == SUCCESS) {
+			if (FAILURE == stream->ops->cast(stream, castas, ret)) {
 				return FAILURE;
 			}
 			goto exit_success;
@@ -296,9 +293,9 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 	}
 
 	if (php_stream_is_filtered(stream)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "cannot cast a filtered stream on this system");
+		php_error_docref(NULL, E_WARNING, "Cannot cast a filtered stream on this system");
 		return FAILURE;
-	} else if (stream->ops->cast && stream->ops->cast(stream, castas, ret TSRMLS_CC) == SUCCESS) {
+	} else if (stream->ops->cast && stream->ops->cast(stream, castas, ret) == SUCCESS) {
 		goto exit_success;
 	}
 
@@ -311,7 +308,7 @@ PHPAPI int _php_stream_cast(php_stream *stream, int castas, void **ret, int show
 			"select()able descriptor"
 		};
 
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "cannot represent a stream of type %s as a %s", stream->ops->label, cast_names[castas]);
+		php_error_docref(NULL, E_WARNING, "Cannot represent a stream of type %s as a %s", stream->ops->label, cast_names[castas]);
 	}
 
 	return FAILURE;
@@ -326,7 +323,7 @@ exit_success:
 		 * will be accessing the stream.  Emit a warning so that the end-user will
 		 * know that they should try something else */
 
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "%ld bytes of buffered data lost during stream conversion!", (long)(stream->writepos - stream->readpos));
+		php_error_docref(NULL, E_WARNING, ZEND_LONG_FMT " bytes of buffered data lost during stream conversion!", (zend_long)(stream->writepos - stream->readpos));
 	}
 
 	if (castas == PHP_STREAM_AS_STDIO && ret) {
@@ -343,7 +340,7 @@ exit_success:
 /* }}} */
 
 /* {{{ php_stream_open_wrapper_as_file */
-PHPAPI FILE * _php_stream_open_wrapper_as_file(char *path, char *mode, int options, char **opened_path STREAMS_DC TSRMLS_DC)
+PHPAPI FILE * _php_stream_open_wrapper_as_file(char *path, char *mode, int options, zend_string **opened_path STREAMS_DC)
 {
 	FILE *fp = NULL;
 	php_stream *stream = NULL;
@@ -357,7 +354,7 @@ PHPAPI FILE * _php_stream_open_wrapper_as_file(char *path, char *mode, int optio
 	if (php_stream_cast(stream, PHP_STREAM_AS_STDIO|PHP_STREAM_CAST_TRY_HARD|PHP_STREAM_CAST_RELEASE, (void**)&fp, REPORT_ERRORS) == FAILURE) {
 		php_stream_close(stream);
 		if (opened_path && *opened_path) {
-			efree(*opened_path);
+			zend_string_release_ex(*opened_path, 0);
 		}
 		return NULL;
 	}
@@ -366,7 +363,7 @@ PHPAPI FILE * _php_stream_open_wrapper_as_file(char *path, char *mode, int optio
 /* }}} */
 
 /* {{{ php_stream_make_seekable */
-PHPAPI int _php_stream_make_seekable(php_stream *origstream, php_stream **newstream, int flags STREAMS_DC TSRMLS_DC)
+PHPAPI int _php_stream_make_seekable(php_stream *origstream, php_stream **newstream, int flags STREAMS_DC)
 {
 	if (newstream == NULL) {
 		return PHP_STREAM_FAILED;
@@ -407,12 +404,3 @@ PHPAPI int _php_stream_make_seekable(php_stream *origstream, php_stream **newstr
 	return PHP_STREAM_RELEASED;
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

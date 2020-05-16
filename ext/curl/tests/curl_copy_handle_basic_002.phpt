@@ -4,14 +4,15 @@ Test curl_copy_handle() with simple POST
 Rick Buitenman <rick@meritos.nl>
 #testfest Utrecht 2009
 --SKIPIF--
-<?php if (!extension_loaded("curl") || false === getenv('PHP_CURL_HTTP_REMOTE_SERVER')) print "skip need PHP_CURL_HTTP_REMOTE_SERVER environment variable"; ?>
+<?php include 'skipif.inc'; ?>
 --FILE--
 <?php
-  $host = getenv('PHP_CURL_HTTP_REMOTE_SERVER');
+  include 'server.inc';
+  $host = curl_cli_server_start();
 
   echo '*** Testing curl copy handle with simple POST ***' . "\n";
 
-  $url = "{$host}/get.php?test=getpost";
+  $url = "{$host}/get.inc?test=getpost";
   $ch = curl_init();
 
   ob_start(); // start output buffering
@@ -19,17 +20,16 @@ Rick Buitenman <rick@meritos.nl>
   curl_setopt($ch, CURLOPT_POST, 1);
   curl_setopt($ch, CURLOPT_POSTFIELDS, "Hello=World&Foo=Bar&Person=John%20Doe");
   curl_setopt($ch, CURLOPT_URL, $url); //set the url we want to use
-  
+
   $copy = curl_copy_handle($ch);
   curl_close($ch);
- 
+
   $curl_content = curl_exec($copy);
   curl_close($copy);
 
   var_dump( $curl_content );
 ?>
-===DONE===
---EXPECTF--
+--EXPECT--
 *** Testing curl copy handle with simple POST ***
 string(163) "array(1) {
   ["test"]=>
@@ -44,4 +44,3 @@ array(3) {
   string(8) "John Doe"
 }
 "
-===DONE=== 

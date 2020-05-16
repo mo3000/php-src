@@ -1,12 +1,13 @@
 --TEST--
 Test curl_copy_handle() with CURLOPT_PROGRESSFUNCTION
 --SKIPIF--
-<?php if (!extension_loaded("curl") || false === getenv('PHP_CURL_HTTP_REMOTE_SERVER')) print "skip need PHP_CURL_HTTP_REMOTE_SERVER environment variable"; ?>
+<?php include 'skipif.inc'; ?>
 --FILE--
 <?php
-  $host = getenv('PHP_CURL_HTTP_REMOTE_SERVER');
+  include 'server.inc';
+  $host = curl_cli_server_start();
 
-  $url = "{$host}/get.php";
+  $url = "{$host}/get.inc";
   $ch = curl_init($url);
 
   curl_setopt($ch, CURLOPT_NOPROGRESS, 0);
@@ -18,7 +19,7 @@ Test curl_copy_handle() with CURLOPT_PROGRESSFUNCTION
   echo curl_exec($ch2);
 
 ?>
---EXPECTF--
+--EXPECT--
 Hello World!
 Hello World!
 Hello World!

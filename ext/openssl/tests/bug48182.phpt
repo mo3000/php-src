@@ -1,92 +1,67 @@
 --TEST--
-#48182,ssl handshake fails during asynchronous socket connection
+Bug #48182: ssl handshake fails during asynchronous socket connection
 --SKIPIF--
-<?php 
-if (!extension_loaded("openssl")) die("skip, openssl required");
-if (!extension_loaded("pcntl")) die("skip, pcntl required");
-if (OPENSSL_VERSION_NUMBER < 0x009070af) die("skip");
+<?php
+if (!extension_loaded("openssl")) die("skip openssl not loaded");
+if (!function_exists("proc_open")) die("skip no proc_open");
 ?>
 --FILE--
 <?php
+$certFile = __DIR__ . DIRECTORY_SEPARATOR . 'bug48182.pem.tmp';
+$cacertFile = __DIR__ . DIRECTORY_SEPARATOR . 'bug48182-ca.pem.tmp';
 
-function ssl_server($port) {
-	$host = 'ssl://127.0.0.1'.':'.$port;
-	$flags = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
-	$data = "Sending bug48182\n";
+$serverCode = <<<'CODE'
+    $serverUri = "ssl://127.0.0.1:64321";
+    $serverFlags = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+    $serverCtx = stream_context_create(['ssl' => [
+        'local_cert' => '%s'
+    ]]);
 
-	$pem = dirname(__FILE__) . '/bug46127.pem';
-	$ssl_params = array( 'verify_peer' => false, 'allow_self_signed' => true, 'local_cert' => $pem);
-	$ssl = array('ssl' => $ssl_params);
+    $server = stream_socket_server($serverUri, $errno, $errstr, $serverFlags, $serverCtx);
+    phpt_notify();
 
-	$context = stream_context_create($ssl);
-	$sock = stream_socket_server($host, $errno, $errstr, $flags, $context);
-	if (!$sock) return false;
+    $client = @stream_socket_accept($server, 1);
 
-	$link = stream_socket_accept($sock);
-	if (!$link) return false; // bad link?
+    $data = "Sending bug48182\n" . fread($client, 8192);
+    fwrite($client, $data);
+CODE;
+$serverCode = sprintf($serverCode, $certFile);
 
-	$r = array($link);
-	$w = array();
-	$e = array();
-	if (stream_select($r, $w, $e, 1, 0) != 0)
-		$data .= fread($link, 8192);
+$peerName = 'bug48182';
+$clientCode = <<<'CODE'
+    $serverUri = "ssl://127.0.0.1:64321";
+    $clientFlags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT;
+    $clientCtx = stream_context_create(['ssl' => [
+        'cafile' => '%s',
+        'peer_name' => '%s'
+    ]]);
 
-	$r = array();
-	$w = array($link);
-	if (stream_select($r, $w, $e, 1, 0) != 0)
-		$wrote = fwrite($link, $data, strlen($data));
+    phpt_wait();
+    $client = stream_socket_client($serverUri, $errno, $errstr, 10, $clientFlags, $clientCtx);
 
-	// close stuff
-	fclose($link);
-	fclose($sock);
+    $data = "Sending data over to SSL server in async mode with contents like Hello World\n";
 
-	exit;
-}
-
-function ssl_async_client($port) {
-	$host = 'ssl://127.0.0.1'.':'.$port;
-	$flags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT;
-	$data = "Sending data over to SSL server in async mode with contents like Hello World\n";
-
-	$socket = stream_socket_client($host, $errno, $errstr, 10, $flags);
-	stream_set_blocking($socket, 0);
-
-	while ($socket && $data) {
-		$wrote = fwrite($socket, $data, strlen($data));
-		$data = substr($data, $wrote);
-	}
-
-	$r = array($socket);
-	$w = array();
-	$e = array();
-	if (stream_select($r, $w, $e, 1, 0) != 0) 
-	{
-		$data .= fread($socket, 1024);
-	}
-
-	echo "$data";
-
-	fclose($socket);
-}
+    fwrite($client, $data);
+    echo fread($client, 1024);
+CODE;
+$clientCode = sprintf($clientCode, $cacertFile, $peerName);
 
 echo "Running bug48182\n";
 
-$port = rand(15000, 32000);
+include 'CertificateGenerator.inc';
+$certificateGenerator = new CertificateGenerator();
+$certificateGenerator->saveCaCert($cacertFile);
+$certificateGenerator->saveNewCertAsFileWithKey($peerName, $certFile);
 
-$pid = pcntl_fork();
-if ($pid == 0) { // child
-	ssl_server($port);
-	exit;
-}
-
-// client or failed
-sleep(1);
-ssl_async_client($port);
-
-pcntl_waitpid($pid, $status);
-
+include 'ServerClientTestCase.inc';
+ServerClientTestCase::getInstance()->run($clientCode, $serverCode);
 ?>
---EXPECTF--
+--CLEAN--
+<?php
+@unlink(__DIR__ . DIRECTORY_SEPARATOR . 'bug48182.pem.tmp');
+@unlink(__DIR__ . DIRECTORY_SEPARATOR . 'bug48182-ca.pem.tmp');
+?>
+--EXPECT--
 Running bug48182
 Sending bug48182
 Sending data over to SSL server in async mode with contents like Hello World

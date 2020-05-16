@@ -31,7 +31,7 @@ the lazy dog
 This is a double quoted string
 EOT;
 
-// heredoc with diferent whitespaces
+// heredoc with different whitespaces
 $diff_whitespaces = <<<EOT
 hello\r world\t
 1111\t\t != 2222\v\v
@@ -71,7 +71,7 @@ $inputs = array (
        array(1 => '', 2 => "", 3 => NULL, 4 => null, 5 => false, 6 => true),
        array('' => 1, "" => 2, NULL => 3, null => 4, false => 5, true => 6),
 
-       // array with repetative keys
+       // array with repetitive keys
 /*19*/ array("One" => 1, "two" => 2, "One" => 10, "two" => 20, "three" => 3)
 );
 
@@ -90,7 +90,7 @@ foreach($inputs as $input) {
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing array_pad() : Passing different arrays to $input argument ***
 -- Iteration 1 --
 array(6) {

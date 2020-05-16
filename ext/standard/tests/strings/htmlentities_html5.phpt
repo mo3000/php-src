@@ -3,25 +3,25 @@ htmlentities() conformance check (HTML 5)
 --FILE--
 <?php
 function utf32_utf8($k) {
-	if ($k < 0x80) {
-		$retval = pack('C', $k);
-	} else if ($k < 0x800) {
-		$retval = pack('C2', 
+    if ($k < 0x80) {
+        $retval = pack('C', $k);
+    } else if ($k < 0x800) {
+        $retval = pack('C2',
             0xc0 | ($k >> 6),
             0x80 | ($k & 0x3f));
-	} else if ($k < 0x10000) {
+    } else if ($k < 0x10000) {
         $retval = pack('C3',
             0xe0 | ($k >> 12),
             0x80 | (($k >> 6) & 0x3f),
             0x80 | ($k & 0x3f));
-	} else {
+    } else {
         $retval = pack('C4',
             0xf0 | ($k >> 18),
             0x80 | (($k >> 12) & 0x3f),
             0x80 | (($k >> 6) & 0x3f),
             0x80 | ($k & 0x3f));
-	}
-	return $retval;
+    }
+    return $retval;
 }
 
 for ($i = 0; $i < 0x1DFFF; $i++) {
@@ -1418,6 +1418,7 @@ foreach ($mpcent as $i) {
 &topcir;	U+02AF1
 &nhpar;	U+02AF2
 &parsim;	U+02AF3
+&parsl;	U+02AFD
 &fflig;	U+0FB00
 &filig;	U+0FB01
 &fllig;	U+0FB02
@@ -1620,4 +1621,4 @@ foreach ($mpcent as $i) {
 &nsupseteqq;	U+02AC6 U+00338
 &vsubnE;	U+02ACB U+0FE00
 &varsupsetneqq;	U+02ACC U+0FE00
-&varsupsetneqq;	U+02AFD U+0FE00
+&parsl;︀	U+02AFD U+0FE00

@@ -1,7 +1,7 @@
 --TEST--
 libxml_set_external_entity_loader() basic test
 --SKIPIF--
-<?php if (!extension_loaded('dom')) die('skip'); ?>
+<?php if (!extension_loaded('dom')) die('skip dom extension not available'); ?>
 --FILE--
 <?php
 $xml = <<<XML
@@ -14,15 +14,15 @@ $dtd = <<<DTD
 DTD;
 
 libxml_set_external_entity_loader(
-	function ($public, $system, $context) use($dtd){
-		var_dump($public);
-		var_dump($system);
-		var_dump($context);
-		$f = fopen("php://temp", "r+");
-		fwrite($f, $dtd);
-		rewind($f);
-		return $f;
-	}
+    function ($public, $system, $context) use($dtd){
+        var_dump($public);
+        var_dump($system);
+        var_dump($context);
+        $f = fopen("php://temp", "r+");
+        fwrite($f, $dtd);
+        rewind($f);
+        return $f;
+    }
 );
 
 $dd = new DOMDocument;
@@ -31,6 +31,7 @@ var_dump($dd->validate());
 
 echo "Done.\n";
 
+?>
 --EXPECT--
 string(10) "-//FOO/BAR"
 string(25) "http://example.com/foobar"

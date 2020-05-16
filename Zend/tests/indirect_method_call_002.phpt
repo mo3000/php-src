@@ -4,16 +4,16 @@ Indirect method call with chaining
 <?php
 
 class foo {
-	public $x = 'testing';
+    public $x = 'testing';
 
-	public function bar() {
-		return "foo";
-	}
-	public function baz() {
-		return new self;
-	}
-	static function xyz() {
-	}
+    public function bar() {
+        return "foo";
+    }
+    public function baz() {
+        return new self;
+    }
+    static function xyz() {
+    }
 }
 
 var_dump((new foo())->bar());               // string(3) "foo"
@@ -29,4 +29,7 @@ string(7) "testing"
 string(3) "foo"
 NULL
 
-Fatal error: Call to undefined method foo::www() in %s on line %d
+Fatal error: Uncaught Error: Call to undefined method foo::www() in %s:%d
+Stack trace:
+#0 {main}
+  thrown in %s on line %d

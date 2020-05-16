@@ -3,7 +3,9 @@ Check cli_process_title support in Windows
 --SKIPIF--
 <?php
 if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN')
-  die("skip");
+  die("skip this test is for Windows platforms only");
+if (shell_exec('PowerShell -Help') === NULL)
+  die("skip this test requires powershell.exe");
 ?>
 --FILE--
 <?php
@@ -18,18 +20,7 @@ if (strtoupper(substr(PHP_OS, 0, 3)) !== 'WIN')
 // Hence on Windows 8, we don't verify that the title is actually set by
 // cli_set_process_title(). We're only making the API calls to ensure there are
 // no warnings/errors.
-
-$is_windows8 = false;
-$ps_output = shell_exec("PowerShell \"(Get-Host).UI.RawUI.WindowTitle\"");
-if ($ps_output === null)
-{
-  echo "Get-Host failed\n";
-  die();
-}
-
-$ps_output = trim($ps_output);
-if (($ps_output == "Windows PowerShell") || ($ps_output == "Administrator: Windows PowerShell"))
-  $is_windows8 = true;
+$is_windows8_or_above = PHP_WINDOWS_VERSION_MAJOR >= 10 || PHP_WINDOWS_VERSION_MAJOR >= 6 && PHP_WINDOWS_VERSION_MINOR >= 2;
 
 echo "*** Testing setting the process title ***\n";
 
@@ -39,13 +30,13 @@ $pid = getmypid();
 if (cli_set_process_title($original_title) === true)
   echo "Successfully set title\n";
 
-if ($is_windows8)
+if ($is_windows8_or_above)
 {
   $loaded_title = $original_title;
 }
 else
 {
-  $loaded_title = shell_exec("PowerShell \"get-process cmd*,powershell* | Select-Object mainWindowTitle | ft -hide\"");
+  $loaded_title = shell_exec("PowerShell -NoProfile \"get-process cmd*,powershell* | Select-Object mainWindowTitle | ft -hide\"");
 
   if ($loaded_title === null)
   {
@@ -75,7 +66,7 @@ else
   echo "Actually loaded from get: $read_title\n";
 
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing setting the process title ***
 Successfully set title
 Successfully verified title using get-process

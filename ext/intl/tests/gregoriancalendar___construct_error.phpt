@@ -8,28 +8,34 @@ if (!extension_loaded('intl'))
 <?php
 ini_set("intl.error_level", E_WARNING);
 
-var_dump(intlgregcal_create_instance(1,2,3,4,5,6,7));
-var_dump(intlgregcal_create_instance(1,2,3,4,5,6,7,8));
-var_dump(intlgregcal_create_instance(1,2,3,4));
-var_dump(new IntlGregorianCalendar(1,2,NULL,4));
-var_dump(new IntlGregorianCalendar(1,2,3,4,NULL,array()));
-
-
---EXPECTF--
-
-Warning: intlgregcal_create_instance(): intlgregcal_create_instance: too many arguments in %s on line %d
-NULL
-
-Warning: intlgregcal_create_instance(): intlgregcal_create_instance: too many arguments in %s on line %d
-NULL
-
-Warning: intlgregcal_create_instance(): intlgregcal_create_instance: no variant with 4 arguments (excluding trailing NULLs) in %s on line %d
-NULL
-
-Warning: IntlGregorianCalendar::__construct(): intlgregcal_create_instance: no variant with 4 arguments (excluding trailing NULLs) in %s on line %d
-NULL
-
-Warning: IntlGregorianCalendar::__construct() expects parameter 6 to be long, array given in %s on line %d
-
-Warning: IntlGregorianCalendar::__construct(): intlgregcal_create_instance: bad arguments in %s on line %d
-NULL
+try {
+    var_dump(intlgregcal_create_instance(1,2,3,4,5,6,7));
+} catch (ArgumentCountError $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    var_dump(intlgregcal_create_instance(1,2,3,4,5,6,7,8));
+} catch (ArgumentCountError $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    var_dump(intlgregcal_create_instance(1,2,3,4));
+} catch (ArgumentCountError $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    var_dump(new IntlGregorianCalendar(1,2,NULL,4));
+} catch (ArgumentCountError $e) {
+    echo $e->getMessage(), "\n";
+}
+try {
+    var_dump(new IntlGregorianCalendar(1,2,3,4,NULL,array()));
+} catch (TypeError $e) {
+    echo $e->getMessage(), "\n";
+}
+--EXPECT--
+Too many arguments
+Too many arguments
+No variant with 4 arguments (excluding trailing NULLs)
+No variant with 4 arguments (excluding trailing NULLs)
+IntlGregorianCalendar::__construct(): Argument #6 must be of type int, array given

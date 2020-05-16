@@ -8,23 +8,12 @@
 #include <errno.h>
 #include <limits.h>
 #ifdef PHP_WIN32
-# include "win32/php_stdint.h"
 # define __alignof__ __alignof
 # define alloca _alloca
 #else
-# if HAVE_INTTYPES_H
-#  include <inttypes.h>
-# elif HAVE_STDINT_H
-#  include <stdint.h>
-# endif
 # ifndef HAVE_ALIGNOF
 #  include <stddef.h>
 #  define __alignof__(type) offsetof (struct { char c; type member;}, member)
-# endif
-# if HAVE_ATTRIBUTE_ALIGNED
-#  define ALIGNED(size) __attribute__ ((__aligned__ (size)))
-# else
-#  define ALIGNED(size)
 # endif
 #endif
 
@@ -36,11 +25,7 @@
 #else
 # include <sys/param.h>
 # include <sys/types.h>
-# if HAVE_STRING_H
-#  include <string.h>
-# else
-#  include <strings.h>
-# endif
+# include <string.h>
 #endif
 
 extern void * __php_mempcpy(void * dst, const void * src, size_t len);
@@ -69,7 +54,7 @@ struct sha512_ctx
 };
 
 
-#if PHP_WIN32 || (!defined(WORDS_BIGENDIAN))
+#if defined(PHP_WIN32) || (!defined(WORDS_BIGENDIAN))
 # define SWAP(n) \
   (((n) << 56)					\
    | (((n) & 0xff00) << 40)			\
@@ -374,18 +359,11 @@ static const char b64t[64] =
 char *
 php_sha512_crypt_r(const char *key, const char *salt, char *buffer, int buflen) {
 #ifdef PHP_WIN32
-# if _MSC <= 1300
-#  pragma pack(push, 16)
-	unsigned char alt_result[64];
-	unsigned char temp_result[64];
-#  pragma pack(pop)
-# else
-	__declspec(align(64)) unsigned char alt_result[64];
-	__declspec(align(64)) unsigned char temp_result[64];
-# endif
+	ZEND_SET_ALIGNED(64, unsigned char alt_result[64]);
+	ZEND_SET_ALIGNED(64, unsigned char temp_result[64]);
 #else
-	unsigned char alt_result[64] ALIGNED(__alignof__ (uint64_t));
-	unsigned char temp_result[64] ALIGNED(__alignof__ (uint64_t));
+	ZEND_SET_ALIGNED(__alignof__ (uint64_t), unsigned char alt_result[64]);
+	ZEND_SET_ALIGNED(__alignof__ (uint64_t), unsigned char temp_result[64]);
 #endif
 	struct sha512_ctx ctx;
 	struct sha512_ctx alt_ctx;
@@ -411,7 +389,7 @@ php_sha512_crypt_r(const char *key, const char *salt, char *buffer, int buflen) 
 	if (strncmp(salt, sha512_rounds_prefix, sizeof(sha512_rounds_prefix) - 1) == 0) {
 		const char *num = salt + sizeof(sha512_rounds_prefix) - 1;
 		char *endp;
-		unsigned long int srounds = strtoul(num, &endp, 10);
+		zend_ulong srounds = ZEND_STRTOUL(num, &endp, 10);
 
 		if (*endp == '$') {
 			salt = endp + 1;
@@ -561,7 +539,7 @@ php_sha512_crypt_r(const char *key, const char *salt, char *buffer, int buflen) 
 
 	if (rounds_custom) {
 #ifdef PHP_WIN32
-	  int n = _snprintf(cp, MAX(0, buflen), "%s%u$", sha512_rounds_prefix, rounds);
+	  int n = _snprintf(cp, MAX(0, buflen), "%s" ZEND_ULONG_FMT "$", sha512_rounds_prefix, rounds);
 #else
 	  int n = snprintf(cp, MAX(0, buflen), "%s%zu$", sha512_rounds_prefix, rounds);
 #endif
@@ -625,16 +603,16 @@ php_sha512_crypt_r(const char *key, const char *salt, char *buffer, int buflen) 
 	 inside the SHA512 implementation as well.  */
 	sha512_init_ctx(&ctx);
 	sha512_finish_ctx(&ctx, alt_result);
-	memset(temp_result, '\0', sizeof(temp_result));
-	memset(p_bytes, '\0', key_len);
-	memset(s_bytes, '\0', salt_len);
-	memset(&ctx, '\0', sizeof(ctx));
-	memset(&alt_ctx, '\0', sizeof(alt_ctx));
+	ZEND_SECURE_ZERO(temp_result, sizeof(temp_result));
+	ZEND_SECURE_ZERO(p_bytes, key_len);
+	ZEND_SECURE_ZERO(s_bytes, salt_len);
+	ZEND_SECURE_ZERO(&ctx, sizeof(ctx));
+	ZEND_SECURE_ZERO(&alt_ctx, sizeof(alt_ctx));
 	if (copied_key != NULL) {
-		memset(copied_key, '\0', key_len);
+		ZEND_SECURE_ZERO(copied_key, key_len);
 	}
 	if (copied_salt != NULL) {
-		memset(copied_salt, '\0', salt_len);
+		ZEND_SECURE_ZERO(copied_salt, salt_len);
 	}
 
 	return buffer;
@@ -649,8 +627,8 @@ php_sha512_crypt(const char *key, const char *salt) {
 	 password.  We can compute an upper bound for the size of the
 	 result in advance and so we can prepare the buffer we pass to
 	 `sha512_crypt_r'.  */
-	static char *buffer;
-	static int buflen;
+	ZEND_TLS char *buffer;
+	ZEND_TLS int buflen = 0;
 	int needed = (int)(sizeof(sha512_salt_prefix) - 1
 		+ sizeof(sha512_rounds_prefix) + 9 + 1
 		+ strlen(salt) + 1 + 86 + 1);

@@ -1,7 +1,5 @@
 --TEST--
 Test strip_tags() function : usage variations - heredoc strings
---INI--
-short_open_tag = on
 --FILE--
 <?php
 /* Prototype  : string strip_tags(string $str [, string $allowable_tags])
@@ -33,7 +31,7 @@ $multiline_string = <<<EOT
 <b>This is a double quoted string</b>
 EOT;
 
-// here doc with diferent whitespaces
+// here doc with different whitespaces
 $diff_whitespaces = <<<EOT
 <html>hello\r world\t
 1111\t\t != 2222\v\v</html>
@@ -77,7 +75,7 @@ for($index =0; $index < count($res_heredoc_strings); $index ++) {
 
 echo "Done\n";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing strip_tags() : usage variations ***
 -- Iteration 1 --
 string(0) ""

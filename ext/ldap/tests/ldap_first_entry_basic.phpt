@@ -11,20 +11,19 @@ Patrick Allaert <patrickallaert@php.net>
 require "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-insert_dummy_data($link);
-$result = ldap_search($link, "dc=my-domain,dc=com", "(objectclass=person)");
+insert_dummy_data($link, $base);
+$result = ldap_search($link, "$base", "(objectclass=person)");
 var_dump(
-	$entry = ldap_first_entry($link, $result),
-	ldap_get_values($link, $entry, 'sn')
+    $entry = ldap_first_entry($link, $result),
+    ldap_get_values($link, $entry, 'sn')
 );
 ?>
-===DONE===
 --CLEAN--
 <?php
 include "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-remove_dummy_data($link);
+remove_dummy_data($link, $base);
 ?>
 --EXPECTF--
 resource(%d) of type (ldap result entry)
@@ -34,4 +33,3 @@ array(2) {
   ["count"]=>
   int(1)
 }
-===DONE===

@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -21,7 +19,6 @@
 #include "dateformat_class.h"
 #include "../intl_convert.h"
 #include "dateformat_class.h"
-#include "dateformat_attr.h"
 
 #include <unicode/ustring.h>
 #include <unicode/udat.h>
@@ -36,11 +33,9 @@ PHP_FUNCTION( datefmt_get_datetype )
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O", &object, IntlDateFormatter_ce_ptr ) == FAILURE )
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "O", &object, IntlDateFormatter_ce_ptr ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,	
-			"datefmt_get_datetype: unable to parse input params", 0 TSRMLS_CC );
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */
@@ -62,11 +57,9 @@ PHP_FUNCTION( datefmt_get_timetype )
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O", &object, IntlDateFormatter_ce_ptr ) == FAILURE )
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "O", &object, IntlDateFormatter_ce_ptr ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,	
-			"datefmt_get_timetype: unable to parse input params", 0 TSRMLS_CC );
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */
@@ -86,18 +79,16 @@ PHP_FUNCTION( datefmt_get_timetype )
 PHP_FUNCTION( datefmt_get_pattern )
 {
 	UChar  value_buf[64];
-	int    length = USIZE( value_buf );
+	uint32_t    length = USIZE( value_buf );
 	UChar* value  = value_buf;
 	zend_bool   is_pattern_localized =FALSE;
 
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O", &object, IntlDateFormatter_ce_ptr ) == FAILURE )
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "O", &object, IntlDateFormatter_ce_ptr ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,	
-			"datefmt_get_pattern: unable to parse input params", 0 TSRMLS_CC );
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */
@@ -128,8 +119,8 @@ PHP_FUNCTION( datefmt_get_pattern )
 PHP_FUNCTION( datefmt_set_pattern )
 {
 	char*       value = NULL;
-	int         value_len = 0;
-	int         slength = 0;
+	size_t      value_len = 0;
+	int32_t     slength = 0;
 	UChar*	    svalue  = NULL;
 	zend_bool   is_pattern_localized =FALSE;
 
@@ -137,12 +128,10 @@ PHP_FUNCTION( datefmt_set_pattern )
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Os",
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "Os",
 		&object, IntlDateFormatter_ce_ptr,  &value, &value_len ) == FAILURE )
 	{
-		intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,	
-			"datefmt_set_pattern: unable to parse input params", 0 TSRMLS_CC);
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	DATE_FORMAT_METHOD_FETCH_OBJECT;
@@ -170,18 +159,16 @@ PHP_FUNCTION( datefmt_set_pattern )
 PHP_FUNCTION( datefmt_get_locale )
 {
 	char *loc;
-	long  loc_type =ULOC_ACTUAL_LOCALE;
+	zend_long  loc_type =ULOC_ACTUAL_LOCALE;
 
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O|l",
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "O|l",
 		&object, IntlDateFormatter_ce_ptr,&loc_type) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,
-			"datefmt_get_locale: unable to parse input params", 0 TSRMLS_CC );
 
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */
@@ -189,7 +176,7 @@ PHP_FUNCTION( datefmt_get_locale )
 
 	loc = (char *)udat_getLocaleByType(DATE_FORMAT_OBJECT(dfo), loc_type,&INTL_DATA_ERROR_CODE(dfo));
 	INTL_METHOD_CHECK_STATUS(dfo, "Error getting locale");
-	RETURN_STRING(loc, 1);
+	RETURN_STRING(loc);
 }
 /* }}} */
 
@@ -200,17 +187,15 @@ PHP_FUNCTION( datefmt_get_locale )
  */
 PHP_FUNCTION( datefmt_is_lenient )
 {
-	
+
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O",
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "O",
 		&object, IntlDateFormatter_ce_ptr ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,
-			"datefmt_is_lenient: unable to parse input params", 0 TSRMLS_CC );
 
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */
@@ -220,9 +205,9 @@ PHP_FUNCTION( datefmt_is_lenient )
 }
 /* }}} */
 
-/* {{{ proto string IntlDateFormatter::setLenient()
+/* {{{ proto void IntlDateFormatter::setLenient()
  * Set formatter lenient. }}} */
-/* {{{ proto string datefmt_setLenient(IntlDateFormatter $mf)
+/* {{{ proto void datefmt_setLenient(IntlDateFormatter $mf)
  * Set formatter lenient.
  */
 PHP_FUNCTION( datefmt_set_lenient )
@@ -232,12 +217,10 @@ PHP_FUNCTION( datefmt_set_lenient )
 	DATE_FORMAT_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Ob",
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "Ob",
 	&object, IntlDateFormatter_ce_ptr,&isLenient ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,
-			"datefmt_set_lenient: unable to parse input params", 0 TSRMLS_CC );
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */

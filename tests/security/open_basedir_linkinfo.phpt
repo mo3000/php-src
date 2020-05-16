@@ -2,7 +2,7 @@
 Test open_basedir configuration
 --SKIPIF--
 <?php
-if (substr(PHP_OS, 0, 3) == 'WIN') {
+if(PHP_OS_FAMILY === "Windows") {
     die('skip no symlinks on Windows');
 }
 ?>
@@ -41,6 +41,7 @@ test_open_basedir_after("linkinfo");
 ?>
 --CLEAN--
 <?php
+chdir(__DIR__);
 require_once "open_basedir.inc";
 delete_directories();
 ?>
@@ -62,4 +63,3 @@ bool(false)
 int(%d)
 bool(true)
 *** Finished testing open_basedir configuration [linkinfo] ***
-

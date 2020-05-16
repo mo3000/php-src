@@ -6,20 +6,20 @@ Steve Seear <stevseea@php.net>
 --FILE--
 <?php
 class C {
-	public function pubf1() {}
-	public function pubf2() {}
-	private function privf1() {}
-	private function privf2() {}
-	static public function pubsf1() {}
-	static public function pubsf2() {}
-	static private function privsf1() {}
-	static private function privsf2() {}
+    public function pubf1() {}
+    public function pubf2() {}
+    private function privf1() {}
+    private function privf2() {}
+    static public function pubsf1() {}
+    static public function pubsf2() {}
+    static private function privsf1() {}
+    static private function privsf2() {}
 }
 
 $rc = new ReflectionClass("C");
-$StaticFlag = 0x01;
-$pubFlag =  0x100;
-$privFlag = 0x400;
+$StaticFlag = ReflectionMethod::IS_STATIC;
+$pubFlag = ReflectionMethod::IS_PUBLIC;
+$privFlag = ReflectionMethod::IS_PRIVATE;
 
 echo "No methods:";
 var_dump($rc->getMethods(0));
@@ -43,28 +43,28 @@ No methods:array(0) {
 }
 Public methods:array(4) {
   [0]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(5) "pubf1"
     ["class"]=>
     string(1) "C"
   }
   [1]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(5) "pubf2"
     ["class"]=>
     string(1) "C"
   }
   [2]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "pubsf1"
     ["class"]=>
     string(1) "C"
   }
   [3]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "pubsf2"
     ["class"]=>
@@ -73,28 +73,28 @@ Public methods:array(4) {
 }
 Private methods:array(4) {
   [0]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "privf1"
     ["class"]=>
     string(1) "C"
   }
   [1]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "privf2"
     ["class"]=>
     string(1) "C"
   }
   [2]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(7) "privsf1"
     ["class"]=>
     string(1) "C"
   }
   [3]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(7) "privsf2"
     ["class"]=>
@@ -103,42 +103,42 @@ Private methods:array(4) {
 }
 Public or static methods:array(6) {
   [0]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(5) "pubf1"
     ["class"]=>
     string(1) "C"
   }
   [1]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(5) "pubf2"
     ["class"]=>
     string(1) "C"
   }
   [2]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "pubsf1"
     ["class"]=>
     string(1) "C"
   }
   [3]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "pubsf2"
     ["class"]=>
     string(1) "C"
   }
   [4]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(7) "privsf1"
     ["class"]=>
     string(1) "C"
   }
   [5]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(7) "privsf2"
     ["class"]=>
@@ -147,42 +147,42 @@ Public or static methods:array(6) {
 }
 Private or static methods:array(6) {
   [0]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "privf1"
     ["class"]=>
     string(1) "C"
   }
   [1]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "privf2"
     ["class"]=>
     string(1) "C"
   }
   [2]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "pubsf1"
     ["class"]=>
     string(1) "C"
   }
   [3]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(6) "pubsf2"
     ["class"]=>
     string(1) "C"
   }
   [4]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(7) "privsf1"
     ["class"]=>
     string(1) "C"
   }
   [5]=>
-  &object(ReflectionMethod)#%d (2) {
+  object(ReflectionMethod)#%d (2) {
     ["name"]=>
     string(7) "privsf2"
     ["class"]=>

@@ -1,8 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | PHP Version 5                                                        |
-  +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -17,8 +15,6 @@
   |          Wez Furlong <wez@php.net>                                   |
   +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef PHP_PDO_PGSQL_INT_H
 #define PHP_PDO_PGSQL_INT_H
@@ -43,37 +39,33 @@ typedef struct {
 	unsigned 	_reserved:31;
 	pdo_pgsql_error_info	einfo;
 	Oid 		pgoid;
-#if HAVE_PQPREPARE
+	unsigned int	stmt_counter;
 	/* The following two variables have the same purpose. Unfortunately we need
-	   to keep track of two different attributes having the same effect.
-	   It might be worth to deprecate the driver specific one soon. */
-	int		emulate_prepares;
-	int		disable_native_prepares;
-#endif
-	unsigned int stmt_counter;
+	   to keep track of two different attributes having the same effect. */
+	zend_bool		emulate_prepares;
+	zend_bool		disable_native_prepares; /* deprecated since 5.6 */
+	zend_bool		disable_prepares;
 } pdo_pgsql_db_handle;
 
 typedef struct {
 	char         *def;
+	zend_long    intval;
 	Oid          pgsql_type;
-	long         intval;
 	zend_bool    boolval;
 } pdo_pgsql_column;
 
 typedef struct {
 	pdo_pgsql_db_handle     *H;
 	PGresult                *result;
-	int                     current_row;
 	pdo_pgsql_column        *cols;
 	char *cursor_name;
-#if HAVE_PQPREPARE
 	char *stmt_name;
 	char *query;
 	char **param_values;
 	int *param_lengths;
 	int *param_formats;
 	Oid *param_types;
-#endif
+	int                     current_row;
 	zend_bool is_prepared;
 } pdo_pgsql_stmt;
 
@@ -81,22 +73,24 @@ typedef struct {
 	Oid     oid;
 } pdo_pgsql_bound_param;
 
-extern pdo_driver_t pdo_pgsql_driver;
+extern const pdo_driver_t pdo_pgsql_driver;
 
-extern int _pdo_pgsql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, int errcode, const char *sqlstate, const char *file, int line TSRMLS_DC);
-#define pdo_pgsql_error(d,e,z)	_pdo_pgsql_error(d, NULL, e, z, __FILE__, __LINE__ TSRMLS_CC)
-#define pdo_pgsql_error_stmt(s,e,z)	_pdo_pgsql_error(s->dbh, s, e, z, __FILE__, __LINE__ TSRMLS_CC)
+extern int _pdo_pgsql_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, int errcode, const char *sqlstate, const char *msg, const char *file, int line);
+#define pdo_pgsql_error(d,e,z)	_pdo_pgsql_error(d, NULL, e, z, NULL, __FILE__, __LINE__)
+#define pdo_pgsql_error_msg(d,e,m)	_pdo_pgsql_error(d, NULL, e, NULL, m, __FILE__, __LINE__)
+#define pdo_pgsql_error_stmt(s,e,z)	_pdo_pgsql_error(s->dbh, s, e, z, NULL, __FILE__, __LINE__)
+#define pdo_pgsql_error_stmt_msg(s,e,m)	_pdo_pgsql_error(s->dbh, s, e, NULL, m, __FILE__, __LINE__)
 
-extern struct pdo_stmt_methods pgsql_stmt_methods;
+extern const struct pdo_stmt_methods pgsql_stmt_methods;
 
 #define pdo_pgsql_sqlstate(r) PQresultErrorField(r, PG_DIAG_SQLSTATE)
 
 enum {
-	PDO_PGSQL_ATTR_DISABLE_NATIVE_PREPARED_STATEMENT = PDO_ATTR_DRIVER_SPECIFIC,
+	PDO_PGSQL_ATTR_DISABLE_PREPARES = PDO_ATTR_DRIVER_SPECIFIC,
 };
 
 struct pdo_pgsql_lob_self {
-	pdo_dbh_t *dbh;
+	zval dbh;
 	PGconn *conn;
 	int lfd;
 	Oid oid;
@@ -110,16 +104,7 @@ enum pdo_pgsql_specific_constants {
 	PGSQL_TRANSACTION_UNKNOWN = PQTRANS_UNKNOWN
 };
 
-php_stream *pdo_pgsql_create_lob_stream(pdo_dbh_t *stmt, int lfd, Oid oid TSRMLS_DC);
-extern php_stream_ops pdo_pgsql_lob_stream_ops;
+php_stream *pdo_pgsql_create_lob_stream(zval *pdh, int lfd, Oid oid);
+extern const php_stream_ops pdo_pgsql_lob_stream_ops;
 
 #endif /* PHP_PDO_PGSQL_INT_H */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

@@ -4,13 +4,14 @@ custom save handler, multiple session_start()s, complex data structure test.
 <?php include('skipif.inc'); ?>
 --INI--
 session.use_cookies=0
+session.use_strict_mode=0
 session.cache_limiter=
 session.name=PHPSESSID
 session.serialize_handler=php
 --FILE--
 <?php
-
 error_reporting(E_ALL);
+ob_start();
 
 class handler {
     public $data = 'baz|O:3:"foo":2:{s:3:"bar";s:2:"ok";s:3:"yes";i:1;}arr|a:1:{i:3;O:3:"foo":2:{s:3:"bar";s:2:"ok";s:3:"yes";i:1;}}';
@@ -22,7 +23,7 @@ class handler {
     }
     function close()
     {
-		print "CLOSE\n";
+        print "CLOSE\n";
         return true;
     }
     function read($key)
@@ -45,13 +46,6 @@ class handler {
     }
 
     function gc() { return true; }
-
-    function __construct()
-    {
-        if (ini_get("unicode.semantics")) {
-            $this->data = str_replace('s:', 'U:', $this->data);
-        }
-    }
 }
 
 $hnd = new handler;

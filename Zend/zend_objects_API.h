@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2013 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) Zend Technologies Ltd. (http://www.zend.com)           |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,89 +12,106 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef ZEND_OBJECTS_API_H
 #define ZEND_OBJECTS_API_H
 
 #include "zend.h"
+#include "zend_compile.h"
 
-typedef void (*zend_objects_store_dtor_t)(void *object, zend_object_handle handle TSRMLS_DC);
-typedef void (*zend_objects_free_object_storage_t)(void *object TSRMLS_DC);
-typedef void (*zend_objects_store_clone_t)(void *object, void **object_clone TSRMLS_DC);
+#define OBJ_BUCKET_INVALID			(1<<0)
 
-typedef struct _zend_object_store_bucket {
-	zend_bool destructor_called;
-	zend_bool valid;
-	zend_uchar apply_count;
-	union _store_bucket {
-		struct _store_object {
-			void *object;
-			zend_objects_store_dtor_t dtor;
-			zend_objects_free_object_storage_t free_storage;
-			zend_objects_store_clone_t clone;
-			const zend_object_handlers *handlers;
-			zend_uint refcount;
-			gc_root_buffer *buffered;
-		} obj;
-		struct {
-			int next;
-		} free_list;
-	} bucket;
-} zend_object_store_bucket;
+#define IS_OBJ_VALID(o)				(!(((zend_uintptr_t)(o)) & OBJ_BUCKET_INVALID))
+
+#define SET_OBJ_INVALID(o)			((zend_object*)((((zend_uintptr_t)(o)) | OBJ_BUCKET_INVALID)))
+
+#define GET_OBJ_BUCKET_NUMBER(o)	(((zend_intptr_t)(o)) >> 1)
+
+#define SET_OBJ_BUCKET_NUMBER(o, n)	do { \
+		(o) = (zend_object*)((((zend_uintptr_t)(n)) << 1) | OBJ_BUCKET_INVALID); \
+	} while (0)
+
+#define ZEND_OBJECTS_STORE_ADD_TO_FREE_LIST(h) do { \
+		SET_OBJ_BUCKET_NUMBER(EG(objects_store).object_buckets[(h)], EG(objects_store).free_list_head); \
+		EG(objects_store).free_list_head = (h); \
+	} while (0)
+
+#define OBJ_RELEASE(obj) zend_object_release(obj)
 
 typedef struct _zend_objects_store {
-	zend_object_store_bucket *object_buckets;
-	zend_uint top;
-	zend_uint size;
+	zend_object **object_buckets;
+	uint32_t top;
+	uint32_t size;
 	int free_list_head;
 } zend_objects_store;
 
 /* Global store handling functions */
 BEGIN_EXTERN_C()
-ZEND_API void zend_objects_store_init(zend_objects_store *objects, zend_uint init_size);
-ZEND_API void zend_objects_store_call_destructors(zend_objects_store *objects TSRMLS_DC);
-ZEND_API void zend_objects_store_mark_destructed(zend_objects_store *objects TSRMLS_DC);
-ZEND_API void zend_objects_store_destroy(zend_objects_store *objects);
+ZEND_API void ZEND_FASTCALL zend_objects_store_init(zend_objects_store *objects, uint32_t init_size);
+ZEND_API void ZEND_FASTCALL zend_objects_store_call_destructors(zend_objects_store *objects);
+ZEND_API void ZEND_FASTCALL zend_objects_store_mark_destructed(zend_objects_store *objects);
+ZEND_API void ZEND_FASTCALL zend_objects_store_free_object_storage(zend_objects_store *objects, zend_bool fast_shutdown);
+ZEND_API void ZEND_FASTCALL zend_objects_store_destroy(zend_objects_store *objects);
 
 /* Store API functions */
-ZEND_API zend_object_handle zend_objects_store_put(void *object, zend_objects_store_dtor_t dtor, zend_objects_free_object_storage_t storage, zend_objects_store_clone_t clone TSRMLS_DC);
+ZEND_API void ZEND_FASTCALL zend_objects_store_put(zend_object *object);
+ZEND_API void ZEND_FASTCALL zend_objects_store_del(zend_object *object);
 
-ZEND_API void zend_objects_store_add_ref(zval *object TSRMLS_DC);
-ZEND_API void zend_objects_store_del_ref(zval *object TSRMLS_DC);
-ZEND_API void zend_objects_store_add_ref_by_handle(zend_object_handle handle TSRMLS_DC);
-ZEND_API void zend_objects_store_del_ref_by_handle_ex(zend_object_handle handle, const zend_object_handlers *handlers TSRMLS_DC);
-static zend_always_inline void zend_objects_store_del_ref_by_handle(zend_object_handle handle TSRMLS_DC) {
-	zend_objects_store_del_ref_by_handle_ex(handle, NULL TSRMLS_CC);
+/* Called when the ctor was terminated by an exception */
+static zend_always_inline void zend_object_store_ctor_failed(zend_object *obj)
+{
+	GC_ADD_FLAGS(obj, IS_OBJ_DESTRUCTOR_CALLED);
 }
-ZEND_API zend_uint zend_objects_store_get_refcount(zval *object TSRMLS_DC);
-ZEND_API zend_object_value zend_objects_store_clone_obj(zval *object TSRMLS_DC);
-ZEND_API void *zend_object_store_get_object(const zval *object TSRMLS_DC);
-ZEND_API void *zend_object_store_get_object_by_handle(zend_object_handle handle TSRMLS_DC);
-/* See comment in zend_objects_API.c before you use this */
-ZEND_API void zend_object_store_set_object(zval *zobject, void *object TSRMLS_DC);
-ZEND_API void zend_object_store_ctor_failed(zval *zobject TSRMLS_DC);
 
-ZEND_API void zend_objects_store_free_object_storage(zend_objects_store *objects TSRMLS_DC);
-
-#define ZEND_OBJECTS_STORE_HANDLERS zend_objects_store_add_ref, zend_objects_store_del_ref, zend_objects_store_clone_obj
-
-ZEND_API zval *zend_object_create_proxy(zval *object, zval *member TSRMLS_DC);
-
-ZEND_API zend_object_handlers *zend_get_std_object_handlers(void);
 END_EXTERN_C()
 
-#endif /* ZEND_OBJECTS_H */
+static zend_always_inline void zend_object_release(zend_object *obj)
+{
+	if (GC_DELREF(obj) == 0) {
+		zend_objects_store_del(obj);
+	} else if (UNEXPECTED(GC_MAY_LEAK((zend_refcounted*)obj))) {
+		gc_possible_root((zend_refcounted*)obj);
+	}
+}
 
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- */
+static zend_always_inline size_t zend_object_properties_size(zend_class_entry *ce)
+{
+	return sizeof(zval) *
+		(ce->default_properties_count -
+			((ce->ce_flags & ZEND_ACC_USE_GUARDS) ? 0 : 1));
+}
+
+/* Allocates object type and zeros it, but not the properties.
+ * Properties MUST be initialized using object_properties_init(). */
+static zend_always_inline void *zend_object_alloc(size_t obj_size, zend_class_entry *ce) {
+	void *obj = emalloc(obj_size + zend_object_properties_size(ce));
+	/* Subtraction of sizeof(zval) is necessary, because zend_object_properties_size() may be
+	 * -sizeof(zval), if the object has no properties. */
+	memset(obj, 0, obj_size - sizeof(zval));
+	return obj;
+}
+
+static inline zend_property_info *zend_get_property_info_for_slot(zend_object *obj, zval *slot)
+{
+	zend_property_info **table = obj->ce->properties_info_table;
+	intptr_t prop_num = slot - obj->properties_table;
+	ZEND_ASSERT(prop_num >= 0 && prop_num < obj->ce->default_properties_count);
+	return table[prop_num];
+}
+
+/* Helper for cases where we're only interested in property info of typed properties. */
+static inline zend_property_info *zend_get_typed_property_info_for_slot(zend_object *obj, zval *slot)
+{
+	zend_property_info *prop_info = zend_get_property_info_for_slot(obj, slot);
+	if (prop_info && ZEND_TYPE_IS_SET(prop_info->type)) {
+		return prop_info;
+	}
+	return NULL;
+}
+
+
+#endif /* ZEND_OBJECTS_H */

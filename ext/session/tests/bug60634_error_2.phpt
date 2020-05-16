@@ -1,10 +1,9 @@
 --TEST--
 Bug #60634 (Segmentation fault when trying to die() in SessionHandler::write()) - exception in write during exec
---XFAIL--
-Long term low priority bug, working on it
 --INI--
 session.save_path=
 session.name=PHPSESSID
+session.save_handler=files
 --SKIPIF--
 <?php include('skipif.inc'); ?>
 --FILE--
@@ -17,16 +16,17 @@ function open($save_path, $session_name) {
 }
 
 function close() {
-	echo "close: goodbye cruel world\n";
+    echo "close: goodbye cruel world\n";
+    return true;
 }
 
 function read($id) {
-	return '';
+    return '';
 }
 
 function write($id, $session_data) {
-	echo "write: goodbye cruel world\n";
-	throw new Exception;
+    echo "write: goodbye cruel world\n";
+    throw new Exception;
 }
 
 function destroy($id) {
@@ -46,4 +46,9 @@ echo "um, hi\n";
 --EXPECTF--
 write: goodbye cruel world
 
-Fatal error: Uncaught exception 'Exception' in %s
+Fatal error: Uncaught Exception in %s
+Stack trace:
+#0 [internal function]: write('%s', '')
+#1 %s(%d): session_write_close()
+#2 {main}
+  thrown in %s on line %d

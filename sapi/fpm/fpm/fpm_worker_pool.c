@@ -1,5 +1,3 @@
-
-	/* $Id: fpm_worker_pool.c,v 1.15.2.1 2008/12/13 03:21:18 anight Exp $ */
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #include "fpm_config.h"
@@ -15,8 +13,37 @@
 #include "fpm_shm.h"
 #include "fpm_scoreboard.h"
 #include "fpm_conf.h"
+#include "fpm_unix.h"
 
 struct fpm_worker_pool_s *fpm_worker_all_pools;
+
+void fpm_worker_pool_free_limit_extensions(char **limit_extensions) {
+	char **ext = limit_extensions;
+	while (*ext) {
+		free(*ext);
+		ext++;
+	}
+	free(limit_extensions);
+}
+
+void fpm_worker_pool_free(struct fpm_worker_pool_s *wp) /* {{{ */
+{
+	if (wp->config) {
+		free(wp->config);
+	}
+	if (wp->user) {
+		free(wp->user);
+	}
+	if (wp->home) {
+		free(wp->home);
+	}
+	if (wp->limit_extensions) {
+		fpm_worker_pool_free_limit_extensions(wp->limit_extensions);
+	}
+	fpm_unix_free_socket_premissions(wp);
+	free(wp);
+}
+/* }}} */
 
 static void fpm_worker_pool_cleanup(int which, void *arg) /* {{{ */
 {
@@ -29,10 +56,7 @@ static void fpm_worker_pool_cleanup(int which, void *arg) /* {{{ */
 		if ((which & FPM_CLEANUP_CHILD) == 0 && fpm_globals.parent_pid == getpid()) {
 			fpm_scoreboard_free(wp->scoreboard);
 		}
-		free(wp->config);
-		free(wp->user);
-		free(wp->home);
-		free(wp);
+		fpm_worker_pool_free(wp);
 	}
 	fpm_worker_all_pools = NULL;
 }

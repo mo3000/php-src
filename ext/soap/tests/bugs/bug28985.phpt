@@ -6,7 +6,7 @@ Bug #28985 (__getTypes() returning nothing on complex WSDL)
 soap.wsdl_cache_enabled=0
 --FILE--
 <?php
-$client = new SOAPClient(dirname(__FILE__).'/bug28985.wsdl', array('trace'=>1));
+$client = new SOAPClient(__DIR__.'/bug28985.wsdl', array('trace'=>1));
 var_dump($client->__getTypes());
 ?>
 --EXPECT--
@@ -44,10 +44,10 @@ array(42) {
  string iUserPassword;
 }"
   [8]=>
-  string(86) "struct MGCodeLibelle {
+  string(87) "struct MGCodeLibelle {
  string Code;
  string Libelle;
- boolean Defaut;
+ boolean Default;
  anyType Tag;
 }"
   [9]=>

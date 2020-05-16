@@ -1,26 +1,26 @@
 --TEST--
-Test parse_url() function: Parse a load of URLs without specifying PHP_URL_FRAGMENT as the URL component 
+Test parse_url() function: Parse a load of URLs without specifying PHP_URL_FRAGMENT as the URL component
 --FILE--
 <?php
 /* Prototype  : proto mixed parse_url(string url, [int url_component])
- * Description: Parse a URL and return its components 
+ * Description: Parse a URL and return its components
  * Source code: ext/standard/url.c
- * Alias to functions: 
+ * Alias to functions:
  */
 
 /*
  * Parse a load of URLs without specifying PHP_URL_FRAGMENT as the URL component
  */
-include_once(dirname(__FILE__) . '/urls.inc');
+include_once(__DIR__ . '/urls.inc');
 
 foreach ($urls as $url) {
-	echo "--> $url   : ";
-	var_dump(parse_url($url, PHP_URL_FRAGMENT));
+    echo "--> $url   : ";
+    var_dump(parse_url($url, PHP_URL_FRAGMENT));
 }
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 --> 64.246.30.37   : NULL
 --> http://64.246.30.37   : NULL
 --> http://64.246.30.37/   : NULL
@@ -54,7 +54,7 @@ echo "Done";
 --> http://www.php.net:80/index.php   : NULL
 --> http://www.php.net:80/index.php?   : NULL
 --> http://www.php.net:80/#foo   : string(3) "foo"
---> http://www.php.net:80/?#   : NULL
+--> http://www.php.net:80/?#   : string(0) ""
 --> http://www.php.net:80/?test=1   : NULL
 --> http://www.php.net/?test=1&   : NULL
 --> http://www.php.net:80/?&   : NULL
@@ -80,6 +80,7 @@ echo "Done";
 --> /foo.php?a=b&c=d   : NULL
 --> foo.php?a=b&c=d   : NULL
 --> http://user:passwd@www.example.com:8080?bar=1&boom=0   : NULL
+--> http://user_me-you:my_pas-word@www.example.com:8080?bar=1&boom=0   : NULL
 --> file:///path/to/file   : NULL
 --> file://path/to/file   : NULL
 --> file:/path/to/file   : NULL
@@ -95,9 +96,10 @@ echo "Done";
 --> x:/blah.com   : NULL
 --> x://::abc/?   : bool(false)
 --> http://::?   : NULL
+--> http://::#   : string(0) ""
 --> x://::6.5   : NULL
---> http://?:/   : NULL
---> http://@?:/   : NULL
+--> http://?:/   : bool(false)
+--> http://@?:/   : bool(false)
 --> file:///:   : NULL
 --> file:///a:/   : NULL
 --> file:///ab:/   : NULL
@@ -108,6 +110,7 @@ echo "Done";
 --> http://[x:80]/   : NULL
 -->    : NULL
 --> /   : NULL
+--> /rest/Users?filter={"id":"123"}   : NULL
 --> http:///blah.com   : bool(false)
 --> http://:80   : bool(false)
 --> http://user@:80   : bool(false)
@@ -117,6 +120,7 @@ echo "Done";
 --> http://@:/   : bool(false)
 --> http://:/   : bool(false)
 --> http://?   : bool(false)
+--> http://#   : bool(false)
 --> http://?:   : bool(false)
 --> http://:?   : bool(false)
 --> http://blah.com:123456   : bool(false)

@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -14,15 +12,13 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef LOCALE_LOCALE_H
 #define LOCALE_LOCALE_H
 
 #include <php.h>
 
 void locale_register_constants( INIT_FUNC_ARGS );
- 
+
 #define OPTION_DEFAULT NULL
 #define LOC_LANG_TAG "language"
 #define LOC_SCRIPT_TAG "script"

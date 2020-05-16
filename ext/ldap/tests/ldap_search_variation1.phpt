@@ -14,22 +14,21 @@ require_once('skipifbindfailure.inc');
 include "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-insert_dummy_data($link);
+insert_dummy_data($link, $base);
 
-$dn = "dc=my-domain,dc=com";
+$dn = "$base";
 $filter = "(dc=*)";
 var_dump(
-	$result = ldap_search($link, "dc=my-domain,dc=com", "(dc=*)", array('dc')),
-	ldap_get_entries($link, $result)
+    $result = ldap_search($link, "o=test,$base", "(o=*)", array('o')),
+    ldap_get_entries($link, $result)
 );
 ?>
-===DONE===
 --CLEAN--
 <?php
 include "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-remove_dummy_data($link);
+remove_dummy_data($link, $base);
 ?>
 --EXPECTF--
 resource(%d) of type (ldap result)
@@ -38,19 +37,18 @@ array(2) {
   int(1)
   [0]=>
   array(4) {
-    ["dc"]=>
+    ["o"]=>
     array(2) {
       ["count"]=>
       int(1)
       [0]=>
-      string(9) "my-domain"
+      string(4) "test"
     }
     [0]=>
-    string(2) "dc"
+    string(1) "o"
     ["count"]=>
     int(1)
     ["dn"]=>
-    string(19) "dc=my-domain,dc=com"
+    string(%d) "o=test,%s"
   }
 }
-===DONE===

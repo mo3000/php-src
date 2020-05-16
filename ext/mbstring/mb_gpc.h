@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 2001 The PHP Group                                     |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -17,8 +15,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 /* {{{ includes */
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -27,17 +23,17 @@
 #include "php.h"
 /* }}} */
 
-#if HAVE_MBSTRING
+#ifdef HAVE_MBSTRING
 /* {{{ typedefs */
 typedef struct _php_mb_encoding_handler_info_t {
-	int data_type;
 	const char *separator;
-	unsigned int report_errors: 1;
-	enum mbfl_no_language to_language;
 	const mbfl_encoding *to_encoding;
-	enum mbfl_no_language from_language;
 	const mbfl_encoding **from_encodings;
 	size_t num_from_encodings;
+	int data_type;
+	unsigned int report_errors : 1;
+	enum mbfl_no_language to_language;
+	enum mbfl_no_language from_language;
 } php_mb_encoding_handler_info_t;
 
 /* }}}*/
@@ -47,15 +43,6 @@ SAPI_POST_HANDLER_FUNC(php_mb_post_handler);
 MBSTRING_API SAPI_TREAT_DATA_FUNC(mbstr_treat_data);
 
 int _php_mb_enable_encoding_translation(int flag);
-const mbfl_encoding *_php_mb_encoding_handler_ex(const php_mb_encoding_handler_info_t *info, zval *arg, char *res TSRMLS_DC);
+const mbfl_encoding *_php_mb_encoding_handler_ex(const php_mb_encoding_handler_info_t *info, zval *arg, char *res);
 /* }}} */
 #endif /* HAVE_MBSTRING */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: fdm=marker
- * vim: noet sw=4 ts=4
- */

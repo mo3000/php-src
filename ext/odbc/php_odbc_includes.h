@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,26 +10,18 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Stig Sæther Bakken <ssb@php.net>                            |
+   | Authors: Stig SÃ¦ther Bakken <ssb@php.net>                            |
    |          Andreas Karajannis <Andreas.Karajannis@gmd.de>              |
-   |	      Kevin N. Shallow <kshallow@tampabay.rr.com> (Birdstep)      |
+   |	      Kevin N. Shallow <kshallow@tampabay.rr.com>                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef PHP_ODBC_INCLUDES_H
 #define PHP_ODBC_INCLUDES_H
 
 #if HAVE_UODBC
 
-#define ODBCVER 0x0250
-/*#ifndef MSVC5
-#define FAR
-#endif
-*/
-
-/* checking in the same order as in configure.in */
+/* checking in the same order as in configure.ac */
 
 #if defined(HAVE_SOLID) || defined(HAVE_SOLID_30) || defined(HAVE_SOLID_35) /* Solid Server */
 
@@ -45,9 +35,7 @@
 # include <cli0defs.h>
 # include <cli0env.h>
 #elif defined(HAVE_SOLID_35)
-# if !defined(PHP_WIN32)
-#  include <sqlunix.h>
-# endif		/* end: #if !defined(PHP_WIN32) */
+# include <sqlunix.h>
 # include <sqltypes.h>
 # include <sqlucode.h>
 # include <sqlext.h>
@@ -115,6 +103,7 @@ PHP_FUNCTION(solid_fetch_prev);
 #endif
 
 #define ODBC_TYPE "unixODBC"
+#undef ODBCVER
 #include <sql.h>
 #include <sqlext.h>
 #define HAVE_SQL_EXTENDED_FETCH 1
@@ -125,20 +114,6 @@ PHP_FUNCTION(solid_fetch_prev);
 #include <sql.h>
 #include <sqlext.h>
 #define HAVE_SQL_EXTENDED_FETCH 1
-
-#elif defined(HAVE_ODBC_ROUTER) /* ODBCRouter.com */
-
-#ifdef CHAR
-#undef CHAR
-#endif
-
-#ifdef SQLCHAR
-#undef SQLCHAR
-#endif
-
-#define ODBC_TYPE "ODBCRouter"
-#include <odbcsdk.h>
-#undef HAVE_SQL_EXTENDED_FETCH
 
 #elif defined(HAVE_OPENLINK) /* OpenLink ODBC drivers */
 
@@ -154,23 +129,6 @@ PHP_FUNCTION(solid_fetch_prev);
 #ifndef SQLUSMALLINT
 #define SQLUSMALLINT UWORD
 #endif
-
-#elif defined(HAVE_BIRDSTEP) /* Raima Birdstep */
-
-#define ODBC_TYPE "Birdstep"
-#define UNIX
-/*
- * Extended Fetch in the Birdstep ODBC API is incapable of returning long varchar (memo) fields.
- * So the following line has been commented-out to accomadate. - KNS
- *
- * #define HAVE_SQL_EXTENDED_FETCH 1
- */
-#include <sql.h>
-#include <sqlext.h>
-#define SQLINTEGER SDWORD
-#define SQLSMALLINT SWORD
-#define SQLUSMALLINT UWORD
-
 
 #elif defined(HAVE_DBMAKER) /* DBMaker */
 
@@ -227,16 +185,23 @@ typedef struct odbc_connection {
     ODBC_SQL_CONN_T hdbc;
     char laststate[6];
     char lasterrormsg[SQL_MAX_MESSAGE_LENGTH];
-	int id;
+	zend_resource *res;
 	int persistent;
 } odbc_connection;
 
 typedef struct odbc_result_value {
-	char name[32];
+	char name[256];
 	char *value;
 	SQLLEN vallen;
 	SQLLEN coltype;
 } odbc_result_value;
+
+typedef struct odbc_param_info {
+	SQLSMALLINT sqltype;
+	SQLSMALLINT scale;
+	SQLSMALLINT nullable;
+	SQLULEN precision;
+} odbc_param_info;
 
 typedef struct odbc_result {
 	ODBC_SQL_STMT_T stmt;
@@ -246,9 +211,10 @@ typedef struct odbc_result {
 # if HAVE_SQL_EXTENDED_FETCH
 	int fetch_abs;
 # endif
-	long longreadlen;
+	zend_long longreadlen;
 	int binmode;
 	int fetched;
+	odbc_param_info * param_info;
 	odbc_connection *conn_ptr;
 } odbc_result;
 
@@ -256,16 +222,16 @@ ZEND_BEGIN_MODULE_GLOBALS(odbc)
 	char *defDB;
 	char *defUser;
 	char *defPW;
-	long allow_persistent;
-	long check_persistent;
-	long max_persistent;
-	long max_links;
-	long num_persistent;
-	long num_links;
+	zend_long allow_persistent;
+	zend_long check_persistent;
+	zend_long max_persistent;
+	zend_long max_links;
+	zend_long num_persistent;
+	zend_long num_links;
 	int defConn;
-    long defaultlrl;
-    long defaultbinmode;
-    long default_cursortype;
+    zend_long defaultlrl;
+    zend_long defaultbinmode;
+    zend_long default_cursortype;
     char laststate[6];
     char lasterrormsg[SQL_MAX_MESSAGE_LENGTH];
 	HashTable *resource_list;
@@ -278,28 +244,35 @@ void odbc_del_result(HashTable *list, int count);
 int odbc_add_conn(HashTable *list, HDBC conn);
 odbc_connection *odbc_get_conn(HashTable *list, int count);
 void odbc_del_conn(HashTable *list, int ind);
-int odbc_bindcols(odbc_result *result TSRMLS_DC);
+int odbc_bindcols(odbc_result *result);
 
 #define ODBC_SQL_ERROR_PARAMS odbc_connection *conn_resource, ODBC_SQL_STMT_T stmt, char *func
 
 void odbc_sql_error(ODBC_SQL_ERROR_PARAMS);
 
+#if defined(ODBCVER) && (ODBCVER >= 0x0300)
+#define IS_SQL_LONG(x) (x == SQL_LONGVARBINARY || x == SQL_LONGVARCHAR || x == SQL_WLONGVARCHAR)
+
+#define PHP_ODBC_SQLCOLATTRIBUTE SQLColAttribute
+#define PHP_ODBC_SQLALLOCSTMT(hdbc, phstmt) SQLAllocHandle(SQL_HANDLE_STMT, hdbc, phstmt)
+
+#define PHP_ODBC_SQL_DESC_NAME SQL_DESC_NAME
+#else
 #define IS_SQL_LONG(x) (x == SQL_LONGVARBINARY || x == SQL_LONGVARCHAR)
+
+#define PHP_ODBC_SQLCOLATTRIBUTE SQLColAttributes
+#define PHP_ODBC_SQLALLOCSTMT SQLAllocStmt
+
+#define PHP_ODBC_SQL_DESC_NAME SQL_COLUMN_NAME
+#endif
 #define IS_SQL_BINARY(x) (x == SQL_BINARY || x == SQL_VARBINARY || x == SQL_LONGVARBINARY)
 
-#ifdef ZTS
-# define ODBCG(v) TSRMG(odbc_globals_id, zend_odbc_globals *, v)
-#else
-# define ODBCG(v) (odbc_globals.v)
-extern ZEND_API zend_odbc_globals odbc_globals;
+PHP_ODBC_API ZEND_EXTERN_MODULE_GLOBALS(odbc)
+#define ODBCG(v) ZEND_MODULE_GLOBALS_ACCESSOR(odbc, v)
+
+#if defined(ZTS) && defined(COMPILE_DL_ODBC)
+ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
 #endif /* HAVE_UODBC */
 #endif /* PHP_ODBC_INCLUDES_H */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- */

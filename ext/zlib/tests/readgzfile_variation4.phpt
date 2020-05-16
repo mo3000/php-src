@@ -1,8 +1,8 @@
 --TEST--
-Test function readgzfile() by substituting agument 1 with float values.
+Test function readgzfile() by substituting argument 1 with float values.
 --SKIPIF--
 <?php
-if (!extension_loaded(zlib)) die ('skip zlib extension not available in this build');
+if (!extension_loaded('zlib')) die ('skip zlib extension not available in this build');
 ?>
 --FILE--
 <?php
@@ -24,20 +24,18 @@ foreach ( $variation as $var ) {
   var_dump(readgzfile( $var ,  $use_include_path ) );
 }
 ?>
-===DONE===
 --EXPECTF--
-Warning: readgzfile(10.5): failed to open stream: No such file or directory in %s on line %d
+Warning: readgzfile(10.5): Failed to open stream: No such file or directory in %s on line %d
 bool(false)
 
-Warning: readgzfile(-10.5): failed to open stream: No such file or directory in %s on line %d
+Warning: readgzfile(-10.5): Failed to open stream: No such file or directory in %s on line %d
 bool(false)
 
-Warning: readgzfile(123456789000): failed to open stream: No such file or directory in %s on line %d
+Warning: readgzfile(123456789000): Failed to open stream: No such file or directory in %s on line %d
 bool(false)
 
-Warning: readgzfile(-123456789000): failed to open stream: No such file or directory in %s on line %d
+Warning: readgzfile(-123456789000): Failed to open stream: No such file or directory in %s on line %d
 bool(false)
 
-Warning: readgzfile(0.5): failed to open stream: No such file or directory in %s on line %d
+Warning: readgzfile(0.5): Failed to open stream: No such file or directory in %s on line %d
 bool(false)
-===DONE===

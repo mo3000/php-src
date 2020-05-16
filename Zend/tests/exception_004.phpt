@@ -1,18 +1,19 @@
 --TEST--
 Throwing exception using a class that isn't derived from the Exception base class
 --FILE--
-<?php 
-
-error_reporting(E_ALL|E_STRICT);
+<?php
 
 class Foo { }
 
 try {
-	throw new Foo();
+    throw new Foo();
 } catch (Foo $e) {
-	var_dump($e);
+    var_dump($e);
 }
 
 ?>
 --EXPECTF--
-Fatal error: Exceptions must be valid objects derived from the Exception base class in %s on line %d
+Fatal error: Uncaught Error: Cannot throw objects that do not implement Throwable in %s:%d
+Stack trace:
+#0 {main}
+  thrown in %s on line %d

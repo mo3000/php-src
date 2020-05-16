@@ -60,6 +60,7 @@ $urls = array(
 '/foo.php?a=b&c=d',
 'foo.php?a=b&c=d',
 'http://user:passwd@www.example.com:8080?bar=1&boom=0',
+'http://user_me-you:my_pas-word@www.example.com:8080?bar=1&boom=0',
 'file:///path/to/file',
 'file://path/to/file',
 'file:/path/to/file',
@@ -75,6 +76,7 @@ $urls = array(
 'x:/blah.com',
 'x://::abc/?',
 'http://::?',
+'http://::#',
 'x://::6.5',
 'http://?:/',
 'http://@?:/',
@@ -88,6 +90,7 @@ $urls = array(
 'http://[x:80]/',
 '',
 '/',
+'/rest/Users?filter={"id":"123"}',
 
 // Severely malformed URLs that do not parse:
 'http:///blah.com',
@@ -99,6 +102,7 @@ $urls = array(
 'http://@:/',
 'http://:/',
 'http://?',
+'http://#',
 'http://?:',
 'http://:?',
 'http://blah.com:123456',

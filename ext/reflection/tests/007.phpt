@@ -5,54 +5,57 @@ ReflectionClass::newInstance[Args]
 
 function test($class)
 {
-	echo "====>$class\n";
-	try
-	{
-		$ref = new ReflectionClass($class);
-	}
-	catch (ReflectionException $e)
-	{
-		var_dump($e->getMessage());
-		return; // only here
-	}
+    echo "====>$class\n";
+    try
+    {
+        $ref = new ReflectionClass($class);
+    }
+    catch (ReflectionException $e)
+    {
+        var_dump($e->getMessage());
+        return; // only here
+    }
 
-	echo "====>newInstance()\n";
-	try
-	{
-		var_dump($ref->newInstance());
-	}
-	catch (ReflectionException $e)
-	{
-		var_dump($e->getMessage());
-	}
-	
-	echo "====>newInstance(25)\n";
-	try
-	{
-		var_dump($ref->newInstance(25));
-	}
-	catch (ReflectionException $e)
-	{
-		var_dump($e->getMessage());
-	}
+    echo "====>newInstance()\n";
+    try
+    {
+        var_dump($ref->newInstance());
+    }
+    catch (ReflectionException $e)
+    {
+        var_dump($e->getMessage());
+    }
+    catch (Throwable $e)
+    {
+        echo "Exception: " . $e->getMessage() . "\n";
+    }
 
-	echo "====>newInstance(25, 42)\n";
-	try
-	{
-		var_dump($ref->newInstance(25, 42));
-	}
-	catch (ReflectionException $e)
-	{
-		var_dump($e->getMessage());
-	}
-	
-	echo "\n";
+    echo "====>newInstance(25)\n";
+    try
+    {
+        var_dump($ref->newInstance(25));
+    }
+    catch (ReflectionException $e)
+    {
+        var_dump($e->getMessage());
+    }
+
+    echo "====>newInstance(25, 42)\n";
+    try
+    {
+        var_dump($ref->newInstance(25, 42));
+    }
+    catch (ReflectionException $e)
+    {
+        var_dump($e->getMessage());
+    }
+
+    echo "\n";
 }
 
-function __autoload($class)
-{
-	echo __FUNCTION__ . "($class)\n";
-}
+spl_autoload_register(function ($class) {
+    echo __FUNCTION__ . "($class)\n";
+});
 
 test('Class_does_not_exist');
 
@@ -64,33 +67,30 @@ test('NoCtor');
 
 Class WithCtor
 {
-	function __construct()
-	{
-		echo __METHOD__ . "()\n";
-		var_dump(func_get_args());
-	}
+    function __construct()
+    {
+        echo __METHOD__ . "()\n";
+        var_dump(func_get_args());
+    }
 }
 
 test('WithCtor');
 
 Class WithCtorWithArgs
 {
-	function __construct($arg)
-	{
-		echo __METHOD__ . "($arg)\n";
-		var_dump(func_get_args());
-	}
+    function __construct($arg)
+    {
+        echo __METHOD__ . "($arg)\n";
+        var_dump(func_get_args());
+    }
 }
 
 test('WithCtorWithArgs');
 
 ?>
-===DONE===
-<?php exit(0); ?>
 --EXPECTF--
-
 ====>Class_does_not_exist
-__autoload(Class_does_not_exist)
+{closure}(Class_does_not_exist)
 string(41) "Class Class_does_not_exist does not exist"
 ====>NoCtor
 ====>newInstance()
@@ -129,15 +129,7 @@ object(WithCtor)#%d (0) {
 
 ====>WithCtorWithArgs
 ====>newInstance()
-
-Warning: Missing argument 1 for WithCtorWithArgs::__construct() in %s007.php on line %d
-
-Notice: Undefined variable: arg in %s007.php on line %d
-WithCtorWithArgs::__construct()
-array(0) {
-}
-object(WithCtorWithArgs)#%d (0) {
-}
+Exception: Too few arguments to function WithCtorWithArgs::__construct(), 0 passed and exactly 1 expected
 ====>newInstance(25)
 WithCtorWithArgs::__construct(25)
 array(1) {
@@ -157,4 +149,3 @@ array(2) {
 object(WithCtorWithArgs)#%d (0) {
 }
 
-===DONE===

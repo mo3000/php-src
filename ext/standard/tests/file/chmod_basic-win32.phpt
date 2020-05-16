@@ -1,5 +1,5 @@
 --TEST--
-chmod() basic fuctionality
+chmod() basic functionality
 --SKIPIF--
 <?php
 if (substr(PHP_OS, 0, 3) != 'WIN') {
@@ -17,10 +17,10 @@ $fd = fopen($filename, "w+");
 fclose($fd);
 
 for ($perms_to_set = 0777; $perms_to_set >= 0; $perms_to_set--) {
-	chmod($filename, $perms_to_set);
-	$set_perms = (fileperms($filename) & PERMISSIONS_MASK);
-	clearstatcache();
-	printf("Setting mode %o gives mode %o\n", $perms_to_set, $set_perms);
+    chmod($filename, $perms_to_set);
+    $set_perms = (fileperms($filename) & PERMISSIONS_MASK);
+    clearstatcache();
+    printf("Setting mode %o gives mode %o\n", $perms_to_set, $set_perms);
 }
 var_dump(chmod($filename, 0777));
 

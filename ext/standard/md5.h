@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -17,16 +15,11 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef MD5_H
 #define MD5_H
 
 PHPAPI void make_digest(char *md5str, const unsigned char *digest);
 PHPAPI void make_digest_ex(char *md5str, const unsigned char *digest, int len);
-
-PHP_NAMED_FUNCTION(php_if_md5);
-PHP_NAMED_FUNCTION(php_if_md5_file);
 
 #include "ext/standard/basic_functions.h"
 
@@ -42,10 +35,10 @@ PHP_NAMED_FUNCTION(php_if_md5_file);
 
 /* MD5 context. */
 typedef struct {
-	php_uint32 lo, hi;
-	php_uint32 a, b, c, d;
+	uint32_t lo, hi;
+	uint32_t a, b, c, d;
 	unsigned char buffer[64];
-	php_uint32 block[16];
+	uint32_t block[16];
 } PHP_MD5_CTX;
 
 PHPAPI void PHP_MD5Init(PHP_MD5_CTX *ctx);

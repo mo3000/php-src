@@ -1,7 +1,7 @@
 --TEST--
 Test session_save_path() function : variation
 --SKIPIF--
-<?php include('skipif.inc'); 
+<?php include('skipif.inc');
 if(substr(PHP_OS, 0, 3) == "WIN")
 	die("skip Not for Windows");
 ?>
@@ -9,26 +9,25 @@ if(substr(PHP_OS, 0, 3) == "WIN")
 session.save_handler=files
 session.save_path=
 session.name=PHPSESSID
-open_basedir=.
 --FILE--
 <?php
 
 ob_start();
-/* 
+/*
  * Prototype : string session_save_path([string $path])
  * Description : Get and/or set the current session save path
- * Source code : ext/session/session.c 
+ * Source code : ext/session/session.c
  */
 
 echo "*** Testing session_save_path() : variation ***\n";
-$directory = dirname(__FILE__);
+$directory = __DIR__;
 $sessions = ($directory."/sessions");
 
 chdir($directory);
-
+ini_set('open_basedir', '.');
 // Delete the existing directory
 if (file_exists($sessions) === TRUE) {
-	@rmdir($sessions);
+    @rmdir($sessions);
 }
 
 var_dump(mkdir($sessions));
@@ -41,9 +40,11 @@ echo "Done";
 ob_end_flush();
 ?>
 --CLEAN--
-$directory = dirname(__FILE__);
+<?php
+$directory = __DIR__;
 $sessions = ($directory."/sessions");
 var_dump(rmdir($sessions));
+?>
 --EXPECTF--
 *** Testing session_save_path() : variation ***
 bool(true)
@@ -53,4 +54,3 @@ Warning: ini_set(): open_basedir restriction in effect. File(%s) is not within t
 string(0) ""
 bool(true)
 Done
-

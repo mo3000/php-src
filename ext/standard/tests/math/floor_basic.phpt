@@ -11,36 +11,34 @@ precision=14
 
 echo "*** Testing floor() : basic functionality ***\n";
 $values = array(0,
-				-0,
-				0.5,
-				-0.5,
-				1,
-				-1,
-				1.5,
-				-1.5,
-				2.6,
-				-2.6,
-				037,
-				0x5F,	
-				"10.5",
-				"-10.5",
-				"3.95E3",
-				"-3.95E3",
-				"039",
-				"0x5F",
-				true,
-				false,
-				null, 
-				);	
-				
+                -0,
+                0.5,
+                -0.5,
+                1,
+                -1,
+                1.5,
+                -1.5,
+                2.6,
+                -2.6,
+                037,
+                0x5F,
+                "10.5",
+                "-10.5",
+                "3.95E3",
+                "-3.95E3",
+                "039",
+                true,
+                false,
+                null,
+                );
+
 foreach($values as $value) {
-	echo "\n-- floor $value --\n";
-	var_dump(floor($value));
-};				
+    echo "\n-- floor $value --\n";
+    var_dump(floor($value));
+};
 
 ?>
-===Done===
---EXPECTF--
+--EXPECT--
 *** Testing floor() : basic functionality ***
 
 -- floor 0 --
@@ -94,9 +92,6 @@ float(-3950)
 -- floor 039 --
 float(39)
 
--- floor 0x5F --
-float(95)
-
 -- floor 1 --
 float(1)
 
@@ -105,4 +100,3 @@ float(0)
 
 -- floor  --
 float(0)
-===Done===

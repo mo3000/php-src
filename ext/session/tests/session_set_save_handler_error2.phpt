@@ -2,15 +2,17 @@
 Test session_set_save_handler() function : error functionality
 --SKIPIF--
 <?php include('skipif.inc'); ?>
+--INI--
+error_reporting=0
 --FILE--
 <?php
 
 ob_start();
 
-/* 
+/*
  * Prototype : bool session_set_save_handler(callback $open, callback $close, callback $read, callback $write, callback $destroy, callback $gc)
  * Description : Sets user-level session storage functions
- * Source code : ext/session/session.c 
+ * Source code : ext/session/session.c
  */
 
 echo "*** Testing session_set_save_handler() : error functionality ***\n";
@@ -39,7 +41,7 @@ session_destroy();
 
 ob_end_flush();
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing session_set_save_handler() : error functionality ***
 array(3) {
   ["Blah"]=>
@@ -59,4 +61,3 @@ array(3) {
 }
 array(0) {
 }
-

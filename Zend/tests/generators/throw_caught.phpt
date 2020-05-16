@@ -4,6 +4,7 @@ Generator::throw() where the exception is caught in the generator
 <?php
 
 function gen() {
+    echo "before yield\n";
     try {
         yield;
     } catch (RuntimeException $e) {
@@ -18,7 +19,8 @@ var_dump($gen->throw(new RuntimeException('Test')));
 
 ?>
 --EXPECTF--
-exception 'RuntimeException' with message 'Test' in %s:%d
+before yield
+RuntimeException: Test in %s:%d
 Stack trace:
 #0 {main}
 

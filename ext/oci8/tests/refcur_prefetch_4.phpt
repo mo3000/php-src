@@ -3,22 +3,29 @@ Prefetch with REF cursor. Test No 4
 --SKIPIF--
 <?php if (!extension_loaded('oci8')) die("skip no oci8 extension");
 if (!extension_loaded('oci8')) die("skip no oci8 extension");
-require(dirname(__FILE__)."/connect.inc");
-if (preg_match('/Release 1[012]\./', oci_server_version($c), $matches) !== 1) {
-	die("skip expected output only valid when using Oracle 10g or greater databases");
-} else if (preg_match('/^(11\.2|12)\./', oci_client_version()) != 1) {
+require(__DIR__."/connect.inc");
+preg_match('/.*Release ([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)*/', oci_server_version($c), $matches);
+if (!(isset($matches[0]) &&
+      ($matches[1] >= 10))) {
+       	die("skip expected output only valid when using Oracle 10g or greater database server");
+}
+preg_match('/^([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)/', oci_client_version(), $matches);
+if (!(isset($matches[0]) &&
+    (($matches[1] == 11 && $matches[2] >= 2) ||
+     ($matches[1] >= 12)
+     ))) {
     die("skip test expected to work only with Oracle 11gR2 or greater version of client");
 }
 ?>
 --FILE--
 <?php
-require dirname(__FILE__)."/connect.inc";
+require __DIR__."/connect.inc";
 
-// Creates the necessary package and tables. 
+// Creates the necessary package and tables.
 $stmtarray = array(
-	   "DROP TABLE refcurtest",
+       "DROP TABLE refcurtest",
 
-	   "CREATE TABLE refcurtest (c1 NUMBER, c2 VARCHAR(20))",
+       "CREATE TABLE refcurtest (c1 NUMBER, c2 VARCHAR(20))",
 
        "CREATE or REPLACE PACKAGE refcurpkg is
            type refcursortype is ref cursor;
@@ -27,16 +34,16 @@ $stmtarray = array(
         end refcurpkg;",
 
        "CREATE or REPLACE PACKAGE body refcurpkg is
-  	    procedure open_ref_cur(cur1 out refcursortype) is
+        procedure open_ref_cur(cur1 out refcursortype) is
           begin
-	        open cur1 for select * from refcurtest order by c1;
-	      end open_ref_cur;
-  	     procedure fetch_ref_cur(cur1 in refcursortype, c1 out number, c2 out varchar2) is
-  	      begin
-	    	fetch cur1 into c1,c2;
-  	      end fetch_ref_cur;
+            open cur1 for select * from refcurtest order by c1;
+          end open_ref_cur;
+         procedure fetch_ref_cur(cur1 in refcursortype, c1 out number, c2 out varchar2) is
+          begin
+            fetch cur1 into c1,c2;
+          end fetch_ref_cur;
          end refcurpkg;"
-	);
+    );
 
 oci8_test_sql_execute($c, $stmtarray);
 
@@ -82,7 +89,7 @@ if (!oci_bind_by_name($s2, ":c2", $c2, 20, SQLT_CHR)) {
 
 echo "------Test 1 - Set Prefetch after PL/SQL fetch ----------\n";
 $cur1 = oci_new_cursor($c);
-// Fetch from PL/SQL 
+// Fetch from PL/SQL
 if (!oci_bind_by_name($s2,":curs1",$cur1,-1,SQLT_RSET)) {
     die("oci_bind_by_name(sql2) failed!\n");
 }
@@ -127,7 +134,7 @@ var_dump($c2);
 
 function  print_roundtrips($c) {
     $sql_stmt = "select value from v\$mystat a,v\$statname c where
-	 a.statistic#=c.statistic# and c.name='SQL*Net roundtrips to/from client'";
+     a.statistic#=c.statistic# and c.name='SQL*Net roundtrips to/from client'";
     $s = oci_parse($c,$sql_stmt);
     oci_define_by_name($s,"VALUE",$value);
     oci_execute($s);
@@ -150,7 +157,7 @@ echo "Done\n";
 ------Test 1 - Set Prefetch after PL/SQL fetch ----------
 
 Warning: oci_execute(): ORA-01001: %s
-ORA-06512: at "SYSTEM.REFCURPKG", line %d
+ORA-06512: at "%s.REFCURPKG", line %d
 ORA-06512: at line %d in %s on line %d
 Fetch Row from PL/SQL
 int(0)

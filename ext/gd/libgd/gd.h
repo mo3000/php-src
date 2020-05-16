@@ -46,10 +46,8 @@ extern "C" {
 #include <stdio.h>
 #include "gd_io.h"
 
-void php_gd_error_ex(int type, const char *format, ...);
-
-void php_gd_error(const char *format, ...);
-
+/* va_list needed in gdErrorMethod */
+#include <stdarg.h>
 
 /* The maximum number of palette entries in palette-based images.
 	In the wonderful new world of gd 2.0, you can of course have
@@ -92,6 +90,7 @@ void php_gd_error(const char *format, ...);
 #define gdEffectAlphaBlend 1
 #define gdEffectNormal 2
 #define gdEffectOverlay 3
+#define gdEffectMultiply 4
 
 #define GD_TRUE 1
 #define GD_FALSE 0
@@ -104,6 +103,8 @@ void php_gd_error(const char *format, ...);
 	The resulting color is opaque. */
 
 int gdAlphaBlend(int dest, int src);
+int gdLayerOverlay(int dst, int src);
+int gdLayerMultiply(int dest, int src);
 
 /**
  * Group: Transform
@@ -112,7 +113,7 @@ int gdAlphaBlend(int dest, int src);
 
  *  GD_BELL				 - Bell
  *  GD_BESSEL			 - Bessel
- *  GD_BILINEAR_FIXED 	 - fixed point bilinear 
+ *  GD_BILINEAR_FIXED 	 - fixed point bilinear
  *  GD_BICUBIC 			 - Bicubic
  *  GD_BICUBIC_FIXED 	 - fixed point bicubic integer
  *  GD_BLACKMAN			 - Blackman
@@ -222,37 +223,24 @@ typedef struct gdImageStruct {
 		To do that, build your image as a truecolor image,
 		then quantize down to 8 bits. */
 	int alphaBlendingFlag;
-	/* Should antialias functions be used */
-	int antialias;
 	/* Should the alpha channel of the image be saved? This affects
 		PNG at the moment; other future formats may also
 		have that capability. JPEG doesn't. */
 	int saveAlphaFlag;
 
-
-	/* 2.0.12: anti-aliased globals */
+	/* 2.0.12: anti-aliased globals. 2.0.26: just a few vestiges after
+	  switching to the fast, memory-cheap implementation from PHP-gd. */
 	int AA;
 	int AA_color;
 	int AA_dont_blend;
-	unsigned char **AA_opacity;
-	int AA_polygon;
-	/* Stored and pre-computed variables for determining the perpendicular
-	 * distance from a point to the anti-aliased line being drawn:
-	 */
-	int AAL_x1;
-	int AAL_y1;
-	int AAL_x2;
-	int AAL_y2;
-	int AAL_Bx_Ax;
-	int AAL_By_Ay;
-	int AAL_LAB_2;
-	float AAL_LAB;
 
 	/* 2.0.12: simple clipping rectangle. These values must be checked for safety when set; please use gdImageSetClip */
 	int cx1;
 	int cy1;
 	int cx2;
 	int cy2;
+	unsigned int res_x;
+	unsigned int res_y;
 	gdInterpolationMethod interpolation_id;
 	interpolation_method interpolation;
 } gdImage;
@@ -299,6 +287,10 @@ typedef struct {
 /* Text functions take these. */
 typedef gdFont *gdFontPtr;
 
+typedef void(*gdErrorMethod)(int, const char *, va_list);
+
+void gdSetErrorMethod(gdErrorMethod);
+void gdClearErrorMethod(void);
 
 /**
  * Group: Types
@@ -362,16 +354,26 @@ gdImagePtr gdImageCreateFromPng(FILE *fd);
 gdImagePtr gdImageCreateFromPngCtx(gdIOCtxPtr in);
 gdImagePtr gdImageCreateFromWBMP(FILE *inFile);
 gdImagePtr gdImageCreateFromWBMPCtx(gdIOCtx *infile);
-gdImagePtr gdImageCreateFromJpeg(FILE *infile, int ignore_warning);
-gdImagePtr gdImageCreateFromJpegCtx(gdIOCtx *infile, int ignore_warning);
+gdImagePtr gdImageCreateFromJpeg(FILE *infile);
+gdImagePtr gdImageCreateFromJpegEx(FILE *infile, int ignore_warning);
+gdImagePtr gdImageCreateFromJpegCtx(gdIOCtx *infile);
+gdImagePtr gdImageCreateFromJpegCtxEx(gdIOCtx *infile, int ignore_warning);
+gdImagePtr gdImageCreateFromJpegPtr (int size, void *data);
+gdImagePtr gdImageCreateFromJpegPtrEx (int size, void *data, int ignore_warning);
 gdImagePtr gdImageCreateFromWebp(FILE *fd);
 gdImagePtr gdImageCreateFromWebpCtx(gdIOCtxPtr in);
 gdImagePtr gdImageCreateFromWebpPtr (int size, void *data);
 
-int gdJpegGetVersionInt();
+gdImagePtr gdImageCreateFromTga( FILE * fp );
+gdImagePtr gdImageCreateFromTgaCtx(gdIOCtx* ctx);
+gdImagePtr gdImageCreateFromTgaPtr(int size, void *data);
+
+gdImagePtr gdImageCreateFromBmp (FILE * inFile);
+gdImagePtr gdImageCreateFromBmpPtr (int size, void *data);
+gdImagePtr gdImageCreateFromBmpCtx (gdIOCtxPtr infile);
+
 const char * gdPngGetVersionString();
 
-int gdJpegGetVersionInt();
 const char * gdJpegGetVersionString();
 
 /* A custom data source. */
@@ -429,6 +431,7 @@ void gdImageRectangle(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
 void gdImageFilledRectangle(gdImagePtr im, int x1, int y1, int x2, int y2, int color);
 void gdImageSetClip(gdImagePtr im, int x1, int y1, int x2, int y2);
 void gdImageGetClip(gdImagePtr im, int *x1P, int *y1P, int *x2P, int *y2P);
+void gdImageSetResolution(gdImagePtr im, const unsigned int res_x, const unsigned int res_y);
 void gdImageChar(gdImagePtr im, gdFontPtr f, int x, int y, int c, int color);
 void gdImageCharUp(gdImagePtr im, gdFontPtr f, int x, int y, int c, int color);
 void gdImageString(gdImagePtr im, gdFontPtr f, int x, int y, unsigned char *s, int color);
@@ -467,7 +470,7 @@ typedef struct {
 	double linespacing;	/* fine tune line spacing for '\n' */
 	int flags;		/* Logical OR of gdFTEX_ values */
 	int charmap;		/* TBB: 2.0.12: may be gdFTEX_Unicode,
-				   gdFTEX_Shift_JIS, or gdFTEX_Big5;
+				   gdFTEX_Shift_JIS, gdFTEX_Big5 or gdFTEX_MacRoman;
 				   when not specified, maps are searched
 				   for in the above order. */
 	int hdpi;
@@ -483,6 +486,7 @@ typedef struct {
 #define gdFTEX_Unicode 0
 #define gdFTEX_Shift_JIS 1
 #define gdFTEX_Big5 2
+#define gdFTEX_MacRoman 3
 
 /* FreeType 2 text output with fine tuning */
 char *
@@ -497,6 +501,7 @@ typedef struct {
 } gdPoint, *gdPointPtr;
 
 void gdImagePolygon(gdImagePtr im, gdPointPtr p, int n, int c);
+void gdImageOpenPolygon(gdImagePtr im, gdPointPtr p, int n, int c);
 void gdImageFilledPolygon(gdImagePtr im, gdPointPtr p, int n, int c);
 
 /* These functions still work with truecolor images,
@@ -558,7 +563,7 @@ void gdImageColorDeallocate(gdImagePtr im, int color);
 
 gdImagePtr gdImageCreatePaletteFromTrueColor (gdImagePtr im, int ditherFlag, int colorsWanted);
 
-void gdImageTrueColorToPalette(gdImagePtr im, int ditherFlag, int colorsWanted);
+int gdImageTrueColorToPalette(gdImagePtr im, int ditherFlag, int colorsWanted);
 int gdImagePaletteToTrueColor(gdImagePtr src);
 
 /* An attempt at getting the results of gdImageTrueColorToPalette
@@ -582,6 +587,11 @@ void gdImagePng(gdImagePtr im, FILE *out);
 void gdImagePngCtx(gdImagePtr im, gdIOCtx *out);
 void gdImageGif(gdImagePtr im, FILE *out);
 void gdImageGifCtx(gdImagePtr im, gdIOCtx *out);
+
+void * gdImageBmpPtr(gdImagePtr im, int *size, int compression);
+void gdImageBmp(gdImagePtr im, FILE *outFile, int compression);
+void gdImageBmpCtx(gdImagePtr im, gdIOCtxPtr out, int compression);
+
 /* 2.0.12: Compression level: 0-9 or -1, where 0 is NO COMPRESSION at all,
  * 1 is FASTEST but produces larger files, 9 provides the best
  * compression (smallest files) but takes a long time to compress, and
@@ -688,8 +698,6 @@ void gdImageCopyResampled(gdImagePtr dst, gdImagePtr src, int dstX, int dstY, in
 gdImagePtr gdImageRotate90(gdImagePtr src, int ignoretransparent);
 gdImagePtr gdImageRotate180(gdImagePtr src, int ignoretransparent);
 gdImagePtr gdImageRotate270(gdImagePtr src, int ignoretransparent);
-gdImagePtr gdImageRotate45(gdImagePtr src, double dAngle, int clrBack, int ignoretransparent);
-gdImagePtr gdImageRotate (gdImagePtr src, double dAngle, int clrBack, int ignoretransparent);
 gdImagePtr gdImageRotateInterpolated(const gdImagePtr src, const float angle, int bgcolor);
 
 void gdImageSetBrush(gdImagePtr im, gdImagePtr brush);
@@ -712,6 +720,18 @@ enum gdPixelateMode {
 };
 
 int gdImagePixelate(gdImagePtr im, int block_size, const unsigned int mode);
+
+typedef struct {
+	int sub;
+	int plus;
+	unsigned int num_colors;
+	int *colors;
+	unsigned int seed;
+} gdScatter, *gdScatterPtr;
+
+int gdImageScatter(gdImagePtr im, int sub, int plus);
+int gdImageScatterColor(gdImagePtr im, int sub, int plus, int colors[], unsigned int num_colors);
+int gdImageScatterEx(gdImagePtr im, gdScatterPtr s);
 
 /* Macros to access information about images. */
 
@@ -741,6 +761,8 @@ int gdImagePixelate(gdImagePtr im, int block_size, const unsigned int mode);
 	of image is also your responsibility. */
 #define gdImagePalettePixel(im, x, y) (im)->pixels[(y)][(x)]
 #define gdImageTrueColorPixel(im, x, y) (im)->tpixels[(y)][(x)]
+#define gdImageResolutionX(im) (im)->res_x
+#define gdImageResolutionY(im) (im)->res_y
 
 /* I/O Support routines. */
 
@@ -777,7 +799,7 @@ int gdImageBrightness(gdImagePtr src, int brightness);
 /* Set the contrast level <contrast> for the image <src> */
 int gdImageContrast(gdImagePtr src, double contrast);
 
-/* Simply adds or substracts respectively red, green or blue to a pixel */
+/* Simply adds or subtracts respectively red, green or blue to a pixel */
 int gdImageColor(gdImagePtr src, const int red, const int green, const int blue, const int alpha);
 
 /* Image convolution by a 3x3 custom matrix */
@@ -802,7 +824,7 @@ void gdImageFlipHorizontal(gdImagePtr im);
 void gdImageFlipVertical(gdImagePtr im);
 void gdImageFlipBoth(gdImagePtr im);
 
-#define GD_FLIP_HORINZONTAL 1
+#define GD_FLIP_HORIZONTAL 1
 #define GD_FLIP_VERTICAL 2
 #define GD_FLIP_BOTH 3
 
@@ -880,7 +902,7 @@ int gdTransformAffineBoundingBox(gdRectPtr src, const double affine[6], gdRectPt
 
 
 #define GD_CMP_IMAGE		1	/* Actual image IS different */
-#define GD_CMP_NUM_COLORS	2	/* Number of Colours in pallette differ */
+#define GD_CMP_NUM_COLORS	2	/* Number of Colours in palette differ */
 #define GD_CMP_COLOR		4	/* Image colours differ */
 #define GD_CMP_SIZE_X		8	/* Image width differs */
 #define GD_CMP_SIZE_Y		16	/* Image heights differ */

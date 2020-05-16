@@ -1,58 +1,54 @@
 --TEST--
-#46127, openssl_sign/verify: accept different algos 
+#46127 php_openssl_tcp_sockop_accept forgets to set context on accepted stream
 --SKIPIF--
-<?php 
-if (!extension_loaded("openssl")) die("skip, openssl required");
-if (!extension_loaded("pcntl")) die("skip, pcntl required");
-if (OPENSSL_VERSION_NUMBER < 0x009070af) die("skip");
+<?php
+if (!extension_loaded("openssl")) die("skip openssl not loaded");
+if (!function_exists("proc_open")) die("skip no proc_open");
 ?>
 --FILE--
 <?php
+$certFile = __DIR__ . DIRECTORY_SEPARATOR . 'bug46127.pem.tmp';
 
-function ssl_server($port) {
-	$pem = dirname(__FILE__) . '/bug46127.pem';
-	$ssl = array(
-			'verify_peer' => false,
-			'allow_self_signed' => true,
-			'local_cert' => $pem,
-			//		'passphrase' => '',
-		    );
-	$context = stream_context_create(array('ssl' => $ssl));
-	$sock = stream_socket_server('ssl://127.0.0.1:'.$port, $errno, $errstr, STREAM_SERVER_BIND | STREAM_SERVER_LISTEN, $context);
-	if (!$sock) return false;
+$serverCode = <<<'CODE'
+    $serverUri = "ssl://127.0.0.1:64321";
+    $serverFlags = STREAM_SERVER_BIND | STREAM_SERVER_LISTEN;
+    $serverCtx = stream_context_create(['ssl' => [
+        'local_cert' => '%s',
+    ]]);
 
-	$link = stream_socket_accept($sock);
-	if (!$link) return false; // bad link?
+    $sock = stream_socket_server($serverUri, $errno, $errstr, $serverFlags, $serverCtx);
+    phpt_notify();
 
-	fputs($link, "Sending bug 46127\n");
+    $link = stream_socket_accept($sock);
+    fwrite($link, "Sending bug 46127\n");
+CODE;
+$serverCode = sprintf($serverCode, $certFile);
 
-	// close stuff
-	fclose($link);
-	fclose($sock);
+$clientCode = <<<'CODE'
+    $serverUri = "ssl://127.0.0.1:64321";
+    $clientFlags = STREAM_CLIENT_CONNECT;
 
-	exit;
-}
+    $clientCtx = stream_context_create(['ssl' => [
+        'verify_peer' => false,
+        'verify_peer_name' => false
+    ]]);
 
-echo "Running bug46127\n";
+    phpt_wait();
+    $sock = stream_socket_client($serverUri, $errno, $errstr, 2, $clientFlags, $clientCtx);
 
-$port = rand(15000, 32000);
+    echo fgets($sock);
+CODE;
 
-$pid = pcntl_fork();
-if ($pid == 0) { // child
-	ssl_server($port);
-	exit;
-}
+include 'CertificateGenerator.inc';
+$certificateGenerator = new CertificateGenerator();
+$certificateGenerator->saveNewCertAsFileWithKey('bug46127', $certFile);
 
-// client or failed
-sleep(1);
-$sock = fsockopen('ssl://127.0.0.1', $port, $errno, $errstr);
-if (!$sock) exit;
-
-echo fgets($sock);
-
-pcntl_waitpid($pid, $status);
-
+include 'ServerClientTestCase.inc';
+ServerClientTestCase::getInstance()->run($clientCode, $serverCode);
 ?>
---EXPECTF--
-Running bug46127
+--CLEAN--
+<?php
+@unlink(__DIR__ . DIRECTORY_SEPARATOR . 'bug46127.pem.tmp');
+?>
+--EXPECT--
 Sending bug 46127

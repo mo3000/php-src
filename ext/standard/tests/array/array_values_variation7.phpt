@@ -3,13 +3,13 @@ Test array_values() function : usage variations - Internal order check
 --FILE--
 <?php
 /* Prototype  : array array_values(array $input)
- * Description: Return just the values from the input array 
+ * Description: Return just the values from the input array
  * Source code: ext/standard/array.c
  */
 
 /*
  * Check that array_values is re-assigning keys according to the internal order of the array,
- * and is not dependant on the \$input argument's keys
+ * and is not dependent on the \$input argument's keys
  */
 
 echo "*** Testing array_values() : usage variations ***\n";
@@ -25,8 +25,7 @@ var_dump(array_values($input));
 
 echo "Done";
 ?>
-
---EXPECTF--
+--EXPECT--
 *** Testing array_values() : usage variations ***
 
 -- $input argument: --

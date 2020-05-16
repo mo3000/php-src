@@ -5,7 +5,7 @@ Make sure trait does not implement an interface.
 error_reporting(E_ALL);
 
 interface MyInterface {
-	public function a();
+    public function a();
 }
 
 trait THello implements MyInterface {
@@ -15,5 +15,5 @@ trait THello implements MyInterface {
 }
 
 ?>
---EXPECTF--	
-Fatal error: Cannot use 'MyInterface' as interface on 'THello' since it is a Trait in %s on line %d
+--EXPECTF--
+Parse error: syntax error, unexpected 'implements' (T_IMPLEMENTS), expecting '{' in %s on line %d

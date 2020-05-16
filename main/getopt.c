@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,8 +14,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -28,6 +24,7 @@
 #define OPTERRNF (2)
 #define OPTERRARG (3)
 
+// Print error message to stderr and return -2 to distinguish it from '?' command line option.
 static int php_opt_error(int argc, char * const *argv, int oint, int optchr, int err, int show_err) /* {{{ */
 {
 	if (show_err)
@@ -49,7 +46,7 @@ static int php_opt_error(int argc, char * const *argv, int oint, int optchr, int
 			break;
 		}
 	}
-	return('?');
+	return PHP_GETOPT_INVALID_ARG;
 }
 /* }}} */
 
@@ -59,8 +56,16 @@ PHPAPI int php_getopt(int argc, char* const *argv, const opt_struct opts[], char
 {
 	static int optchr = 0;
 	static int dash = 0; /* have already seen the - */
+	static char **prev_optarg = NULL;
 
 	php_optidx = -1;
+
+	if(prev_optarg && prev_optarg != optarg) {
+		/* reset the state */
+		optchr = 0;
+		dash = 0;
+	}
+	prev_optarg = optarg;
 
 	if (*optind >= argc) {
 		return(EOF);
@@ -80,8 +85,8 @@ PHPAPI int php_getopt(int argc, char* const *argv, const opt_struct opts[], char
 		}
 	}
 	if ((argv[*optind][0] == '-') && (argv[*optind][1] == '-')) {
-		char *pos;
-		int arg_end = strlen(argv[*optind])-1;
+		const char *pos;
+		size_t arg_end = strlen(argv[*optind])-1;
 
 		/* '--' indicates end of args if not followed by a known long option name */
 		if (argv[*optind][2] == '\0') {
@@ -111,7 +116,7 @@ PHPAPI int php_getopt(int argc, char* const *argv, const opt_struct opts[], char
 
 		optchr = 0;
 		dash = 0;
-		arg_start += strlen(opts[php_optidx].opt_name);
+		arg_start += (int)strlen(opts[php_optidx].opt_name);
 	} else {
 		if (!dash) {
 			dash = 1;
@@ -188,12 +193,3 @@ PHPAPI int php_getopt(int argc, char* const *argv, const opt_struct opts[], char
 	return(0);	/* never reached */
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

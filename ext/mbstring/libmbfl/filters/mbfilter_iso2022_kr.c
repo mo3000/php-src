@@ -5,7 +5,7 @@
  * LICENSE NOTICES
  *
  * This file is part of "streamable kanji code filter and converter",
- * which is distributed under the terms of GNU Lesser General Public 
+ * which is distributed under the terms of GNU Lesser General Public
  * License (version 2) as published by the Free Software Foundation.
  *
  * This software is distributed in the hope that it will be useful,
@@ -24,7 +24,7 @@
 /*
  * The source code included in this files was separated from mbfilter_kr.c
  * by moriyoshi koizumi <moriyoshi@php.net> on 4 dec 2002.
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -43,7 +43,9 @@ const mbfl_encoding mbfl_encoding_2022kr = {
 	"ISO-2022-KR",
 	NULL,
 	NULL,
-	MBFL_ENCTYPE_MBCS | MBFL_ENCTYPE_SHFTCODE | MBFL_ENCTYPE_GL_UNSAFE
+	MBFL_ENCTYPE_MBCS | MBFL_ENCTYPE_SHFTCODE | MBFL_ENCTYPE_GL_UNSAFE,
+	&vtbl_2022kr_wchar,
+	&vtbl_wchar_2022kr
 };
 
 const struct mbfl_identify_vtbl vtbl_identify_2022kr = {
@@ -59,7 +61,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_2022kr = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_2022kr,
-	mbfl_filt_conv_any_2022kr_flush
+	mbfl_filt_conv_any_2022kr_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_2022kr_wchar = {
@@ -68,7 +71,8 @@ const struct mbfl_convert_vtbl vtbl_2022kr_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_2022kr_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 #define CK(statement)	do { if ((statement) < 0) return (-1); } while (0)
@@ -89,9 +93,9 @@ retry:
 		if (c == 0x1b) { /* ESC */
 			filter->status += 2;
 		} else if (c == 0x0f) { /* SI (ASCII) */
-			filter->status &= ~0xff; 
+			filter->status &= ~0xff;
 		} else if (c == 0x0e) { /* SO (KSC5601) */
-			filter->status |= 0x10; 
+			filter->status |= 0x10;
 		} else if ((filter->status & 0x10) != 0  && c > 0x20 && c < 0x7f) {
 			/* KSC5601 lead byte */
 			filter->cache = c;
@@ -131,7 +135,7 @@ retry:
 					w = 0;
 				}
 			}
-			
+
 			if (w <= 0) {
 				w = (c1 << 8) | c;
 				w &= MBFL_WCSPLANE_MASK;
@@ -218,7 +222,7 @@ mbfl_filt_conv_wchar_2022kr(int c, mbfl_convert_filter *filter)
 	c1 = (s >> 8) & 0xff;
 	c2 = s & 0xff;
 	/* exclude UHC extension area */
-	if (c1 < 0xa1 || c2 < 0xa1){ 
+	if (c1 < 0xa1 || c2 < 0xa1){
 		s = c;
 	}
 	if (s & 0x8000) {
@@ -261,9 +265,7 @@ mbfl_filt_conv_wchar_2022kr(int c, mbfl_convert_filter *filter)
 			CK((*filter->output_function)(s & 0xff, filter->data));
 		}
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
@@ -355,5 +357,3 @@ retry:
 
 	return c;
 }
-
-

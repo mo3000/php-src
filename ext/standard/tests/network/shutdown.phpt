@@ -6,59 +6,67 @@ stream_socket_shutdown() test on IPv4 TCP Loopback
 ?>
 --FILE--
 <?php
-	/* Setup socket server */
-	$server = stream_socket_server('tcp://127.0.0.1:31337');
-	if (!$server) {
-		die('Unable to create AF_INET socket [server]');
-	}
 
-	/* Connect and send request 1 */
-	$client1 = stream_socket_client('tcp://127.0.0.1:31337');
-	if (!$client1) {
-		die('Unable to create AF_INET socket [client]');
-	}
-	@fwrite($client1, "Client 1\n");
-	stream_socket_shutdown($client1, STREAM_SHUT_WR);
-	@fwrite($client1, "Error 1\n");
+  for ($i=0; $i<100; $i++) {
+    $port = rand(10000, 65000);
+    /* Setup socket server */
+    $server = @stream_socket_server("tcp://127.0.0.1:$port");
+    if ($server) {
+      break;
+    }
+  }
 
-	/* Connect and send request 2 */
-	$client2 = stream_socket_client('tcp://127.0.0.1:31337');
-	if (!$client2) {
-		die('Unable to create AF_INET socket [client]');
-	}
-	@fwrite($client2, "Client 2\n");
-	stream_socket_shutdown($client2, STREAM_SHUT_WR);
-	@fwrite($client2, "Error 2\n");
+if (!$server) {
+        die('Unable to create AF_INET socket [server]');
+    }
 
-	/* Accept connection 1 */
-	$socket = stream_socket_accept($server);
-	if (!$socket) {
-		die('Unable to accept connection');
-	}
-	@fwrite($socket, fgets($socket));
-	@fwrite($socket, fgets($socket));
-	fclose($socket);
+    /* Connect and send request 1 */
+    $client1 = stream_socket_client("tcp://127.0.0.1:$port");
+    if (!$client1) {
+        die('Unable to create AF_INET socket [client]');
+    }
+    @fwrite($client1, "Client 1\n");
+    stream_socket_shutdown($client1, STREAM_SHUT_WR);
+    @fwrite($client1, "Error 1\n");
 
-	/* Read Response 1 */
-	echo fgets($client1);
-	echo fgets($client1);
+    /* Connect and send request 2 */
+    $client2 = stream_socket_client("tcp://127.0.0.1:$port");
+    if (!$client2) {
+        die('Unable to create AF_INET socket [client]');
+    }
+    @fwrite($client2, "Client 2\n");
+    stream_socket_shutdown($client2, STREAM_SHUT_WR);
+    @fwrite($client2, "Error 2\n");
 
-	/* Accept connection 2 */
-	$socket = stream_socket_accept($server);
-	if (!$socket) {
-		die('Unable to accept connection');
-	}
-	@fwrite($socket, fgets($socket));
-	@fwrite($socket, fgets($socket));
-	fclose($socket);
+    /* Accept connection 1 */
+    $socket = stream_socket_accept($server);
+    if (!$socket) {
+        die('Unable to accept connection');
+    }
+    @fwrite($socket, fgets($socket));
+    @fwrite($socket, fgets($socket));
+    fclose($socket);
 
-	/* Read Response 2 */
-	echo fgets($client2);
-	echo fgets($client2);
+    /* Read Response 1 */
+    echo fgets($client1);
+    echo fgets($client1);
 
-	fclose($client1);
-	fclose($client2);
-	fclose($server);
+    /* Accept connection 2 */
+    $socket = stream_socket_accept($server);
+    if (!$socket) {
+        die('Unable to accept connection');
+    }
+    @fwrite($socket, fgets($socket));
+    @fwrite($socket, fgets($socket));
+    fclose($socket);
+
+    /* Read Response 2 */
+    echo fgets($client2);
+    echo fgets($client2);
+
+    fclose($client1);
+    fclose($client2);
+    fclose($server);
 ?>
 --EXPECT--
 Client 1

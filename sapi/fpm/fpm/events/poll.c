@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,14 +14,12 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "../fpm_config.h"
 #include "../fpm_events.h"
 #include "../fpm.h"
 #include "../zlog.h"
 
-#if HAVE_POLL
+#ifdef HAVE_POLL
 
 #include <poll.h>
 #include <errno.h>
@@ -42,7 +38,7 @@ static struct fpm_event_module_s poll_module = {
 	.clean = fpm_event_poll_clean,
 	.wait = fpm_event_poll_wait,
 	.add = fpm_event_poll_add,
-	.remove = fpm_event_poll_remove, 
+	.remove = fpm_event_poll_remove,
 };
 
 static struct pollfd *pollfds = NULL;
@@ -56,7 +52,7 @@ static int next_free_slot = 0;
  */
 struct fpm_event_module_s *fpm_event_poll_module() /* {{{ */
 {
-#if HAVE_POLL
+#ifdef HAVE_POLL
 	return &poll_module;
 #else
 	return NULL;
@@ -64,7 +60,7 @@ struct fpm_event_module_s *fpm_event_poll_module() /* {{{ */
 }
 /* }}} */
 
-#if HAVE_POLL
+#ifdef HAVE_POLL
 
 /*
  * Init the module
@@ -150,7 +146,7 @@ static int fpm_event_poll_wait(struct fpm_event_queue_s *queue, unsigned long in
 			return -1;
 		}
 	}
-	
+
 	/* events have been triggered */
 	if (ret > 0) {
 
@@ -220,7 +216,7 @@ static int fpm_event_poll_add(struct fpm_event_s *ev) /* {{{ */
 		return 0;
 	}
 
-	zlog(ZLOG_ERROR, "poll: not enought space to add event (fd=%d)", ev->fd);
+	zlog(ZLOG_ERROR, "poll: not enough space to add event (fd=%d)", ev->fd);
 	return -1;
 }
 /* }}} */

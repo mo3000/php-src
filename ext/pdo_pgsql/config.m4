@@ -1,10 +1,8 @@
-dnl $Id$
-dnl config.m4 for extension pdo_pgsql
-dnl vim:et:sw=2:ts=2:
-
-PHP_ARG_WITH(pdo-pgsql,for PostgreSQL support for PDO,
-[  --with-pdo-pgsql[=DIR]    PDO: PostgreSQL support.  DIR is the PostgreSQL base
-                            install directory or the path to pg_config])
+PHP_ARG_WITH([pdo-pgsql],
+  [for PostgreSQL support for PDO],
+  [AS_HELP_STRING([[--with-pdo-pgsql[=DIR]]],
+    [PDO: PostgreSQL support. DIR is the PostgreSQL base install directory or
+    the path to pg_config])])
 
 if test "$PHP_PDO_PGSQL" != "no"; then
 
@@ -34,7 +32,7 @@ if test "$PHP_PDO_PGSQL" != "no"; then
     else
       PGSQL_SEARCH_PATHS=$PHP_PDO_PGSQL
     fi
-  
+
     for i in $PGSQL_SEARCH_PATHS; do
       for j in include include/pgsql include/postgres include/postgresql ""; do
         if test -r "$i/$j/libpq-fe.h"; then
@@ -47,7 +45,7 @@ if test "$PHP_PDO_PGSQL" != "no"; then
       done
 
       for j in $PHP_LIBDIR $PHP_LIBDIR/pgsql $PHP_LIBDIR/postgres $PHP_LIBDIR/postgresql ""; do
-        if test -f "$i/$j/libpq.so" || test -f "$i/$j/libpq.a"; then 
+        if test -f "$i/$j/libpq.so" || test -f "$i/$j/libpq.a"; then
           PGSQL_LIBDIR=$i/$j
         fi
       done
@@ -68,33 +66,14 @@ if test "$PHP_PDO_PGSQL" != "no"; then
 
   AC_DEFINE(HAVE_PDO_PGSQL,1,[Whether to build PostgreSQL for PDO support or not])
 
-  AC_MSG_CHECKING([for openssl dependencies])
-  grep openssl $PGSQL_INCLUDE/libpq-fe.h >/dev/null 2>&1
-  if test $? -eq 0 ; then
-    AC_MSG_RESULT([yes])
-    dnl First try to find pkg-config
-    AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
-    if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
-      PDO_PGSQL_CFLAGS=`$PKG_CONFIG openssl --cflags`
-    fi
-  else
-    AC_MSG_RESULT([no])
-  fi
-
   old_LIBS=$LIBS
   old_LDFLAGS=$LDFLAGS
   LDFLAGS="-L$PGSQL_LIBDIR $LDFLAGS"
-  AC_CHECK_LIB(pq, PQparameterStatus,AC_DEFINE(HAVE_PQPARAMETERSTATUS,1,[PostgreSQL 7.4 or later]), [
-    echo "Unable to build the PDO PostgreSQL driver: libpq 7.4+ is required"
-    exit 1
-  ])
 
-  AC_CHECK_LIB(pq, PQprepare,AC_DEFINE(HAVE_PQPREPARE,1,[PostgreSQL 8.0 or later]))
-  AC_CHECK_LIB(pq, PQescapeStringConn, AC_DEFINE(HAVE_PQESCAPE_CONN,1,[PostgreSQL 8.1.4 or later]))
-  AC_CHECK_LIB(pq, PQescapeByteaConn, AC_DEFINE(HAVE_PQESCAPE_BYTEA_CONN,1,[PostgreSQL 8.1.4 or later]))
-
-  AC_CHECK_LIB(pq, pg_encoding_to_char,AC_DEFINE(HAVE_PGSQL_WITH_MULTIBYTE_SUPPORT,1,[Whether libpq is compiled with --enable-multibyte]))
-  
+  AC_CHECK_LIB(pq, PQprepare,, AC_MSG_ERROR([Unable to build the PDO PostgreSQL driver: a newer libpq is required]))
+  AC_CHECK_LIB(pq, PQexecParams,, AC_MSG_ERROR([Unable to build the PDO PostgreSQL driver: a newer libpq is required]))
+  AC_CHECK_LIB(pq, PQescapeStringConn,, AC_MSG_ERROR([Unable to build the PDO PostgreSQL driver: a newer libpq is required]))
+  AC_CHECK_LIB(pq, PQescapeByteaConn,, AC_MSG_ERROR([Unable to build the PDO PostgreSQL driver: a newer libpq is required]))
 
   LIBS=$old_LIBS
   LDFLAGS=$old_LDFLAGS
@@ -104,26 +83,8 @@ if test "$PHP_PDO_PGSQL" != "no"; then
 
   PHP_ADD_INCLUDE($PGSQL_INCLUDE)
 
-  ifdef([PHP_CHECK_PDO_INCLUDES],
-  [
-    PHP_CHECK_PDO_INCLUDES
-  ],[
-    AC_MSG_CHECKING([for PDO includes])
-    if test -f $abs_srcdir/include/php/ext/pdo/php_pdo_driver.h; then
-      pdo_cv_inc_path=$abs_srcdir/ext
-    elif test -f $abs_srcdir/ext/pdo/php_pdo_driver.h; then
-      pdo_cv_inc_path=$abs_srcdir/ext
-    elif test -f $prefix/include/php/ext/pdo/php_pdo_driver.h; then
-      pdo_cv_inc_path=$prefix/include/php/ext
-    else
-      AC_MSG_ERROR([Cannot find php_pdo_driver.h.])
-    fi
-    AC_MSG_RESULT($pdo_cv_inc_path)
-  ])
+  PHP_CHECK_PDO_INCLUDES
 
-  PHP_NEW_EXTENSION(pdo_pgsql, pdo_pgsql.c pgsql_driver.c pgsql_statement.c, $ext_shared,,-I$pdo_cv_inc_path $PDO_PGSQL_CFLAGS)
-  ifdef([PHP_ADD_EXTENSION_DEP],
-  [
-    PHP_ADD_EXTENSION_DEP(pdo_pgsql, pdo) 
-  ])
+  PHP_NEW_EXTENSION(pdo_pgsql, pdo_pgsql.c pgsql_driver.c pgsql_statement.c, $ext_shared,,-I$pdo_cv_inc_path)
+  PHP_ADD_EXTENSION_DEP(pdo_pgsql, pdo)
 fi

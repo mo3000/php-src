@@ -123,7 +123,7 @@ Bug #34066 (recursive array_walk causes segfault)
                 "ProceedKeyArticle"	=>	"01",
                 "ActionKey"		=>	"00",
                 "ContactCommissionArticle"=>	"0,00",
-                "QuantDependantPriceKey"=>	"",
+                "QuantdependentPriceKey"=>	"",
                 "Quant"			=>	"1",
                 "QuantUnit"		=>	"",
                 "Meas" => array(
@@ -245,27 +245,27 @@ function gen_xml($val, $key, $prefix)
     global $xml_fd;
     print "gen_xml(prefix=$prefix)\n";
     if (is_array($val)) {
-	if (preg_match('/^\d+$/', $key)) {
-	    if ($key == 1) {
-		print substr($prefix, 0, -1) . "\n";
-	    }
-	    array_walk($val, "gen_xml", "$prefix@");
-	}
-	else {
-	    array_walk($val, "gen_xml", "$prefix$key/");
-	}
+    if (preg_match('/^\d+$/', $key)) {
+        if ($key == 1) {
+        print substr($prefix, 0, -1) . "\n";
+        }
+        array_walk($val, "gen_xml", "$prefix@");
     }
     else {
-	    if (strlen($val) > 0)
-		print "$prefix$key=$val\n";
-	    else
-		print "$prefix$key\n";
+        array_walk($val, "gen_xml", "$prefix$key/");
+    }
+    }
+    else {
+        if (strlen($val) > 0)
+        print "$prefix$key=$val\n";
+        else
+        print "$prefix$key\n";
     }
     print "gen_xml(prefix=$prefix) end\n";
 }
 echo "Done\n";
 ?>
---EXPECTF--	
+--EXPECT--
 gen_xml(prefix=/Docs/)
 gen_xml(prefix=/Docs/@)
 /Docs/@Version=1.0
@@ -584,7 +584,7 @@ gen_xml(prefix=/Docs/Doc/DocItems/DocItem/)
 /Docs/Doc/DocItems/DocItem/ContactCommissionArticle=0,00
 gen_xml(prefix=/Docs/Doc/DocItems/DocItem/) end
 gen_xml(prefix=/Docs/Doc/DocItems/DocItem/)
-/Docs/Doc/DocItems/DocItem/QuantDependantPriceKey
+/Docs/Doc/DocItems/DocItem/QuantdependentPriceKey
 gen_xml(prefix=/Docs/Doc/DocItems/DocItem/) end
 gen_xml(prefix=/Docs/Doc/DocItems/DocItem/)
 /Docs/Doc/DocItems/DocItem/Quant=1

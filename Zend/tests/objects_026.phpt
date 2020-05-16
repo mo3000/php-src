@@ -4,10 +4,13 @@ Using $this when out of context
 <?php
 
 try {
-	$this->a = 1;
+    $this->a = 1;
 } catch (Exception $e) {
 }
 
 ?>
 --EXPECTF--
-Fatal error: Using $this when not in object context in %s on line %d
+Fatal error: Uncaught Error: Using $this when not in object context in %s:%d
+Stack trace:
+#0 {main}
+  thrown in %s on line %d

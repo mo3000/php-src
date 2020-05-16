@@ -7,6 +7,7 @@ comment=debug builds show some additional E_NOTICE errors
 upload_max_filesize=1024
 session.save_path=
 session.name=PHPSESSID
+session.use_strict_mode=0
 session.use_cookies=1
 session.use_only_cookies=0
 session.upload_progress.enabled=1
@@ -15,6 +16,7 @@ session.upload_progress.prefix=upload_progress_
 session.upload_progress.name=PHP_SESSION_UPLOAD_PROGRESS
 session.upload_progress.freq=1%
 session.upload_progress.min_freq=0.000000001
+session.save_handler=files
 --SKIPIF--
 <?php include('skipif.inc'); ?>
 --COOKIE--
@@ -53,30 +55,30 @@ session_destroy();
 string(%d) "rfc1867-tests"
 bool(true)
 array(2) {
-  [%u|b%"file1"]=>
+  ["file1"]=>
   array(5) {
-    [%u|b%"name"]=>
-    %string|unicode%(9) "file1.txt"
-    [%u|b%"type"]=>
-    %string|unicode%(0) ""
-    [%u|b%"tmp_name"]=>
-    %string|unicode%(%d) "%s"
-    [%u|b%"error"]=>
+    ["name"]=>
+    string(9) "file1.txt"
+    ["type"]=>
+    string(0) ""
+    ["tmp_name"]=>
+    string(%d) "%s"
+    ["error"]=>
     int(0)
-    [%u|b%"size"]=>
+    ["size"]=>
     int(1)
   }
-  [%u|b%"file2"]=>
+  ["file2"]=>
   array(5) {
-    [%u|b%"name"]=>
-    %string|unicode%(9) "file2.txt"
-    [%u|b%"type"]=>
-    %string|unicode%(0) ""
-    [%u|b%"tmp_name"]=>
-    %string|unicode%(%d) "%s"
-    [%u|b%"error"]=>
+    ["name"]=>
+    string(9) "file2.txt"
+    ["type"]=>
+    string(0) ""
+    ["tmp_name"]=>
+    string(%d) "%s"
+    ["error"]=>
     int(0)
-    [%u|b%"size"]=>
+    ["size"]=>
     int(1)
   }
 }

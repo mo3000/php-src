@@ -3,13 +3,27 @@ Testing socket_get_status()
 --FILE--
 <?php
 
-$tcp_socket = stream_socket_server('tcp://127.0.0.1:31337');
-var_dump(socket_get_status($tcp_socket));
-fclose($tcp_socket);
+for ($i=0; $i<100; $i++) {
+  $port = rand(10000, 65000);
+  /* Setup socket server */
+  $server = @stream_socket_server("tcp://127.0.0.1:$port");
+  if ($server) {
+    break;
+  }
+}
+
+var_dump(socket_get_status($server));
+fclose($server);
 
 ?>
 --EXPECTF--
 array(7) {
+  ["timed_out"]=>
+  bool(false)
+  ["blocked"]=>
+  bool(true)
+  ["eof"]=>
+  bool(false)
   ["stream_type"]=>
   string(%d) "tcp_socket%S"
   ["mode"]=>
@@ -17,11 +31,5 @@ array(7) {
   ["unread_bytes"]=>
   int(0)
   ["seekable"]=>
-  bool(false)
-  ["timed_out"]=>
-  bool(false)
-  ["blocked"]=>
-  bool(true)
-  ["eof"]=>
   bool(false)
 }

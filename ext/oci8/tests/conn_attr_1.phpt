@@ -1,24 +1,26 @@
 --TEST--
 Set and get of connection attributes with all types of connections.
 --SKIPIF--
-<?php if (!extension_loaded('oci8')) die("skip no oci8 extension"); 
+<?php if (!extension_loaded('oci8')) die("skip no oci8 extension");
 $target_dbs = array('oracledb' => true, 'timesten' => false);  // test runs on these DBs
-require(dirname(__FILE__).'/skipif.inc');
+require(__DIR__.'/skipif.inc');
 
 if (strcasecmp($user, "system") && strcasecmp($user, "sys"))
     die("skip needs to be run as a DBA user");
 if ($test_drcp) die("skip output might vary with DRCP");
 
-if (preg_match('/Release 1[01]\./', oci_server_version($c), $matches) !== 1) {
+preg_match('/.*Release ([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)\.([[:digit:]]+)*/', oci_server_version($c), $matches);
+if (!(isset($matches[0]) && $matches[1] >= 10)) {
 	die("skip expected output only valid when using Oracle 10g or greater database server");
-} else if (preg_match('/^1[01]\./', oci_client_version()) != 1) {
-    die("skip test expected to work only with Oracle 10g or greater version of client");
 }
-
 ?>
 --FILE--
 <?php
-require(dirname(__FILE__)."/conn_attr.inc");
+
+$testuser     = 'testuser_attr_1';  // Used in conn_attr.inc
+$testpassword = 'testuser';
+
+require(__DIR__."/conn_attr.inc");
 
 $attr_array = array('MODULE','ACTION','CLIENT_INFO','CLIENT_IDENTIFIER');
 
@@ -34,19 +36,19 @@ echo"**Test 1.2 - Set and get values for the attributes **************\n";
 
 $conn1 = get_conn(1); //oci_connect()
 foreach($attr_array as $attr) {
-	set_attr($conn1,$attr,1);
+    set_attr($conn1,$attr,1);
     get_attr($conn1,$attr);
 }
 
 $conn2 = get_conn(2); //oci_pconnect()
 foreach($attr_array as $attr) {
-	set_attr($conn2,$attr,2);
+    set_attr($conn2,$attr,2);
     get_attr($conn2,$attr);
 }
 
 $conn3 = get_conn(3); //oci_new_connect()
 foreach($attr_array as $attr) {
-	set_attr($conn3,$attr,3);
+    set_attr($conn3,$attr,3);
     get_attr($conn3,$attr);
 }
 

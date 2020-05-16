@@ -6,17 +6,17 @@ Test 3: Exception Test
 <?php
 
 $dom = new domdocument;
-$dom->load(dirname(__FILE__)."/book.xml");
+$dom->load(__DIR__."/book.xml");
 $rootNode = $dom->documentElement;
 print "--- Catch exception with try/catch\n";
 try {
     $rootNode->appendChild($rootNode);
 } catch (domexception $e) {
-	ob_start();
+    ob_start();
     var_dump($e);
-	$contents = ob_get_contents();
-	ob_end_clean();
-	echo preg_replace('/object\(DOMElement\).+\{.*?\}/s', 'DOMElement', $contents);
+    $contents = ob_get_contents();
+    ob_end_clean();
+    echo preg_replace('/object\(DOMElement\).+\{.*?\}/s', 'DOMElement', $contents);
 }
 print "--- Don't catch exception with try/catch\n";
 $rootNode->appendChild($rootNode);
@@ -62,7 +62,7 @@ object(DOMException)#%d (%d) {
 }
 --- Don't catch exception with try/catch
 
-Fatal error: Uncaught exception 'DOMException' with message 'Hierarchy Request Error' in %sdom003.php:%d
+Fatal error: Uncaught DOMException: Hierarchy Request Error in %sdom003.php:%d
 Stack trace:
 #0 %sdom003.php(%d): DOMNode->appendChild(Object(DOMElement))
 #1 {main}

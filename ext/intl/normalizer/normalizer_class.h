@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -38,6 +36,6 @@ typedef struct {
 #define NORMALIZER_ERROR_CODE(co)   INTL_ERROR_CODE(NORMALIZER_ERROR(co))
 #define NORMALIZER_ERROR_CODE_P(co) &(INTL_ERROR_CODE(NORMALIZER_ERROR(co)))
 
-void normalizer_register_Normalizer_class( TSRMLS_D );
+void normalizer_register_Normalizer_class( void );
 extern zend_class_entry *Normalizer_ce_ptr;
 #endif // #ifndef NORMALIZER_CLASS_H

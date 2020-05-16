@@ -7,6 +7,6 @@ Error case: class constant as an array
       const myConst = array();
   }
 ?>
---EXPECTF--
-
-Fatal error: Arrays are not allowed in class constants in %s on line 4
+===DONE===
+--EXPECT--
+===DONE===

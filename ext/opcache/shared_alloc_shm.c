@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend OPcache                                                         |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,10 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    |          Stanislav Malyshev <stas@zend.com>                          |
-   |          Dmitry Stogov <dmitry@zend.com>                             |
+   |          Dmitry Stogov <dmitry@php.net>                              |
    +----------------------------------------------------------------------+
 */
 
@@ -29,7 +29,6 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
-#include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -54,20 +53,20 @@ typedef struct  {
 static int create_segments(size_t requested_size, zend_shared_segment_shm ***shared_segments_p, int *shared_segments_count, char **error_in)
 {
 	int i;
-	unsigned int allocate_size = 0, remaining_bytes = requested_size, seg_allocate_size;
+	size_t allocate_size = 0, remaining_bytes = requested_size, seg_allocate_size;
 	int first_segment_id = -1;
 	key_t first_segment_key = -1;
 	struct shmid_ds sds;
 	int shmget_flags;
 	zend_shared_segment_shm *shared_segments;
 
-    seg_allocate_size = SEG_ALLOC_SIZE_MAX;
-    /* determine segment size we _really_ need:
-     * no more than to include requested_size
-     */
-    while (requested_size * 2 <= seg_allocate_size && seg_allocate_size > SEG_ALLOC_SIZE_MIN) {
-        seg_allocate_size >>= 1;
-    }
+	seg_allocate_size = SEG_ALLOC_SIZE_MAX;
+	/* determine segment size we _really_ need:
+	 * no more than to include requested_size
+	 */
+	while (requested_size * 2 <= seg_allocate_size && seg_allocate_size > SEG_ALLOC_SIZE_MIN) {
+		seg_allocate_size >>= 1;
+	}
 
 	shmget_flags = IPC_CREAT|SHM_R|SHM_W|IPC_EXCL;
 
@@ -111,7 +110,7 @@ static int create_segments(size_t requested_size, zend_shared_segment_shm ***sha
 		}
 
 		shared_segments[i].common.p = shmat(shared_segments[i].shm_id, NULL, 0);
-		if (((int) shared_segments[i].common.p) == -1) {
+		if (shared_segments[i].common.p == (void *)-1) {
 			*error_in = "shmat";
 			shmctl(shared_segments[i].shm_id, IPC_RMID, &sds);
 			return ALLOC_FAILURE;

@@ -5,14 +5,20 @@ Dave Kelsey <d_kelsey@uk.ibm.com>
 --FILE--
 <?php
 
-/* Setup socket server */
-$server = stream_socket_server('tcp://127.0.0.1:31337');
+for ($i=0; $i<100; $i++) {
+  $port = rand(10000, 65000);
+  /* Setup socket server */
+  $server = @stream_socket_server("tcp://127.0.0.1:$port");
+  if ($server) {
+    break;
+  }
+}
 
 /* Connect to it */
-$client = fsockopen('tcp://127.0.0.1:31337');
+$client = fsockopen("tcp://127.0.0.1:$port");
 
 if (!$client) {
-	die("Unable to create socket");
+    die("Unable to create socket");
 }
 
 /* Accept that connection */
@@ -32,7 +38,7 @@ echo "\n\nClose the server side socket and read the remaining data from the clie
 fclose($socket);
 fclose($server);
 while(!feof($client)) {
-	fread($client, 1);
+    fread($client, 1);
 }
 
 echo "done\n";

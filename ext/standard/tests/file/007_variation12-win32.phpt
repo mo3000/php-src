@@ -1,5 +1,5 @@
 --TEST--
-Test fopen and fclose() functions - usage variations - "w+t" mode 
+Test fopen and fclose() functions - usage variations - "w+t" mode
 --SKIPIF--
 <?php
 if( substr(PHP_OS, 0, 3) != "WIN" )
@@ -25,7 +25,7 @@ if( substr(PHP_OS, 0, 3) != "WIN" )
    checking for the file truncation when trying to open an existing file in "w+t" mode,
    and fclose function
 */
-$file_path = dirname(__FILE__);
+$file_path = __DIR__;
 require($file_path."/file.inc");
 
 create_files($file_path, 1, "text_with_new_line", 0755, 20, "w", "007_variation", 12, "bytes");
@@ -36,7 +36,7 @@ echo "*** Test fopen() & fclose() functions:  with 'w+t' mode ***\n";
 $file_handle = fopen($file, "w+t");  //opening the file "w+t" mode
 var_dump($file_handle);  //Check for the content of handle
 var_dump( get_resource_type($file_handle) );  //Check for the type of resource
-var_dump( ftell($file_handle) );  //Initial file pointer position, expected at the begining of the file
+var_dump( ftell($file_handle) );  //Initial file pointer position, expected at the beginning of the file
 var_dump( fwrite($file_handle, $string) );  //Check for write operation; passes; expected:size of the $string
 var_dump( ftell($file_handle) );  //File pointer position after write operation, expected at the end of the file
 rewind($file_handle);
@@ -53,11 +53,11 @@ clearstatcache();
 
 unlink($file);  //Deleting the file
 fclose( fopen($file, "w+t") );  //Opening the non-existing file in "w+t" mode, which will be created
-var_dump( file_exists($file) );  //Check for the existance of file
-echo "*** Done ***\n"; 
+var_dump( file_exists($file) );  //Check for the existence of file
+echo "*** Done ***\n";
 --CLEAN--
 <?php
-unlink(dirname(__FILE__)."/007_variation12.tmp");
+unlink(__DIR__."/007_variation12.tmp");
 ?>
 --EXPECTF--
 *** Test fopen() & fclose() functions:  with 'w+t' mode ***

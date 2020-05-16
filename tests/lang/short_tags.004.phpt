@@ -1,8 +1,7 @@
 --TEST--
-short_open_tag: Off, asp_tags: Off
+short_open_tag: Off
 --INI--
 short_open_tag=off
-asp_tags=off
 --FILE--
 <%= 'so should this' %>
 
@@ -30,6 +29,6 @@ This gets echoed twice
 <? $b=3; ?>
 
 
-Notice: Undefined variable: b in %s on line %d
+Warning: Undefined variable $b in %s on line %d
 
-Notice: Undefined variable: b in %s on line %d
+Warning: Undefined variable $b in %s on line %d

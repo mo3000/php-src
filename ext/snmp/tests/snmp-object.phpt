@@ -1,14 +1,14 @@
---TEST--                                 
+--TEST--
 OO API
 --CREDITS--
 Boris Lytochkin
 --SKIPIF--
 <?php
-require_once(dirname(__FILE__).'/skipif.inc');
+require_once(__DIR__.'/skipif.inc');
 ?>
 --FILE--
 <?php
-require_once(dirname(__FILE__).'/snmp_include.inc');
+require_once(__DIR__.'/snmp_include.inc');
 
 //EXPECTF format is quickprint OFF
 snmp_set_enum_print(false);
@@ -35,7 +35,7 @@ $session = new SNMP(SNMP::VERSION_2c, $hostname, $community, $timeout, $retries)
 $orig = array('.1.3.6.1.2.1.1.1.0', '.1.3.6.1.2.1.1.5.0');
 $result = $session->get($orig, TRUE);
 foreach($orig as $oid){
-	var_dump($result[$oid]);
+    var_dump($result[$oid]);
 }
 var_dump($session->close());
 
@@ -83,12 +83,6 @@ var_dump(gettype($z));
 var_dump(count($z));
 var_dump(key($z));
 var_dump(array_shift($z));
-var_dump(key($z));
-array_shift($z);
-var_dump(key($z));
-array_shift($z);
-var_dump(key($z));
-array_shift($z);
 var_dump(key($z));
 array_shift($z);
 var_dump(key($z));
@@ -211,9 +205,6 @@ string(3) "2.0"
 string(3) "3.0"
 string(3) "4.0"
 string(3) "5.0"
-string(3) "6.0"
-string(3) "7.0"
-string(3) "8.0"
 bool(true)
 SNMPv3 (default security settings)
 string(%d) "%S"

@@ -12,7 +12,7 @@ $diff = date_diff($date, $other);
 
 var_dump($diff);
 --EXPECTF--
-object(DateInterval)#%d (15) {
+object(DateInterval)#%d (16) {
   ["y"]=>
   int(0)
   ["m"]=>
@@ -25,6 +25,8 @@ object(DateInterval)#%d (15) {
   int(0)
   ["s"]=>
   int(0)
+  ["f"]=>
+  float(0)
   ["weekday"]=>
   int(0)
   ["weekday_behavior"]=>
@@ -34,11 +36,11 @@ object(DateInterval)#%d (15) {
   ["invert"]=>
   int(0)
   ["days"]=>
-  string(1) "3"
+  int(3)
   ["special_type"]=>
   int(0)
   ["special_amount"]=>
-  string(1) "0"
+  int(0)
   ["have_weekday_relative"]=>
   int(0)
   ["have_special_relative"]=>

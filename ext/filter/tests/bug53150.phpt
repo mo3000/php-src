@@ -17,12 +17,12 @@ var_dump(filter_var('191.255.0.0', FILTER_VALIDATE_IP));
 var_dump(filter_var('191.255.0.0', FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE));
 
 ?>
---EXPECT--	
+--EXPECT--
 string(9) "127.0.0.1"
 string(3) "::1"
 bool(false)
 bool(false)
 string(9) "128.0.0.1"
-bool(false)
+string(9) "128.0.0.1"
 string(11) "191.255.0.0"
-bool(false)
+string(11) "191.255.0.0"

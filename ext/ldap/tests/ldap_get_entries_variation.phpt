@@ -11,26 +11,24 @@ Patrick Allaert <patrickallaert@php.net>
 require "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-insert_dummy_data($link);
+insert_dummy_data($link, $base);
 
 var_dump(
-	ldap_get_entries(
-		$link,
-		ldap_search($link, "dc=my-domain,dc=com", "(o=my-unexisting-domain)")
-	)
+    ldap_get_entries(
+        $link,
+        ldap_search($link, "$base", "(o=my-unexisting-domain)")
+    )
 );
 ?>
-===DONE===
 --CLEAN--
 <?php
 require "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
-remove_dummy_data($link);
+remove_dummy_data($link, $base);
 ?>
 --EXPECT--
 array(1) {
   ["count"]=>
   int(0)
 }
-===DONE===

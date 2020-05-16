@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -18,13 +16,13 @@
 #include "config.h"
 #endif
 
+#include "php_intl.h"
+
 #include <unicode/ustring.h>
 #include <locale.h>
 
-#include "php_intl.h"
 #include "formatter_class.h"
 #include "formatter_format.h"
-#include "formatter_parse.h"
 #include "intl_convert.h"
 
 #define ICU_LOCALE_BUG 1
@@ -36,11 +34,11 @@
  */
 PHP_FUNCTION( numfmt_parse )
 {
-	long type = FORMAT_TYPE_DOUBLE;
+	zend_long type = FORMAT_TYPE_DOUBLE;
 	UChar* sstr = NULL;
-	int sstr_len = 0;
+	int32_t sstr_len = 0;
 	char* str = NULL;
-	int str_len;
+	size_t str_len;
 	int32_t val32, position = 0;
 	int64_t val64;
 	double val_double;
@@ -50,13 +48,15 @@ PHP_FUNCTION( numfmt_parse )
 	FORMATTER_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Os|lz!",
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "Os|lz!",
 		&object, NumberFormatter_ce_ptr,  &str, &str_len, &type, &zposition ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,
-			"number_parse: unable to parse input params", 0 TSRMLS_CC );
+		RETURN_THROWS();
+	}
 
-		RETURN_FALSE;
+	if(zposition) {
+		position = (int32_t) zval_get_long(zposition);
+		position_p = &position;
 	}
 
 	/* Fetch the object. */
@@ -66,14 +66,10 @@ PHP_FUNCTION( numfmt_parse )
 	intl_convert_utf8_to_utf16(&sstr, &sstr_len, str, str_len, &INTL_DATA_ERROR_CODE(nfo));
 	INTL_METHOD_CHECK_STATUS( nfo, "String conversion to UTF-16 failed" );
 
-	if(zposition) {
-		convert_to_long(zposition);
-		position = (int32_t)Z_LVAL_P( zposition );
-		position_p = &position;
-	}
-
 #if ICU_LOCALE_BUG && defined(LC_NUMERIC)
-	oldlocale = setlocale(LC_NUMERIC, "C");
+	/* need to copy here since setlocale may change it later */
+	oldlocale = estrdup(setlocale(LC_NUMERIC, NULL));
+	setlocale(LC_NUMERIC, "C");
 #endif
 
 	switch(type) {
@@ -83,10 +79,10 @@ PHP_FUNCTION( numfmt_parse )
 			break;
 		case FORMAT_TYPE_INT64:
 			val64 = unum_parseInt64(FORMATTER_OBJECT(nfo), sstr, sstr_len, position_p, &INTL_DATA_ERROR_CODE(nfo));
-			if(val64 > LONG_MAX || val64 < LONG_MIN) {
+			if(val64 > ZEND_LONG_MAX || val64 < ZEND_LONG_MIN) {
 				RETVAL_DOUBLE(val64);
 			} else {
-				RETVAL_LONG((long)val64);
+				RETVAL_LONG((zend_long)val64);
 			}
 			break;
 		case FORMAT_TYPE_DOUBLE:
@@ -94,16 +90,16 @@ PHP_FUNCTION( numfmt_parse )
 			RETVAL_DOUBLE(val_double);
 			break;
 		default:
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Unsupported format type %ld", type);
+			php_error_docref(NULL, E_WARNING, "Unsupported format type " ZEND_LONG_FMT, type);
 			RETVAL_FALSE;
 			break;
 	}
 #if ICU_LOCALE_BUG && defined(LC_NUMERIC)
 	setlocale(LC_NUMERIC, oldlocale);
+	efree(oldlocale);
 #endif
 	if(zposition) {
-		zval_dtor(zposition);
-		ZVAL_LONG(zposition, position);
+		ZEND_TRY_ASSIGN_REF_LONG(zposition, position);
 	}
 
 	if (sstr) {
@@ -114,9 +110,9 @@ PHP_FUNCTION( numfmt_parse )
 }
 /* }}} */
 
-/* {{{ proto double NumberFormatter::parseCurrency( string $str, string $&currency[, int $&position] )
+/* {{{ proto float NumberFormatter::parseCurrency( string $str, string &$currency[, int &$position] )
  * Parse a number as currency. }}} */
-/* {{{ proto double numfmt_parse_currency( NumberFormatter $nf, string $str, string $&currency[, int $&position] )
+/* {{{ proto float numfmt_parse_currency( NumberFormatter $nf, string $str, string &$currency[, int &$position] )
  * Parse a number as currency.
  */
 PHP_FUNCTION( numfmt_parse_currency )
@@ -124,24 +120,20 @@ PHP_FUNCTION( numfmt_parse_currency )
 	double number;
 	UChar currency[5] = {0};
 	UChar* sstr = NULL;
-	int sstr_len = 0;
-	char *currency_str = NULL;
-	int currency_len = 0;
+	int32_t sstr_len = 0;
+	zend_string *u8str;
 	char *str;
-	int str_len;
+	size_t str_len;
 	int32_t* position_p = NULL;
 	int32_t position = 0;
 	zval *zcurrency, *zposition = NULL;
 	FORMATTER_METHOD_INIT_VARS;
 
 	/* Parse parameters. */
-	if( zend_parse_method_parameters( ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Osz|z!",
+	if( zend_parse_method_parameters( ZEND_NUM_ARGS(), getThis(), "Osz/|z!",
 		&object, NumberFormatter_ce_ptr,  &str, &str_len, &zcurrency, &zposition ) == FAILURE )
 	{
-		intl_error_set( NULL, U_ILLEGAL_ARGUMENT_ERROR,
-			"number_parse_currency: unable to parse input params", 0 TSRMLS_CC );
-
-		RETURN_FALSE;
+		RETURN_THROWS();
 	}
 
 	/* Fetch the object. */
@@ -152,15 +144,13 @@ PHP_FUNCTION( numfmt_parse_currency )
 	INTL_METHOD_CHECK_STATUS( nfo, "String conversion to UTF-16 failed" );
 
 	if(zposition) {
-		convert_to_long(zposition);
-		position = (int32_t)Z_LVAL_P( zposition );
+		position = (int32_t) zval_get_long(zposition);
 		position_p = &position;
 	}
 
 	number = unum_parseDoubleCurrency(FORMATTER_OBJECT(nfo), sstr, sstr_len, position_p, currency, &INTL_DATA_ERROR_CODE(nfo));
 	if(zposition) {
-		zval_dtor(zposition);
-		ZVAL_LONG(zposition, position);
+		ZEND_TRY_ASSIGN_REF_LONG(zposition, position);
 	}
 	if (sstr) {
 		efree(sstr);
@@ -168,20 +158,11 @@ PHP_FUNCTION( numfmt_parse_currency )
 	INTL_METHOD_CHECK_STATUS( nfo, "Number parsing failed" );
 
 	/* Convert parsed currency to UTF-8 and pass it back to caller. */
-	intl_convert_utf16_to_utf8(&currency_str, &currency_len, currency, u_strlen(currency), &INTL_DATA_ERROR_CODE(nfo));
+	u8str = intl_convert_utf16_to_utf8(currency, u_strlen(currency), &INTL_DATA_ERROR_CODE(nfo));
 	INTL_METHOD_CHECK_STATUS( nfo, "Currency conversion to UTF-8 failed" );
-	zval_dtor( zcurrency );
-	ZVAL_STRINGL(zcurrency, currency_str, currency_len, 0);
+	zval_ptr_dtor( zcurrency );
+	ZVAL_NEW_STR(zcurrency, u8str);
 
 	RETVAL_DOUBLE( number );
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: noet sw=4 ts=4 fdm=marker
- * vim<600: noet sw=4 ts=4
- */

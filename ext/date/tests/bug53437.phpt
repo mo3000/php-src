@@ -22,27 +22,26 @@ foreach($dpu as $dt) {
         echo $dt->format('Y-m-d H:i:s')."\r\n";
 }
 ?>
-==DONE==
---EXPECT--
+--EXPECTF--
 Original:
 2010-01-01 00:00:00
 2010-01-02 00:00:00
 2010-01-03 00:00:00
 
-object(DatePeriod)#1 (6) {
+object(DatePeriod)#%d (6) {
   ["start"]=>
-  object(DateTime)#2 (3) {
+  object(DateTime)#%d (3) {
     ["date"]=>
-    string(19) "2010-01-01 00:00:00"
+    string(26) "2010-01-01 00:00:00.000000"
     ["timezone_type"]=>
     int(3)
     ["timezone"]=>
     string(3) "UTC"
   }
   ["current"]=>
-  object(DateTime)#4 (3) {
+  object(DateTime)#%d (3) {
     ["date"]=>
-    string(19) "2010-01-04 00:00:00"
+    string(26) "2010-01-04 00:00:00.000000"
     ["timezone_type"]=>
     int(3)
     ["timezone"]=>
@@ -51,7 +50,7 @@ object(DatePeriod)#1 (6) {
   ["end"]=>
   NULL
   ["interval"]=>
-  object(DateInterval)#5 (15) {
+  object(DateInterval)#%d (16) {
     ["y"]=>
     int(0)
     ["m"]=>
@@ -64,6 +63,8 @@ object(DatePeriod)#1 (6) {
     int(0)
     ["s"]=>
     int(0)
+    ["f"]=>
+    float(0)
     ["weekday"]=>
     int(0)
     ["weekday_behavior"]=>
@@ -77,7 +78,7 @@ object(DatePeriod)#1 (6) {
     ["special_type"]=>
     int(0)
     ["special_amount"]=>
-    string(1) "0"
+    int(0)
     ["have_weekday_relative"]=>
     int(0)
     ["have_special_relative"]=>
@@ -88,20 +89,20 @@ object(DatePeriod)#1 (6) {
   ["include_start_date"]=>
   bool(true)
 }
-object(DatePeriod)#5 (6) {
+object(DatePeriod)#%d (6) {
   ["start"]=>
-  object(DateTime)#10 (3) {
+  object(DateTime)#%d (3) {
     ["date"]=>
-    string(19) "2010-01-01 00:00:00"
+    string(26) "2010-01-01 00:00:00.000000"
     ["timezone_type"]=>
     int(3)
     ["timezone"]=>
     string(3) "UTC"
   }
   ["current"]=>
-  object(DateTime)#7 (3) {
+  object(DateTime)#%d (3) {
     ["date"]=>
-    string(19) "2010-01-04 00:00:00"
+    string(26) "2010-01-04 00:00:00.000000"
     ["timezone_type"]=>
     int(3)
     ["timezone"]=>
@@ -110,7 +111,7 @@ object(DatePeriod)#5 (6) {
   ["end"]=>
   NULL
   ["interval"]=>
-  object(DateInterval)#8 (15) {
+  object(DateInterval)#%d (16) {
     ["y"]=>
     int(0)
     ["m"]=>
@@ -123,6 +124,8 @@ object(DatePeriod)#5 (6) {
     int(0)
     ["s"]=>
     int(0)
+    ["f"]=>
+    float(0)
     ["weekday"]=>
     int(0)
     ["weekday_behavior"]=>
@@ -132,11 +135,11 @@ object(DatePeriod)#5 (6) {
     ["invert"]=>
     int(0)
     ["days"]=>
-    string(1) "0"
+    bool(false)
     ["special_type"]=>
     int(0)
     ["special_amount"]=>
-    string(1) "0"
+    int(0)
     ["have_weekday_relative"]=>
     int(0)
     ["have_special_relative"]=>
@@ -151,4 +154,3 @@ Unserialized:
 2010-01-01 00:00:00
 2010-01-02 00:00:00
 2010-01-03 00:00:00
-==DONE==

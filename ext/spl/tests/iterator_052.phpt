@@ -5,31 +5,31 @@ SPL: RegexIterator::ALL_MATCHES
 
 class MyRegexIterator extends RegexIterator
 {
-	public $uk, $re;
-	
-	function __construct($it, $re, $mode, $flags = 0)
-	{
-		$this->uk = $flags & self::USE_KEY;
-		$this->re = $re;
-		parent::__construct($it, $re, $mode, $flags);
-	}
+    public $uk, $re;
 
-	function show()
-	{
-		foreach($this as $k => $v)
-		{
-			var_dump($k);
-			var_dump($v);
-		}
-	}
-	
-	function accept()
-	{
-		@preg_match_all($this->re, (string)($this->uk ? $this->key() : $this->current()), $sub);
-		$ret = parent::accept();
-		var_dump($sub == $this->current());
-		return $ret;
-	}
+    function __construct($it, $re, $mode, $flags = 0)
+    {
+        $this->uk = $flags & self::USE_KEY;
+        $this->re = $re;
+        parent::__construct($it, $re, $mode, $flags);
+    }
+
+    function show()
+    {
+        foreach($this as $k => $v)
+        {
+            var_dump($k);
+            var_dump($v);
+        }
+    }
+
+    function accept()
+    {
+        @preg_match_all($this->re, (string)($this->uk ? $this->key() : $this->current()), $sub);
+        $ret = parent::accept();
+        var_dump($sub == $this->current());
+        return $ret;
+    }
 }
 
 $ar = new ArrayIterator(array('1','1,2','1,2,3','',NULL,array(),'FooBar',',',',,'));
@@ -42,22 +42,8 @@ $it->show();
 var_dump($ar);
 
 ?>
-===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 bool(true)
-int(0)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
 bool(true)
 int(1)
 array(3) {
@@ -97,85 +83,11 @@ array(3) {
   }
 }
 bool(true)
-int(3)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
 bool(true)
-int(4)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
-
-Notice: Array to string conversion in %siterator_052.php on line %d
+bool(false)
 bool(true)
-int(5)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
 bool(true)
-int(6)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
 bool(true)
-int(7)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
-bool(true)
-int(8)
-array(3) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-  [2]=>
-  array(0) {
-  }
-}
 bool(true)
 int(0)
 array(2) {
@@ -231,67 +143,11 @@ array(2) {
   }
 }
 bool(true)
-int(3)
-array(2) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-}
 bool(true)
-int(4)
-array(2) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-}
-
-Notice: Array to string conversion in %siterator_052.php on line %d
+bool(false)
 bool(true)
-int(5)
-array(2) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-}
 bool(true)
-int(6)
-array(2) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-}
 bool(true)
-int(7)
-array(2) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-}
-bool(true)
-int(8)
-array(2) {
-  [0]=>
-  array(0) {
-  }
-  [1]=>
-  array(0) {
-  }
-}
 object(ArrayIterator)#%d (1) {
   ["storage":"ArrayIterator":private]=>
   array(9) {
@@ -316,4 +172,3 @@ object(ArrayIterator)#%d (1) {
     %s(2) ",,"
   }
 }
-===DONE===

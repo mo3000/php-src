@@ -1,16 +1,18 @@
 --TEST--
 Test var_export() function with valid arrays
+--INI--
+serialize_precision=17
 --FILE--
 <?php
 /* Prototype  : mixed var_export(mixed var [, bool return])
- * Description: Outputs or returns a string representation of a variable 
+ * Description: Outputs or returns a string representation of a variable
  * Source code: ext/standard/var.c
- * Alias to functions: 
+ * Alias to functions:
  */
 
 
 echo "*** Testing var_export() with valid arrays ***\n";
-// different valid  arrays 
+// different valid  arrays
 $valid_arrays = array(
            "array()" => array(),
            "array(NULL)" => array(NULL),
@@ -32,16 +34,15 @@ $valid_arrays = array(
 /* Loop to check for above arrays with var_export() */
 echo "\n*** Output for arrays ***\n";
 foreach($valid_arrays as $key => $arr) {
-	echo "\n--Iteration: $key --\n";
-	var_export( $arr );
-	echo "\n";
-	var_export( $arr, FALSE);
-	echo "\n";
-	var_dump( var_export( $arr, TRUE) );
-	echo "\n";
+    echo "\n--Iteration: $key --\n";
+    var_export( $arr );
+    echo "\n";
+    var_export( $arr, FALSE);
+    echo "\n";
+    var_dump( var_export( $arr, TRUE) );
+    echo "\n";
 }
 ?>
-===DONE===
 --EXPECT--
 *** Testing var_export() with valid arrays ***
 
@@ -233,15 +234,15 @@ string(20) "array (
 --Iteration: array(10.5, 5.6) --
 array (
   0 => 10.5,
-  1 => 5.6,
+  1 => 5.5999999999999996,
 )
 array (
   0 => 10.5,
-  1 => 5.6,
+  1 => 5.5999999999999996,
 )
-string(34) "array (
+string(49) "array (
   0 => 10.5,
-  1 => 5.6,
+  1 => 5.5999999999999996,
 )"
 
 
@@ -274,4 +275,3 @@ string(41) "array (
   1 => 'test',
 )"
 
-===DONE===

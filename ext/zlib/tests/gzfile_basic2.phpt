@@ -6,13 +6,13 @@ if (!extension_loaded('zlib')) die ('skip zlib extension not available in this b
 ?>
 --FILE--
 <?php
-$plaintxt = b<<<EOT
+$plaintxt = <<<EOT
 hello world
 is a very common test
 for all languages
 EOT;
 $dirname = 'gzfile_temp';
-$filename = $dirname.'/plainfile.txt';
+$filename = $dirname.'/gzfile_basic2.txt';
 mkdir($dirname);
 $h = fopen($filename, 'w');
 fwrite($h, $plaintxt);
@@ -24,7 +24,6 @@ var_dump(gzfile( $filename ) );
 unlink($filename);
 rmdir($dirname);
 ?>
-===DONE===
 --EXPECT--
 array(3) {
   [0]=>
@@ -36,4 +35,3 @@ array(3) {
   [2]=>
   string(17) "for all languages"
 }
-===DONE===

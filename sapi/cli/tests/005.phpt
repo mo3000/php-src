@@ -1,11 +1,8 @@
 --TEST--
 show information about class
 --SKIPIF--
-<?php 
-include "skipif.inc"; 
-if (!extension_loaded("reflection")) {
-	die("skip reflection extension required");
-}
+<?php
+include "skipif.inc";
 ?>
 --FILE--
 <?php
@@ -18,7 +15,7 @@ var_dump(`"$php" -n --rc exception`);
 
 echo "Done\n";
 ?>
---EXPECTF--	
+--EXPECT--
 string(40) "Exception: Class unknown does not exist
 "
 string(183) "Class [ <internal:Core> class stdClass ] {
@@ -40,7 +37,7 @@ string(183) "Class [ <internal:Core> class stdClass ] {
 }
 
 "
-string(1355) "Class [ <internal:Core> class Exception ] {
+string(2159) "Class [ <internal:Core> class Exception implements Throwable, Stringable ] {
 
   - Constants [0] {
   }
@@ -52,50 +49,90 @@ string(1355) "Class [ <internal:Core> class Exception ] {
   }
 
   - Properties [7] {
-    Property [ <default> protected $message ]
-    Property [ <default> private $string ]
-    Property [ <default> protected $code ]
-    Property [ <default> protected $file ]
-    Property [ <default> protected $line ]
-    Property [ <default> private $trace ]
-    Property [ <default> private $previous ]
+    Property [ protected $message = '' ]
+    Property [ private $string = '' ]
+    Property [ protected $code = 0 ]
+    Property [ protected $file = NULL ]
+    Property [ protected $line = NULL ]
+    Property [ private $trace = NULL ]
+    Property [ private $previous = NULL ]
   }
 
-  - Methods [10] {
+  - Methods [11] {
     Method [ <internal:Core> final private method __clone ] {
+
+      - Parameters [0] {
+      }
     }
 
     Method [ <internal:Core, ctor> public method __construct ] {
 
       - Parameters [3] {
-        Parameter #0 [ <optional> $message ]
-        Parameter #1 [ <optional> $code ]
-        Parameter #2 [ <optional> $previous ]
+        Parameter #0 [ <optional> string $message = <default> ]
+        Parameter #1 [ <optional> int $code = 0 ]
+        Parameter #2 [ <optional> ?Throwable $previous = null ]
       }
     }
 
-    Method [ <internal:Core> final public method getMessage ] {
+    Method [ <internal:Core> public method __wakeup ] {
+
+      - Parameters [0] {
+      }
     }
 
-    Method [ <internal:Core> final public method getCode ] {
+    Method [ <internal:Core, prototype Throwable> final public method getMessage ] {
+
+      - Parameters [0] {
+      }
+      - Return [ string ]
     }
 
-    Method [ <internal:Core> final public method getFile ] {
+    Method [ <internal:Core, prototype Throwable> final public method getCode ] {
+
+      - Parameters [0] {
+      }
     }
 
-    Method [ <internal:Core> final public method getLine ] {
+    Method [ <internal:Core, prototype Throwable> final public method getFile ] {
+
+      - Parameters [0] {
+      }
+      - Return [ string ]
     }
 
-    Method [ <internal:Core> final public method getTrace ] {
+    Method [ <internal:Core, prototype Throwable> final public method getLine ] {
+
+      - Parameters [0] {
+      }
+      - Return [ int ]
     }
 
-    Method [ <internal:Core> final public method getPrevious ] {
+    Method [ <internal:Core, prototype Throwable> final public method getTrace ] {
+
+      - Parameters [0] {
+      }
+      - Return [ array ]
     }
 
-    Method [ <internal:Core> final public method getTraceAsString ] {
+    Method [ <internal:Core, prototype Throwable> final public method getPrevious ] {
+
+      - Parameters [0] {
+      }
+      - Return [ ?Throwable ]
     }
 
-    Method [ <internal:Core> public method __toString ] {
+    Method [ <internal:Core, prototype Throwable> final public method getTraceAsString ] {
+
+      - Parameters [0] {
+      }
+      - Return [ string ]
+    }
+
+    Method [ <internal:Core, prototype Stringable> public method __toString ] {
+
+      - Parameters [0] {
+      }
+      - Return [ string ]
     }
   }
 }

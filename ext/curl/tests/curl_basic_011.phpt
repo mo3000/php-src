@@ -1,9 +1,9 @@
 --TEST--
-Test curl_opt() function with COOKIE 
+Test curl_opt() function with COOKIE
 --CREDITS--
-TestFest 2009 - AFUP - Xavier Gorse <xgorse@elao.com>      
+TestFest 2009 - AFUP - Xavier Gorse <xgorse@elao.com>
 --SKIPIF--
-<?php if (!extension_loaded("curl") || false === getenv(b'PHP_CURL_HTTP_REMOTE_SERVER')) print "skip need PHP_CURL_HTTP_REMOTE_SERVER environment variable"; ?>
+<?php include 'skipif.inc'; ?>
 --FILE--
 <?php
 /* Prototype  : bool curl_setopt(resource ch, int option, mixed value)
@@ -12,27 +12,25 @@ TestFest 2009 - AFUP - Xavier Gorse <xgorse@elao.com>
  * Alias to functions:
  */
 
-  $host = getenv('PHP_CURL_HTTP_REMOTE_SERVER');
+  include 'server.inc';
+  $host = curl_cli_server_start();
 
   // start testing
   echo '*** Testing curl with cookie ***' . "\n";
 
-  $url = "{$host}/get.php?test=cookie";
+  $url = "{$host}/get.inc?test=cookie";
   $ch = curl_init();
 
   ob_start(); // start output buffering
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_COOKIE, 'foo=bar');    
+  curl_setopt($ch, CURLOPT_COOKIE, 'foo=bar');
   curl_setopt($ch, CURLOPT_URL, $url); //set the url we want to use
-  
+
   $curl_content = curl_exec($ch);
   curl_close($ch);
 
   var_dump( $curl_content );
 ?>
-===DONE===
---EXPECTF--
+--EXPECT--
 *** Testing curl with cookie ***
 string(3) "bar"
-===DONE===
-

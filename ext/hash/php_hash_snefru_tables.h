@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,9 +14,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
-static const php_hash_uint32 tables[16][256]= {
+static const uint32_t tables[16][256]= {
 
  {  /* Start of S Box 0  */
 
@@ -931,12 +927,3 @@ static const php_hash_uint32 tables[16][256]= {
 /* 255*/ 0x4d87253cL
     /* End   of S Box 15  */  }
 };
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

@@ -56,7 +56,7 @@ var_dump($props[0]->isProtected());
 echo "=== 4th test ===\n";
 
 class test5 {
-	private $value = 1;
+    private $value = 1;
 }
 
 class test4 extends test5{
@@ -76,11 +76,11 @@ var_dump($props[0]->isProtected());
 
 echo "Done\n";
 ?>
---EXPECTF--	
+--EXPECTF--
 === 1st test ===
 array(1) {
   [0]=>
-  &object(ReflectionProperty)#%d (2) {
+  object(ReflectionProperty)#%d (2) {
     ["name"]=>
     string(5) "value"
     ["class"]=>
@@ -94,7 +94,7 @@ bool(false)
 === 2nd test ===
 array(1) {
   [0]=>
-  &object(ReflectionProperty)#%d (2) {
+  object(ReflectionProperty)#%d (2) {
     ["name"]=>
     string(5) "value"
     ["class"]=>
@@ -108,7 +108,7 @@ bool(false)
 === 3rd test ===
 array(1) {
   [0]=>
-  &object(ReflectionProperty)#%d (2) {
+  object(ReflectionProperty)#%d (2) {
     ["name"]=>
     string(5) "value"
     ["class"]=>
@@ -122,7 +122,7 @@ bool(false)
 === 4th test ===
 array(1) {
   [0]=>
-  &object(ReflectionProperty)#%d (2) {
+  object(ReflectionProperty)#%d (2) {
     ["name"]=>
     string(5) "value"
     ["class"]=>

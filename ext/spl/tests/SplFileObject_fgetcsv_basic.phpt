@@ -2,23 +2,23 @@
 SplFileObject::fgetcsv default path
 --FILE--
 <?php
-$fp = fopen('SplFileObject__fgetcsv.csv', 'w+');
+$fp = fopen('SplFileObject__fgetcsv1.csv', 'w+');
 fputcsv($fp, array(
-	'field1',
-	'field2',
-	'field3',
-	5
+    'field1',
+    'field2',
+    'field3',
+    5
 ));
 fclose($fp);
 
-$fo = new SplFileObject('SplFileObject__fgetcsv.csv');
+$fo = new SplFileObject('SplFileObject__fgetcsv1.csv');
 var_dump($fo->fgetcsv());
 ?>
 --CLEAN--
 <?php
-unlink('SplFileObject__fgetcsv.csv');
+unlink('SplFileObject__fgetcsv1.csv');
 ?>
---EXPECTF--
+--EXPECT--
 array(4) {
   [0]=>
   string(6) "field1"

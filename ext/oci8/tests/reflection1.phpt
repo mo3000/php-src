@@ -126,10 +126,9 @@ reflection::export(new reflectionfunction('oci_set_module_name'));
 reflection::export(new reflectionfunction('oci_set_action'));
 reflection::export(new reflectionfunction('oci_set_client_info'));
 reflection::export(new reflectionfunction('oci_set_client_identifier'));
+reflection::export(new reflectionfunction('oci_get_implicit_resultset'));
 
 ?>
-===DONE===
-<?php exit(0); ?>
 --EXPECTF--
 Function [ <internal%s> function oci_define_by_name ] {
 
@@ -176,7 +175,7 @@ Function [ <internal%s> function oci_field_name ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -192,7 +191,7 @@ Function [ <internal%s> function oci_field_scale ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -200,7 +199,7 @@ Function [ <internal%s> function oci_field_precision ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -208,7 +207,7 @@ Function [ <internal%s> function oci_field_type ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -216,7 +215,7 @@ Function [ <internal%s> function oci_field_type_raw ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -721,7 +720,7 @@ Function [ <internal%s> function ocicolumnname ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -737,7 +736,7 @@ Function [ <internal%s> function ocicolumnscale ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -745,7 +744,7 @@ Function [ <internal%s> function ocicolumnprecision ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -753,7 +752,7 @@ Function [ <internal%s> function ocicolumntype ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -761,7 +760,7 @@ Function [ <internal%s> function ocicolumntyperaw ] {
 
   - Parameters [2] {
     Parameter #0 [ <required> $statement_resource ]
-    Parameter #1 [ <required> $column_number ]
+    Parameter #1 [ <required> $column_number_or_name ]
   }
 }
 
@@ -1093,4 +1092,10 @@ Function [ <internal%s> function oci_set_client_identifier ] {
   }
 }
 
-===DONE===
+Function [ <internal%s> function oci_get_implicit_resultset ] {
+
+  - Parameters [1] {
+    Parameter #0 [ <required> $statement_resource ]
+  }
+}
+

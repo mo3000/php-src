@@ -8,10 +8,10 @@ namespace Foo;
 
 class Foo {
   function __construct() {
-  	echo "Method - ".__CLASS__."::".__FUNCTION__."\n";
+    echo "Method - ".__CLASS__."::".__FUNCTION__."\n";
   }
   static function Bar() {
-  	echo "Method - ".__CLASS__."::".__FUNCTION__."\n";
+    echo "Method - ".__CLASS__."::".__FUNCTION__."\n";
   }
 }
 
@@ -32,4 +32,7 @@ Method - Foo\Foo::__construct
 Method - Foo\Foo::Bar
 Func   - Foo\Bar
 
-Fatal error: Call to undefined function Foo\Foo\Bar() in %sns_026.php on line %d
+Fatal error: Uncaught Error: Call to undefined function Foo\Foo\Bar() in %sns_026.php:%d
+Stack trace:
+#0 {main}
+  thrown in %sns_026.php on line %d

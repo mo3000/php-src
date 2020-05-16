@@ -3,42 +3,42 @@ Pass function and method calls by reference and by value.
 --FILE--
 <?php
 class C {
-	static function sreturnVal() {
-		global $a;
-		return $a;
-	}
-	
-	static function &sreturnReference() {
-		global $a;
-		return $a;
-	}
+    static function sreturnVal() {
+        global $a;
+        return $a;
+    }
 
-	function returnVal() {
-		global $a;
-		return $a;
-	}
-	
-	function &returnReference() {
-		global $a;
-		return $a;
-	}
+    static function &sreturnReference() {
+        global $a;
+        return $a;
+    }
+
+    function returnVal() {
+        global $a;
+        return $a;
+    }
+
+    function &returnReference() {
+        global $a;
+        return $a;
+    }
 }
 
 function returnVal() {
-		global $a;
-		return $a;
+        global $a;
+        return $a;
 }
 
 function &returnReference() {
-		global $a;
-		return $a;
+        global $a;
+        return $a;
 }
 
 
 
 function foo(&$ref) {
-	var_dump($ref);
-	$ref = "changed";
+    var_dump($ref);
+    $ref = "changed";
 }
 
 
@@ -79,7 +79,7 @@ var_dump($a);
 --EXPECTF--
 Pass a function call that returns a value:
 
-Strict Standards: Only variables should be passed by reference in %s on line 44
+Notice: Only variables should be passed by reference in %s on line 44
 string(8) "original"
 string(8) "original"
 Pass a function call that returns a reference:
@@ -88,7 +88,7 @@ string(7) "changed"
 
 Pass a static method call that returns a value:
 
-Strict Standards: Only variables should be passed by reference in %s on line 55
+Notice: Only variables should be passed by reference in %s on line 55
 string(8) "original"
 string(8) "original"
 Pass a static method call that returns a reference:
@@ -97,7 +97,7 @@ string(7) "changed"
 
 Pass a method call that returns a value:
 
-Strict Standards: Only variables should be passed by reference in %s on line 67
+Notice: Only variables should be passed by reference in %s on line 67
 string(8) "original"
 string(8) "original"
 Pass a method call that returns a reference:

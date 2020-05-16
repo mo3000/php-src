@@ -5,7 +5,7 @@ Bug #32226 (SEGV with exception handler on non existing instance)
 
 class A
 {
-        public function A()
+        public function __construct()
         {
                 set_exception_handler(array($this, 'EH'));
 
@@ -26,11 +26,9 @@ $a = new A();
 }
 catch(Exception $e)
 {
-	echo "Caught\n";
+    echo "Caught\n";
 }
 
 ?>
-===DONE===
 --EXPECT--
 Caught
-===DONE===

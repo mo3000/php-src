@@ -3,6 +3,7 @@
 --FILE--
 <?php
 const C = array();
---EXPECTF--
-Fatal error: Arrays are not allowed as constants in %sns_059.php on line 2
-
+var_dump(C);
+--EXPECT--
+array(0) {
+}

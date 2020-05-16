@@ -13,30 +13,29 @@ require "connect.inc";
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
 
 var_dump(
-	ldap_add($link, "dc=my-domain,dc=com", array(
-		"objectClass"	=> array(
-			"top",
-			"dcObject",
-			"organization"),
-		"dc"			=> "my-domain",
-		"o"				=> "my-domain",
-	)),
-	ldap_get_entries(
-		$link,
-		ldap_search($link, "dc=my-domain,dc=com", "(o=my-domain)")
-	)
+    ldap_add($link, "dc=my-domain,$base", array(
+        "objectClass"	=> array(
+            "top",
+            "dcObject",
+            "organization"),
+        "dc"			=> "my-domain",
+        "o"				=> "my-domain",
+    )),
+    ldap_get_entries(
+        $link,
+        ldap_search($link, "$base", "(o=my-domain)")
+    )
 );
 ?>
-===DONE===
 --CLEAN--
 <?php
 require "connect.inc";
 
 $link = ldap_connect_and_bind($host, $port, $user, $passwd, $protocol_version);
 
-ldap_delete($link, "dc=my-domain,dc=com");
+ldap_delete($link, "dc=my-domain,$base");
 ?>
---EXPECT--
+--EXPECTF--
 bool(true)
 array(2) {
   ["count"]=>
@@ -77,7 +76,6 @@ array(2) {
     ["count"]=>
     int(3)
     ["dn"]=>
-    string(19) "dc=my-domain,dc=com"
+    string(%d) "dc=my-domain,%s"
   }
 }
-===DONE===

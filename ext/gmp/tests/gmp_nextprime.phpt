@@ -22,10 +22,10 @@ $n = gmp_nextprime("");
 var_dump(gmp_strval($n));
 $n = gmp_nextprime(new stdclass());
 var_dump(gmp_strval($n));
-	
+
 echo "Done\n";
 ?>
---EXPECTF--	
+--EXPECTF--
 string(1) "2"
 string(1) "2"
 string(1) "2"
@@ -34,6 +34,8 @@ string(6) "100003"
 
 Warning: gmp_nextprime(): Unable to convert variable to GMP - wrong type in %s on line %d
 string(1) "0"
+
+Warning: gmp_nextprime(): Unable to convert variable to GMP - string is not an integer in %s on line %d
 string(1) "0"
 
 Warning: gmp_nextprime(): Unable to convert variable to GMP - wrong type in %s on line %d

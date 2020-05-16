@@ -3,6 +3,7 @@ Phar front controller $_SERVER munging success [cache_list]
 --INI--
 default_charset=UTF-8
 phar.cache_list={PWD}/frontcontroller21.php
+cgi.fix_pathinfo=1
 --SKIPIF--
 <?php if (!extension_loaded("phar")) die("skip"); ?>
 --ENV--
@@ -15,7 +16,7 @@ files/frontcontroller12.phar
 --EXPECTHEADERS--
 Content-type: text/html; charset=UTF-8
 --EXPECTF--
-%unicode|string%(10) "/index.php"
+string(10) "/index.php"
 string(10) "/index.php"
 string(%d) "phar://%sfrontcontroller21.php/index.php"
 string(18) "/index.php?test=hi"

@@ -5,7 +5,7 @@ oci_define_by_name()
 --FILE--
 <?php
 
-require(dirname(__FILE__)."/connect.inc");
+require(__DIR__."/connect.inc");
 
 // Initialize
 
@@ -32,7 +32,7 @@ var_dump(oci_define_by_name($stmt, ""));
 oci_execute($stmt);
 
 while (oci_fetch($stmt)) {
-	var_dump($string);
+    var_dump($string);
 }
 
 // Cleanup
@@ -55,5 +55,5 @@ bool(false)
 
 Warning: oci_define_by_name() expects at least 3 parameters, 2 given in %s on line %d
 NULL
-%unicode|string%(4) "some"
+string(4) "some"
 Done

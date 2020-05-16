@@ -1,22 +1,28 @@
 --TEST--
-Test fsockopen() function : basic functionality 
+Test fsockopen() function : basic functionality
 --FILE--
 <?php
 /* Prototype  : proto resource fsockopen(string hostname, int port [, int errno [, string errstr [, float timeout]]])
- * Description: Open Internet or Unix domain socket connection 
+ * Description: Open Internet or Unix domain socket connection
  * Source code: ext/standard/fsock.c
- * Alias to functions: 
+ * Alias to functions:
  */
 
 echo "*** Testing fsockopen() : basic functionality ***\n";
 
 echo "Open a server socket\n";
-$server = stream_socket_server('tcp://127.0.0.1:31337');
 
+for ($i=0; $i<100; $i++) {
+  $port = rand(10000, 65000);
+  /* Setup socket server */
+  $server = @stream_socket_server("tcp://127.0.0.1:$port");
+  if ($server) {
+    break;
+  }
+}
 
 // Initialise all required variables
 $hostname = 'tcp://127.0.0.1'; // loopback address
-$port = 31337;
 $errno = null;
 $errstr = null;
 $timeout = 1.5;

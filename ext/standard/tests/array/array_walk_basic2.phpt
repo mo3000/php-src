@@ -3,7 +3,7 @@ Test array_walk() function : basic functionality - associative array
 --FILE--
 <?php
 /* Prototype  : bool array_walk(array $input, string $funcname [, mixed $userdata])
- * Description: Apply a user function to every member of an array 
+ * Description: Apply a user function to every member of an array
  * Source code: ext/standard/array.c
 */
 
@@ -14,23 +14,23 @@ $fruits = array("d" => "lemon", "a" => "orange", "b" => "banana", "c" => "apple"
 
 // User defined callback functions
 /*  Prototype : test_alter(mixed $item, mixed $key, string $prefix)
- *  Parameters : item - value in key/value pair 
+ *  Parameters : item - value in key/value pair
  *               key - key in key/value pair
- *               prefix - string to be added 
+ *               prefix - string to be added
  *  Description : alters the array values by appending prefix string
- */ 
+ */
 function test_alter(&$item, $key, $prefix)
 {
   // dump the arguments to check that they are passed
   // with proper type
   var_dump($item); // value
   var_dump($key);  // key
-  var_dump($prefix); // additional agument passed to callback function
+  var_dump($prefix); // additional argument passed to callback function
   echo "\n"; // new line to separate the output between each element
 }
 
 /*  Prototype : test_print(mixed $item, mixed $key)
- *  Parameters : item - value in key/value pair 
+ *  Parameters : item - value in key/value pair
  *               key - key in key/value pair
  *  Description : prints the array values with keys
  */

@@ -9,14 +9,15 @@ ini_set('mbstring.encoding_translation', true);
 var_dump(mb_internal_encoding());
 mb_internal_encoding('UTF-8');
 var_dump(mb_internal_encoding());
-parse_str('a=b');
+parse_str('a=b', $ary);
 var_dump(mb_internal_encoding());
 mb_internal_encoding('UTF-8');
 var_dump(mb_internal_encoding());
-parse_str('a=b');
+parse_str('a=b', $ary);
 var_dump(mb_internal_encoding());
 ?>
---EXPECT--
+--EXPECTF--
+Deprecated: ini_set(): Use of mbstring.internal_encoding is deprecated in %s on line %d
 string(11) "ISO-8859-15"
 string(5) "UTF-8"
 string(5) "UTF-8"

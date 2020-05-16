@@ -30,7 +30,7 @@ the lazy dog
 This is a double quoted string
 EOT;
 
-// heredoc with diferent whitespaces
+// heredoc with different whitespaces
 $diff_whitespaces = <<<EOT
 hello\r world\t
 1111\t\t != 2222\v\v
@@ -92,10 +92,10 @@ foreach($arrays as $arr1) {
 
   $iterator++;
 }
-  
+
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing array_merge_recursive() : Passing different arrays to $arr1 argument ***
 -- Iteration 1 --
 -- With default argument --

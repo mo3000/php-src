@@ -11,9 +11,8 @@ $di1 = unserialize($s);
 var_dump($di0, $di1);
 
 ?>
-==DONE==
 --EXPECT--
-object(DateInterval)#1 (15) {
+object(DateInterval)#1 (16) {
   ["y"]=>
   int(2)
   ["m"]=>
@@ -26,6 +25,8 @@ object(DateInterval)#1 (15) {
   int(8)
   ["s"]=>
   int(0)
+  ["f"]=>
+  float(0)
   ["weekday"]=>
   int(0)
   ["weekday_behavior"]=>
@@ -39,13 +40,13 @@ object(DateInterval)#1 (15) {
   ["special_type"]=>
   int(0)
   ["special_amount"]=>
-  string(1) "0"
+  int(0)
   ["have_weekday_relative"]=>
   int(0)
   ["have_special_relative"]=>
   int(0)
 }
-object(DateInterval)#2 (15) {
+object(DateInterval)#2 (16) {
   ["y"]=>
   int(2)
   ["m"]=>
@@ -58,6 +59,8 @@ object(DateInterval)#2 (15) {
   int(8)
   ["s"]=>
   int(0)
+  ["f"]=>
+  float(0)
   ["weekday"]=>
   int(0)
   ["weekday_behavior"]=>
@@ -67,14 +70,13 @@ object(DateInterval)#2 (15) {
   ["invert"]=>
   int(0)
   ["days"]=>
-  string(1) "0"
+  bool(false)
   ["special_type"]=>
   int(0)
   ["special_amount"]=>
-  string(1) "0"
+  int(0)
   ["have_weekday_relative"]=>
   int(0)
   ["have_special_relative"]=>
   int(0)
 }
-==DONE==

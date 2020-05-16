@@ -5,7 +5,7 @@
  * LICENSE NOTICES
  *
  * This file is part of "streamable kanji code filter and converter",
- * which is distributed under the terms of GNU Lesser General Public 
+ * which is distributed under the terms of GNU Lesser General Public
  * License (version 2) as published by the Free Software Foundation.
  *
  * This software is distributed in the hope that it will be useful,
@@ -24,7 +24,7 @@
 /*
  * The source code included in this files was separated from mbfilter.c
  * by moriyoshi koizumi <moriyoshi@php.net> on 4 dec 2002.
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -42,7 +42,9 @@ const mbfl_encoding mbfl_encoding_ucs2 = {
 	"UCS-2",
 	(const char *(*)[])&mbfl_encoding_ucs2_aliases,
 	NULL,
-	MBFL_ENCTYPE_WCS2BE
+	MBFL_ENCTYPE_WCS2BE,
+	&vtbl_ucs2_wchar,
+	&vtbl_wchar_ucs2
 };
 
 const mbfl_encoding mbfl_encoding_ucs2be = {
@@ -51,7 +53,9 @@ const mbfl_encoding mbfl_encoding_ucs2be = {
 	"UCS-2BE",
 	NULL,
 	NULL,
-	MBFL_ENCTYPE_WCS2BE
+	MBFL_ENCTYPE_WCS2BE,
+	&vtbl_ucs2be_wchar,
+	&vtbl_wchar_ucs2be
 };
 
 const mbfl_encoding mbfl_encoding_ucs2le = {
@@ -60,7 +64,9 @@ const mbfl_encoding mbfl_encoding_ucs2le = {
 	"UCS-2LE",
 	NULL,
 	NULL,
-	MBFL_ENCTYPE_WCS2LE
+	MBFL_ENCTYPE_WCS2LE,
+	&vtbl_ucs2le_wchar,
+	&vtbl_wchar_ucs2le
 };
 
 const struct mbfl_convert_vtbl vtbl_ucs2_wchar = {
@@ -69,7 +75,8 @@ const struct mbfl_convert_vtbl vtbl_ucs2_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_ucs2_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_ucs2 = {
@@ -78,7 +85,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_ucs2 = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_ucs2be,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_ucs2be_wchar = {
@@ -87,7 +95,8 @@ const struct mbfl_convert_vtbl vtbl_ucs2be_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_ucs2be_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_ucs2be = {
@@ -96,7 +105,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_ucs2be = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_ucs2be,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_ucs2le_wchar = {
@@ -105,7 +115,8 @@ const struct mbfl_convert_vtbl vtbl_ucs2le_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_ucs2le_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_ucs2le = {
@@ -114,7 +125,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_ucs2le = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_ucs2le,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 #define CK(statement)	do { if ((statement) < 0) return (-1); } while (0)
@@ -189,9 +201,7 @@ int mbfl_filt_conv_wchar_ucs2be(int c, mbfl_convert_filter *filter)
 		CK((*filter->output_function)((c >> 8) & 0xff, filter->data));
 		CK((*filter->output_function)(c & 0xff, filter->data));
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
@@ -226,13 +236,8 @@ int mbfl_filt_conv_wchar_ucs2le(int c, mbfl_convert_filter *filter)
 		CK((*filter->output_function)(c & 0xff, filter->data));
 		CK((*filter->output_function)((c >> 8) & 0xff, filter->data));
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
 }
-
-
-

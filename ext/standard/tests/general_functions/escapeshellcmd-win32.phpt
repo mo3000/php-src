@@ -10,25 +10,26 @@ if( substr(PHP_OS, 0, 3) != 'WIN' ) {
 <?php
 echo "*** Testing escapeshellcmd() basic operations ***\n";
 $data = array(
-	'"abc',
-	"'abc",
-	'?<>',
-	'()[]{}$',
-	'%^',
-	'#&;`|*?',
-	'~<>\\',
-	'%NOENV%'
+    '"abc',
+    "'abc",
+    '?<>',
+    '()[]{}$',
+    '%^',
+    '#&;`|*?',
+    '~<>\\',
+    '%NOENV%',
+    '!NOENV!'
 );
 
 $count = 1;
 foreach ($data AS $value) {
-	echo "-- Test " . $count++ . " --\n";
-	var_dump(escapeshellcmd($value));
+    echo "-- Test " . $count++ . " --\n";
+    var_dump(escapeshellcmd($value));
 }
 
 echo "Done\n";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing escapeshellcmd() basic operations ***
 -- Test 1 --
 string(5) "^"abc"
@@ -46,4 +47,6 @@ string(14) "^#^&^;^`^|^*^?"
 string(8) "^~^<^>^\"
 -- Test 8 --
 string(9) "^%NOENV^%"
+-- Test 9 --
+string(9) "^!NOENV^!"
 Done

@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | phar php single-file executable PHP extension                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2007-2013 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,11 +16,9 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "phar_internal.h"
 
-phar_path_check_result phar_path_check(char **s, int *len, const char **error)
+phar_path_check_result phar_path_check(char **s, size_t *len, const char **error)
 {
 	const unsigned char *p = (const unsigned char*)*s;
 	const unsigned char *m;
@@ -37,14 +35,28 @@ phar_path_check_result phar_path_check(char **s, int *len, const char **error)
 #define YYCURSOR        p
 #define YYLIMIT         p+*len
 #define YYMARKER        m
-#define YYFILL(n)
+#define YYFILL(n)       do {} while (0)
 
 loop:
 /*!re2c
-END = "\x00";
-ILL = [\x01-\x19\x80-\xFF];
-EOS = "/" | END;
-ANY = .;
+END     = "\x00";
+NEWLINE = "\r"? "\n";
+UTF8T   = [\x80-\xBF] ;
+UTF8_1  = [\x1A-\x7F] ;
+UTF8_2  = [\xC2-\xDF] UTF8T ;
+UTF8_3A = "\xE0" [\xA0-\xBF] UTF8T ;
+UTF8_3B = [\xE1-\xEC] UTF8T{2} ;
+UTF8_3C = "\xED" [\x80-\x9F] UTF8T ;
+UTF8_3D = [\xEE-\xEF] UTF8T{2} ;
+UTF8_3  = UTF8_3A | UTF8_3B | UTF8_3C | UTF8_3D ;
+UTF8_4A = "\xF0"[\x90-\xBF] UTF8T{2} ;
+UTF8_4B = [\xF1-\xF3] UTF8T{3} ;
+UTF8_4C = "\xF4" [\x80-\x8F] UTF8T{2} ;
+UTF8_4  = UTF8_4A | UTF8_4B | UTF8_4C ;
+UTF8    = UTF8_1 | UTF8_2 | UTF8_3 | UTF8_4 ;
+EOS     = "/" | END;
+ANY     = . | NEWLINE;
+
 "//" 	{
 			*error = "double slash";
 			return pcr_err_double_slash;
@@ -73,9 +85,8 @@ ANY = .;
 			*error = NULL;
 			return pcr_use_query;
 		}
-ILL {
-			*error ="illegal character";
-			return pcr_err_illegal_char;
+UTF8 {
+			goto loop;
 		}
 END {
 			if (**s == '/') {
@@ -91,7 +102,8 @@ END {
 			return pcr_is_ok;
 		}
 ANY {
-			goto loop;
+			*error ="illegal character";
+			return pcr_err_illegal_char;
 		}
 */
 }

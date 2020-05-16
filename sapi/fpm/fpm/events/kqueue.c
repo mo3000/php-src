@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -16,14 +14,12 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "../fpm_config.h"
 #include "../fpm_events.h"
 #include "../fpm.h"
 #include "../zlog.h"
 
-#if HAVE_KQUEUE
+#ifdef HAVE_KQUEUE
 
 #include <sys/types.h>
 #include <sys/event.h>
@@ -44,7 +40,7 @@ static struct fpm_event_module_s kqueue_module = {
 	.clean = fpm_event_kqueue_clean,
 	.wait = fpm_event_kqueue_wait,
 	.add = fpm_event_kqueue_add,
-	.remove = fpm_event_kqueue_remove, 
+	.remove = fpm_event_kqueue_remove,
 };
 
 static struct kevent *kevents = NULL;
@@ -58,7 +54,7 @@ static int kfd = 0;
  */
 struct fpm_event_module_s *fpm_event_kqueue_module() /* {{{ */
 {
-#if HAVE_KQUEUE
+#ifdef HAVE_KQUEUE
 	return &kqueue_module;
 #else
 	return NULL;
@@ -66,7 +62,7 @@ struct fpm_event_module_s *fpm_event_kqueue_module() /* {{{ */
 }
 /* }}} */
 
-#if HAVE_KQUEUE
+#ifdef HAVE_KQUEUE
 
 /*
  * init kqueue and stuff

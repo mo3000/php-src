@@ -1,8 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | PHP Version 5                                                        |
-  +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -15,8 +13,6 @@
   | Author: Wez Furlong <wez@php.net>                                    |
   +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef PHP_PDO_SQLITE_INT_H
 #define PHP_PDO_SQLITE_INT_H
@@ -38,10 +34,10 @@ struct pdo_sqlite_fci {
 struct pdo_sqlite_func {
 	struct pdo_sqlite_func *next;
 
-	zval *func, *step, *fini;
+	zval func, step, fini;
 	int argc;
 	const char *funcname;
-	
+
 	/* accelerated callback references */
 	struct pdo_sqlite_fci afunc, astep, afini;
 };
@@ -50,7 +46,7 @@ struct pdo_sqlite_collation {
 	struct pdo_sqlite_collation *next;
 
 	const char *name;
-	zval *callback;
+	zval callback;
 	struct pdo_sqlite_fci fc;
 };
 
@@ -68,11 +64,18 @@ typedef struct {
 	unsigned done:1;
 } pdo_sqlite_stmt;
 
-extern pdo_driver_t pdo_sqlite_driver;
+extern const pdo_driver_t pdo_sqlite_driver;
 
-extern int _pdo_sqlite_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *file, int line TSRMLS_DC);
-#define pdo_sqlite_error(s) _pdo_sqlite_error(s, NULL, __FILE__, __LINE__ TSRMLS_CC)
-#define pdo_sqlite_error_stmt(s) _pdo_sqlite_error(stmt->dbh, stmt, __FILE__, __LINE__ TSRMLS_CC)
+extern int _pdo_sqlite_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, const char *file, int line);
+#define pdo_sqlite_error(s) _pdo_sqlite_error(s, NULL, __FILE__, __LINE__)
+#define pdo_sqlite_error_stmt(s) _pdo_sqlite_error(stmt->dbh, stmt, __FILE__, __LINE__)
 
-extern struct pdo_stmt_methods sqlite_stmt_methods;
+extern const struct pdo_stmt_methods sqlite_stmt_methods;
+
+enum {
+	PDO_SQLITE_ATTR_OPEN_FLAGS = PDO_ATTR_DRIVER_SPECIFIC,
+	PDO_SQLITE_ATTR_READONLY_STATEMENT,
+	PDO_SQLITE_ATTR_EXTENDED_RESULT_CODES
+};
+
 #endif

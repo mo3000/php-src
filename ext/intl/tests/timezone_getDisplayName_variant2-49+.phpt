@@ -1,11 +1,8 @@
 --TEST--
-IntlTimeZone::getDisplayName(): type parameter (ICU >= 49)
+IntlTimeZone::getDisplayName(): type parameter (ICU >= 49 && ICU < 50.1.2)
 --SKIPIF--
-<?php
-if (!extension_loaded('intl'))
-	die('skip intl extension not enabled');
-if (version_compare(INTL_ICU_VERSION, '49') < 0)
-	die('skip for ICU 49+');
+<?php if (!extension_loaded('intl')) die('skip intl extension not enabled'); ?>
+<?php if (version_compare(INTL_ICU_VERSION, '50.1.2') >=  0) die('skip for ICU < 50.1.2'); ?>
 --FILE--
 <?php
 ini_set("intl.error_level", E_WARNING);
@@ -25,7 +22,6 @@ var_dump($lsb->getDisplayName(false, IntlTimeZone::DISPLAY_SHORT_COMMONLY_USED))
 var_dump($lsb->getDisplayName(false, IntlTimeZone::DISPLAY_GENERIC_LOCATION));
 
 ?>
-==DONE==
 --EXPECT--
 string(3) "GMT"
 string(30) "Western European Standard Time"
@@ -35,4 +31,3 @@ string(5) "+0000"
 string(3) "GMT"
 string(3) "GMT"
 string(22) "Portugal Time (Lisbon)"
-==DONE==

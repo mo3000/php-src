@@ -4,6 +4,7 @@ Bug #37799 (ftp_ssl_connect() falls back to non-ssl connection)
 <?php
 $ssl = 1;
 require 'skipif.inc';
+if (!function_exists("ftp_ssl_connect")) die("skip ftp_ssl is disabled");
 ?>
 --FILE--
 <?php
@@ -18,5 +19,5 @@ var_dump(ftp_login($ftp, 'user', 'pass'));
 ftp_close($ftp);
 ?>
 --EXPECTF--
-Warning: ftp_login(): bogus msg in %sbug37799.php on line 8
+Warning: ftp_login(): %rdummy|bogus msg%r in %sbug37799.php on line 8
 bool(false)

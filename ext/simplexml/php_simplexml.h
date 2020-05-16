@@ -1,8 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | PHP Version 5                                                        |
-  +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) The PHP Group                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,13 +14,14 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef PHP_SIMPLEXML_H
 #define PHP_SIMPLEXML_H
 
 extern zend_module_entry simplexml_module_entry;
 #define phpext_simplexml_ptr &simplexml_module_entry
+
+#include "php_version.h"
+#define PHP_SIMPLEXML_VERSION PHP_VERSION
 
 #ifdef ZTS
 #include "TSRM.h"
@@ -42,9 +41,6 @@ extern zend_module_entry simplexml_module_entry;
 
 PHP_MINIT_FUNCTION(simplexml);
 PHP_MSHUTDOWN_FUNCTION(simplexml);
-#ifdef HAVE_SPL
-PHP_RINIT_FUNCTION(simplexml);
-#endif
 PHP_MINFO_FUNCTION(simplexml);
 
 typedef enum {
@@ -55,7 +51,6 @@ typedef enum {
 } SXE_ITER;
 
 typedef struct {
-	zend_object zo;
 	php_libxml_node_ptr *node;
 	php_libxml_ref_obj *document;
 	HashTable *properties;
@@ -65,17 +60,12 @@ typedef struct {
 		xmlChar               *nsprefix;
 		int                   isprefix;
 		SXE_ITER              type;
-		zval                  *data;
+		zval                  data;
 	} iter;
-	zval *tmp;
+	zval tmp;
 	zend_function *fptr_count;
+	zend_object zo;
 } php_sxe_object;
-
-#ifdef ZTS
-#define SIMPLEXML_G(v) TSRMG(simplexml_globals_id, zend_simplexml_globals *, v)
-#else
-#define SIMPLEXML_G(v) (simplexml_globals.v)
-#endif
 
 #ifdef PHP_WIN32
 #	ifdef PHP_SIMPLEXML_EXPORTS
@@ -90,13 +80,3 @@ typedef struct {
 PHP_SXE_API zend_class_entry *sxe_get_element_class_entry();
 
 #endif
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * indent-tabs-mode: t
- * End:
- * vim600: fdm=marker
- * vim: noet sw=4 ts=4
- */

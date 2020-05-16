@@ -1,5 +1,3 @@
-
-	/* $Id: fpm.c,v 1.23 2008/07/20 16:38:31 anight Exp $ */
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #include "fpm_config.h"
@@ -24,7 +22,7 @@
 #include "zlog.h"
 
 struct fpm_globals_s fpm_globals = {
-	.parent_pid = 0, 
+	.parent_pid = 0,
 	.argc = 0,
 	.argv = NULL,
 	.config = NULL,
@@ -39,10 +37,11 @@ struct fpm_globals_s fpm_globals = {
 	.test_successful = 0,
 	.heartbeat = 0,
 	.run_as_root = 0,
+	.force_stderr = 0,
 	.send_config_pipe = {0, 0},
 };
 
-int fpm_init(int argc, char **argv, char *config, char *prefix, char *pid, int test_conf, int run_as_root, int force_daemon) /* {{{ */
+int fpm_init(int argc, char **argv, char *config, char *prefix, char *pid, int test_conf, int run_as_root, int force_daemon, int force_stderr) /* {{{ */
 {
 	fpm_globals.argc = argc;
 	fpm_globals.argv = argv;
@@ -52,6 +51,7 @@ int fpm_init(int argc, char **argv, char *config, char *prefix, char *pid, int t
 	fpm_globals.prefix = prefix;
 	fpm_globals.pid = pid;
 	fpm_globals.run_as_root = run_as_root;
+	fpm_globals.force_stderr = force_stderr;
 
 	if (0 > fpm_php_init_main()           ||
 	    0 > fpm_stdio_init_main()         ||
@@ -120,4 +120,3 @@ run_child: /* only workers reach this point */
 	return fpm_globals.listening_socket;
 }
 /* }}} */
-

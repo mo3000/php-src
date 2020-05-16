@@ -4,13 +4,13 @@ Closure 018: Assigning lambda to static var and returning by ref
 <?php
 
 class foo {
-	public function test(&$x) {
-		static $lambda;
-		$lambda = function &() use (&$x) { 
-			return $x = $x * $x;
-		};
-		return $lambda();
-	}
+    public function test(&$x) {
+        static $lambda;
+        $lambda = function &() use (&$x) {
+            return $x = $x * $x;
+        };
+        return $lambda();
+    }
 }
 
 $test = new foo;
@@ -21,8 +21,11 @@ var_dump($x = $test->test($y));
 var_dump($y, $x);
 
 ?>
---EXPECT--
+--EXPECTF--
+Notice: Only variable references should be returned by reference in %sclosure_018.php on line 7
 int(4)
+
+Notice: Only variable references should be returned by reference in %sclosure_018.php on line 7
 int(16)
 int(16)
 int(16)

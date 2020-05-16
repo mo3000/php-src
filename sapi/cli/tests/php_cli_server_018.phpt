@@ -12,13 +12,8 @@ var_dump($_SERVER['REQUEST_METHOD']);
 PHP
 );
 
-list($host, $port) = explode(':', PHP_CLI_SERVER_ADDRESS);
-$port = intval($port)?:80;
-
-$fp = fsockopen($host, $port, $errno, $errstr, 0.5);
-if (!$fp) {
-  die("connect failed");
-}
+$host = PHP_CLI_SERVER_HOSTNAME;
+$fp = php_cli_server_connect();
 
 if(fwrite($fp, <<<HEADER
 PATCH / HTTP/1.1
@@ -37,8 +32,9 @@ fclose($fp);
 --EXPECTF--
 HTTP/1.1 200 OK
 Host: %s
+Date: %s
 Connection: close
 X-Powered-By: %s
-Content-type: text/html
+Content-type: text/html; charset=UTF-8
 
 string(5) "PATCH"

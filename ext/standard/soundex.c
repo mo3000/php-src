@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,10 +10,9 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Author: Bjørn Borud - Guardian Networks AS <borud@guardian.no>       |
+   | Author: BjÃ¸rn Borud - Guardian Networks AS <borud@guardian.no>       |
    +----------------------------------------------------------------------+
  */
-/* $Id$ */
 
 #include "php.h"
 #include <stdlib.h>
@@ -29,7 +26,7 @@
 PHP_FUNCTION(soundex)
 {
 	char	*str;
-	int	i, _small, str_len, code, last;
+	size_t	i, _small, str_len, code, last;
 	char	soundex[4 + 1];
 
 	static char soundex_table[26] =
@@ -60,9 +57,10 @@ PHP_FUNCTION(soundex)
 	 0,							/* Y */
 	 '2'};						/* Z */
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &str, &str_len) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, 1)
+		Z_PARAM_STRING(str, str_len)
+	ZEND_PARSE_PARAMETERS_END();
+
 	if (str_len == 0) {
 		RETURN_FALSE;
 	}
@@ -78,7 +76,7 @@ PHP_FUNCTION(soundex)
 		if (code >= 'A' && code <= 'Z') {
 			if (_small == 0) {
 				/* remember first valid char */
-				soundex[_small++] = code;
+				soundex[_small++] = (char)code;
 				last = soundex_table[code - 'A'];
 			}
 			else {
@@ -88,7 +86,7 @@ PHP_FUNCTION(soundex)
 				code = soundex_table[code - 'A'];
 				if (code != last) {
 					if (code != 0) {
-						soundex[_small++] = code;
+						soundex[_small++] = (char)code;
 					}
 					last = code;
 				}
@@ -101,15 +99,6 @@ PHP_FUNCTION(soundex)
 	}
 	soundex[_small] = '\0';
 
-	RETURN_STRINGL(soundex, _small, 1);
+	RETURN_STRINGL(soundex, _small);
 }
 /* }}} */
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * End:
- * vim600: sw=4 ts=4 fdm=marker
- * vim<600: sw=4 ts=4
- */

@@ -1,8 +1,6 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) The PHP Group                                          |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -12,28 +10,30 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Zeev Suraski <zeev@php.net>                                 |
    |          Jouni Ahto <jouni.ahto@exdec.fi>                            |
    +----------------------------------------------------------------------+
  */
- 
-/* $Id$ */
 
 #ifndef PHP_PGSQL_H
 #define PHP_PGSQL_H
 
 #if HAVE_PGSQL
 
+#define PHP_PGSQL_API_VERSION 20140217
+
 extern zend_module_entry pgsql_module_entry;
 #define pgsql_module_ptr &pgsql_module_entry
+
+#include "php_version.h"
+#define PHP_PGSQL_VERSION PHP_VERSION
 
 #ifdef PHP_PGSQL_PRIVATE
 #undef SOCKET_SIZE_TYPE
 #include <libpq-fe.h>
 
+#include <libpq/libpq-fs.h>
 #ifdef PHP_WIN32
-#define INV_WRITE            0x00020000
-#define INV_READ             0x00040000
 #undef PHP_PGSQL_API
 #ifdef PGSQL_EXPORTS
 #define PHP_PGSQL_API __declspec(dllexport)
@@ -41,7 +41,6 @@ extern zend_module_entry pgsql_module_entry;
 #define PHP_PGSQL_API __declspec(dllimport)
 #endif
 #else
-#include <libpq/libpq-fs.h>
 # if defined(__GNUC__) && __GNUC__ >= 4
 #  define PHP_PGSQL_API __attribute__ ((visibility("default")))
 # else
@@ -50,6 +49,7 @@ extern zend_module_entry pgsql_module_entry;
 #endif
 
 #ifdef HAVE_PG_CONFIG_H
+#undef SIZEOF_OFF_T
 #include <pg_config.h>
 #endif
 
@@ -65,6 +65,7 @@ PHP_MINFO_FUNCTION(pgsql);
 /* connection functions */
 PHP_FUNCTION(pg_connect);
 PHP_FUNCTION(pg_pconnect);
+PHP_FUNCTION(pg_connect_poll);
 PHP_FUNCTION(pg_close);
 PHP_FUNCTION(pg_connection_reset);
 PHP_FUNCTION(pg_connection_status);
@@ -132,6 +133,9 @@ PHP_FUNCTION(pg_field_is_null);
 PHP_FUNCTION(pg_field_table);
 /* async message functions */
 PHP_FUNCTION(pg_get_notify);
+PHP_FUNCTION(pg_socket);
+PHP_FUNCTION(pg_consume_input);
+PHP_FUNCTION(pg_flush);
 PHP_FUNCTION(pg_get_pid);
 /* error message functions */
 PHP_FUNCTION(pg_result_error);
@@ -157,6 +161,9 @@ PHP_FUNCTION(pg_lo_import);
 PHP_FUNCTION(pg_lo_export);
 PHP_FUNCTION(pg_lo_seek);
 PHP_FUNCTION(pg_lo_tell);
+#if HAVE_PG_LO_TRUNCATE
+PHP_FUNCTION(pg_lo_truncate);
+#endif
 
 /* debugging functions */
 PHP_FUNCTION(pg_trace);
@@ -186,8 +193,9 @@ PHP_FUNCTION(pg_select);
 
 /* connection options - ToDo: Add async connection option */
 #define PGSQL_CONNECT_FORCE_NEW     (1<<1)
+#define PGSQL_CONNECT_ASYNC         (1<<2)
 /* php_pgsql_convert options */
-#define PGSQL_CONV_IGNORE_DEFAULT   (1<<1)     /* Do not use DEAFULT value by removing field from returned array */
+#define PGSQL_CONV_IGNORE_DEFAULT   (1<<1)     /* Do not use DEFAULT value by removing field from returned array */
 #define PGSQL_CONV_FORCE_NULL       (1<<2)     /* Convert to NULL if string is null string */
 #define PGSQL_CONV_IGNORE_NOT_NULL  (1<<3)     /* Ignore NOT NULL constraints */
 #define PGSQL_CONV_OPTS             (PGSQL_CONV_IGNORE_DEFAULT|PGSQL_CONV_FORCE_NULL|PGSQL_CONV_IGNORE_NOT_NULL)
@@ -196,24 +204,32 @@ PHP_FUNCTION(pg_select);
 #define PGSQL_DML_EXEC              (1<<9)     /* Execute query */
 #define PGSQL_DML_ASYNC             (1<<10)    /* Do async query */
 #define PGSQL_DML_STRING            (1<<11)    /* Return query string */
+#define PGSQL_DML_ESCAPE            (1<<12)    /* No convert, but escape only */
 
 /* exported functions */
-PHP_PGSQL_API int php_pgsql_meta_data(PGconn *pg_link, const char *table_name, zval *meta TSRMLS_DC);
-PHP_PGSQL_API int php_pgsql_convert(PGconn *pg_link, const char *table_name, const zval *values, zval *result, ulong opt TSRMLS_DC);
-PHP_PGSQL_API int php_pgsql_insert(PGconn *pg_link, const char *table, zval *values, ulong opt, char **sql TSRMLS_DC);
-PHP_PGSQL_API int php_pgsql_update(PGconn *pg_link, const char *table, zval *values, zval *ids, ulong opt , char **sql TSRMLS_DC);
-PHP_PGSQL_API int php_pgsql_delete(PGconn *pg_link, const char *table, zval *ids, ulong opt, char **sql TSRMLS_DC);
-PHP_PGSQL_API int php_pgsql_select(PGconn *pg_link, const char *table, zval *ids, zval *ret_array, ulong opt, char **sql  TSRMLS_DC);
-PHP_PGSQL_API int php_pgsql_result2array(PGresult *pg_result, zval *ret_array TSRMLS_DC);
+PHP_PGSQL_API int php_pgsql_meta_data(PGconn *pg_link, const char *table_name, zval *meta, zend_bool extended);
+PHP_PGSQL_API int php_pgsql_convert(PGconn *pg_link, const char *table_name, const zval *values, zval *result, zend_ulong opt);
+PHP_PGSQL_API int php_pgsql_insert(PGconn *pg_link, const char *table, zval *values, zend_ulong opt, zend_string **sql);
+PHP_PGSQL_API int php_pgsql_update(PGconn *pg_link, const char *table, zval *values, zval *ids, zend_ulong opt , zend_string **sql);
+PHP_PGSQL_API int php_pgsql_delete(PGconn *pg_link, const char *table, zval *ids, zend_ulong opt, zend_string **sql);
+PHP_PGSQL_API int php_pgsql_select(PGconn *pg_link, const char *table, zval *ids, zval *ret_array, zend_ulong opt, long fetch_option, zend_string **sql );
+PHP_PGSQL_API int php_pgsql_result2array(PGresult *pg_result, zval *ret_array, long fetch_option);
 
 /* internal functions */
 static void php_pgsql_do_connect(INTERNAL_FUNCTION_PARAMETERS,int persistent);
 static void php_pgsql_get_link_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type);
 static void php_pgsql_get_result_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type);
-static char *get_field_name(PGconn *pgsql, Oid oid, HashTable *list TSRMLS_DC);
+static char *get_field_name(PGconn *pgsql, Oid oid, HashTable *list);
 static void php_pgsql_get_field_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type);
 static void php_pgsql_data_info(INTERNAL_FUNCTION_PARAMETERS, int entry_type);
 static void php_pgsql_do_async(INTERNAL_FUNCTION_PARAMETERS,int entry_type);
+
+static ssize_t php_pgsql_fd_write(php_stream *stream, const char *buf, size_t count);
+static ssize_t php_pgsql_fd_read(php_stream *stream, char *buf, size_t count);
+static int php_pgsql_fd_close(php_stream *stream, int close_handle);
+static int php_pgsql_fd_flush(php_stream *stream);
+static int php_pgsql_fd_set_option(php_stream *stream, int option, int value, void *ptrparam);
+static int php_pgsql_fd_cast(php_stream *stream, int cast_as, void **ret);
 
 typedef enum _php_pgsql_data_type {
 	/* boolean */
@@ -257,7 +273,7 @@ typedef enum _php_pgsql_data_type {
 	PG_PATH,
 	PG_POLYGON,
 	PG_CIRCLE,
-	/* unkown and system */
+	/* unknown and system */
 	PG_UNKNOWN
 } php_pgsql_data_type;
 
@@ -277,23 +293,35 @@ typedef struct _php_pgsql_notice {
 	size_t len;
 } php_pgsql_notice;
 
+static const php_stream_ops php_stream_pgsql_fd_ops = {
+	php_pgsql_fd_write,
+	php_pgsql_fd_read,
+	php_pgsql_fd_close,
+	php_pgsql_fd_flush,
+	"PostgreSQL link",
+	NULL, /* seek */
+	php_pgsql_fd_cast, /* cast */
+	NULL, /* stat */
+	php_pgsql_fd_set_option
+};
+
 ZEND_BEGIN_MODULE_GLOBALS(pgsql)
-	long default_link; /* default link when connection is omitted */
-	long num_links,num_persistent;
-	long max_links,max_persistent;
-	long allow_persistent;
-	long auto_reset_persistent;
+	zend_long num_links,num_persistent;
+	zend_long max_links,max_persistent;
+	zend_long allow_persistent;
+	zend_long auto_reset_persistent;
 	int le_lofp,le_string;
 	int ignore_notices,log_notices;
 	HashTable notices;  /* notice message for each connection */
+	zend_resource *default_link; /* default link when connection is omitted */
+	HashTable hashes; /* hashes for each connection */
 ZEND_END_MODULE_GLOBALS(pgsql)
 
 ZEND_EXTERN_MODULE_GLOBALS(pgsql)
+# define PGG(v) ZEND_MODULE_GLOBALS_ACCESSOR(pgsql, v)
 
-#ifdef ZTS
-# define PGG(v) TSRMG(pgsql_globals_id, zend_pgsql_globals *, v)
-#else
-# define PGG(v) (pgsql_globals.v)
+#if defined(ZTS) && defined(COMPILE_DL_PGSQL)
+ZEND_TSRMLS_CACHE_EXTERN()
 #endif
 
 #endif

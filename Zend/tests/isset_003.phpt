@@ -1,5 +1,5 @@
 --TEST--
-Testing isset accessing undefined array itens and properties
+Testing isset accessing undefined array items and properties
 --FILE--
 <?php
 
@@ -14,7 +14,7 @@ var_dump(isset($a[0]->a));
 
 var_dump(isset($c[0][1][2]->a->b->c->d));
 
-var_dump(isset(${$a}->{$b->$c[$d]}));
+var_dump(isset(${$a}->{$b->{$c[$d]}}));
 
 var_dump(isset($GLOBALS));
 
@@ -29,11 +29,13 @@ bool(true)
 bool(false)
 bool(false)
 
-Notice: Undefined variable: c in %s on line %d
+Warning: Undefined variable $c in %s on line %d
 
-Notice: Undefined variable: d in %s on line %d
+Warning: Undefined variable $d in %s on line %d
 
-Notice: Trying to get property of non-object in %s on line %d
+Warning: Trying to access array offset on value of type null in %s on line %d
+
+Warning: Trying to get property '' of non-object in %s on line %d
 bool(false)
 bool(true)
 bool(false)

@@ -1,7 +1,5 @@
 /*
    +----------------------------------------------------------------------+
-   | PHP Version 5                                                        |
-   +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
@@ -28,13 +26,14 @@ U_CDECL_END
 
 #include <unicode/timezone.h>
 
-U_CFUNC TimeZone *timezone_convert_datetimezone(int type, void *object, int is_datetime, intl_error *outside_error, const char *func TSRMLS_DC);
+using icu::TimeZone;
+
+U_CFUNC TimeZone *timezone_convert_datetimezone(int type, void *object, int is_datetime, intl_error *outside_error, const char *func);
 U_CFUNC int intl_datetime_decompose(zval *z, double *millis, TimeZone **tz,
-		intl_error *err, const char *func TSRMLS_DC);
+		intl_error *err, const char *func);
 
 #endif
 
-U_CFUNC double intl_zval_to_millis(zval *z, intl_error *err, const char *func TSRMLS_DC);
+U_CFUNC double intl_zval_to_millis(zval *z, intl_error *err, const char *func);
 
 #endif	/* COMMON_DATE_H */
-

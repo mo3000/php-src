@@ -11,46 +11,38 @@ foreach($array1 as $start)
       foreach($array2 as $value)
       {
          echo '==========================='."\n";
-	 echo 'start: '.$start.' num: '.$num.' value: '.$value."\n";
-  	 $output = array_fill($start, $num, $value);
-	 var_dump($output);
+     echo 'start: '.$start.' num: '.$num.' value: '.$value."\n";
+     $output = array_fill($start, $num, $value);
+     var_dump($output);
       }
    }
 }
-echo '== Done ==';
 ?>
-===============Done====================
---EXPECTF--
+--EXPECT--
 ===========================
 start: 0 num: 0 value: 1
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 0 num: 0 value: 
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 0 num: 0 value: 
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 0 num: 0 value: d
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 0 num: 0 value: e
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 0 num: 0 value: f
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 0 num: 1 value: 1
 array(1) {
@@ -137,34 +129,28 @@ array(2) {
 }
 ===========================
 start: 1 num: 0 value: 1
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 1 num: 0 value: 
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 1 num: 0 value: 
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 1 num: 0 value: d
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 1 num: 0 value: e
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 1 num: 0 value: f
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 1 num: 1 value: 1
 array(1) {
@@ -251,34 +237,28 @@ array(2) {
 }
 ===========================
 start: 2.5 num: 0 value: 1
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 2.5 num: 0 value: 
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 2.5 num: 0 value: 
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 2.5 num: 0 value: d
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 2.5 num: 0 value: e
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 2.5 num: 0 value: f
-
-Warning: array_fill(): Number of elements must be positive in %s on line %d
-bool(false)
+array(0) {
+}
 ===========================
 start: 2.5 num: 1 value: 1
 array(1) {
@@ -363,4 +343,3 @@ array(2) {
   [3]=>
   string(1) "f"
 }
-== Done =================Done====================

@@ -5,7 +5,7 @@
  * LICENSE NOTICES
  *
  * This file is part of "streamable kanji code filter and converter",
- * which is distributed under the terms of GNU Lesser General Public 
+ * which is distributed under the terms of GNU Lesser General Public
  * License (version 2) as published by the Free Software Foundation.
  *
  * This software is distributed in the hope that it will be useful,
@@ -24,7 +24,7 @@
 /*
  * The source code included in this files was separated from mbfilter.c
  * by moriyoshi koizumi <moriyoshi@php.net> on 4 dec 2002.
- * 
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -42,7 +42,9 @@ const mbfl_encoding mbfl_encoding_utf16 = {
 	"UTF-16",
 	(const char *(*)[])&mbfl_encoding_utf16_aliases,
 	NULL,
-	MBFL_ENCTYPE_MWC2BE
+	MBFL_ENCTYPE_MWC2BE,
+	&vtbl_utf16_wchar,
+	&vtbl_wchar_utf16
 };
 
 const mbfl_encoding mbfl_encoding_utf16be = {
@@ -51,7 +53,9 @@ const mbfl_encoding mbfl_encoding_utf16be = {
 	"UTF-16BE",
 	NULL,
 	NULL,
-	MBFL_ENCTYPE_MWC2BE
+	MBFL_ENCTYPE_MWC2BE,
+	&vtbl_utf16be_wchar,
+	&vtbl_wchar_utf16be
 };
 
 const mbfl_encoding mbfl_encoding_utf16le = {
@@ -60,7 +64,9 @@ const mbfl_encoding mbfl_encoding_utf16le = {
 	"UTF-16LE",
 	NULL,
 	NULL,
-	MBFL_ENCTYPE_MWC2LE
+	MBFL_ENCTYPE_MWC2LE,
+	&vtbl_utf16le_wchar,
+	&vtbl_wchar_utf16le
 };
 
 const struct mbfl_convert_vtbl vtbl_utf16_wchar = {
@@ -69,7 +75,8 @@ const struct mbfl_convert_vtbl vtbl_utf16_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_utf16_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_utf16 = {
@@ -78,7 +85,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_utf16 = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_utf16be,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_utf16be_wchar = {
@@ -87,7 +95,8 @@ const struct mbfl_convert_vtbl vtbl_utf16be_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_utf16be_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_utf16be = {
@@ -96,7 +105,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_utf16be = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_utf16be,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_utf16le_wchar = {
@@ -105,7 +115,8 @@ const struct mbfl_convert_vtbl vtbl_utf16le_wchar = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_utf16le_wchar,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 const struct mbfl_convert_vtbl vtbl_wchar_utf16le = {
@@ -114,7 +125,8 @@ const struct mbfl_convert_vtbl vtbl_wchar_utf16le = {
 	mbfl_filt_conv_common_ctor,
 	mbfl_filt_conv_common_dtor,
 	mbfl_filt_conv_wchar_utf16le,
-	mbfl_filt_conv_common_flush
+	mbfl_filt_conv_common_flush,
+	NULL,
 };
 
 #define CK(statement)	do { if ((statement) < 0) return (-1); } while (0)
@@ -239,9 +251,7 @@ int mbfl_filt_conv_wchar_utf16be(int c, mbfl_convert_filter *filter)
 		CK((*filter->output_function)((n >> 8) & 0xff, filter->data));
 		CK((*filter->output_function)(n & 0xff, filter->data));
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
@@ -304,13 +314,8 @@ int mbfl_filt_conv_wchar_utf16le(int c, mbfl_convert_filter *filter)
 		CK((*filter->output_function)(n & 0xff, filter->data));
 		CK((*filter->output_function)((n >> 8) & 0xff, filter->data));
 	} else {
-		if (filter->illegal_mode != MBFL_OUTPUTFILTER_ILLEGAL_MODE_NONE) {
-			CK(mbfl_filt_conv_illegal_output(c, filter));
-		}
+		CK(mbfl_filt_conv_illegal_output(c, filter));
 	}
 
 	return c;
 }
-
-
-

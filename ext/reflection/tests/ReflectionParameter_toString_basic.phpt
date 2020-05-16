@@ -4,17 +4,16 @@ ReflectionParameter::__toString()
 Stefan Koopmanschap <stefan@stefankoopmanschap.nl>
 --FILE--
 <?php
-function ReflectionParameterTest($test, $test2 = null) {
-	echo $test;
+function ReflectionParameterTest($test, $test2 = null, ...$test3) {
+    echo $test;
 }
 $reflect = new ReflectionFunction('ReflectionParameterTest');
 $params = $reflect->getParameters();
 foreach($params as $key => $value) {
-	echo $value->__toString() . "\n";
+    echo $value->__toString() . "\n";
 }
 ?>
-==DONE==
 --EXPECT--
 Parameter #0 [ <required> $test ]
 Parameter #1 [ <optional> $test2 = NULL ]
-==DONE==
+Parameter #2 [ <optional> ...$test3 ]

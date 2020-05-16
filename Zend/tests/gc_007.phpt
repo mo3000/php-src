@@ -1,5 +1,5 @@
 --TEST--
-GC 007: Unreferensed array cycle
+GC 007: Unreferenced array cycle
 --INI--
 zend.enable_gc=1
 --FILE--
@@ -15,10 +15,7 @@ echo "ok\n"
 --EXPECT--
 array(1) {
   [0]=>
-  &array(1) {
-    [0]=>
-    *RECURSION*
-  }
+  *RECURSION*
 }
 int(0)
 int(1)
