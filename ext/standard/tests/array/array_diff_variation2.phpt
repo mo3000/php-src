@@ -2,12 +2,6 @@
 Test array_diff() function : usage variations - unexpected values for 'arr2' argument
 --FILE--
 <?php
-/* Prototype  : array array_diff(array $arr1, array $arr2 [, array ...])
- * Description: Returns the entries of $arr1 that have values which are
- * not present in any of the others arguments.
- * Source code: ext/standard/array.c
- */
-
 /*
  * Test array_diff by passing non array values in place of $arr2
  */
@@ -149,7 +143,7 @@ echo "Done";
 
 -- Iteration 22 --array_diff(): Argument #2 ($arr2) must be of type array, string given
 
--- Iteration 23 --array_diff(): Argument #2 ($arr2) must be of type array, object given
+-- Iteration 23 --array_diff(): Argument #2 ($arr2) must be of type array, classA given
 
 -- Iteration 24 --array_diff(): Argument #2 ($arr2) must be of type array, null given
 

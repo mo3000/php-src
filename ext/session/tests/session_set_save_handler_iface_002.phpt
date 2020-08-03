@@ -10,12 +10,6 @@ session.name=PHPSESSID
 
 ob_start();
 
-/*
- * Prototype : bool session_set_save_handler(SessionHandlerInterface $handler [, bool $register_shutdown_function = true])
- * Description : Sets user-level session storage functions
- * Source code : ext/session/session.c
- */
-
 echo "*** Testing session_set_save_handler() function: interface wrong ***\n";
 
 interface MySessionHandlerInterface {
@@ -86,5 +80,5 @@ session_start();
 --EXPECT--
 *** Testing session_set_save_handler() function: interface wrong ***
 bool(true)
-session_set_save_handler(): Argument #1 ($open) must be of type SessionHandlerInterface, object given
+session_set_save_handler(): Argument #1 ($open) must be of type SessionHandlerInterface, MySession2 given
 good handler writing

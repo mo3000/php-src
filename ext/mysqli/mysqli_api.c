@@ -32,7 +32,7 @@
 #include "ext/mysqlnd/mysql_float_to_double.h"
 
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 /* {{{ mysqli_tx_cor_options_to_string */
 static void mysqli_tx_cor_options_to_string(const MYSQL * const conn, smart_str * str, const uint32_t mode)
 {
@@ -133,8 +133,7 @@ static int mysqli_commit_or_rollback_libmysql(MYSQL * conn, zend_bool commit, co
 /* }}} */
 #endif
 
-/* {{{ proto mixed mysqli_affected_rows(object link)
-   Get number of affected rows in previous MySQL operation */
+/* {{{ Get number of affected rows in previous MySQL operation */
 PHP_FUNCTION(mysqli_affected_rows)
 {
 	MY_MYSQL 		*mysql;
@@ -155,8 +154,7 @@ PHP_FUNCTION(mysqli_affected_rows)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_autocommit(object link, bool mode)
-   Turn auto commit on or of */
+/* {{{ Turn auto commit on or of */
 PHP_FUNCTION(mysqli_autocommit)
 {
 	MY_MYSQL	*mysql;
@@ -311,8 +309,7 @@ end:
 #endif
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_bind_param(object stmt, string types, mixed variable [,mixed ...])
-   Bind variables to a prepared statement as parameters */
+/* {{{ Bind variables to a prepared statement as parameters */
 PHP_FUNCTION(mysqli_stmt_bind_param)
 {
 	zval			*args;
@@ -574,8 +571,7 @@ mysqli_stmt_bind_result_do_bind(MY_STMT *stmt, zval *args, unsigned int argc)
 #endif
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_bind_result(object stmt, mixed var [,mixed ...])
-   Bind variables to a prepared statement for result storage */
+/* {{{ Bind variables to a prepared statement for result storage */
 PHP_FUNCTION(mysqli_stmt_bind_result)
 {
 	zval		*args;
@@ -600,8 +596,7 @@ PHP_FUNCTION(mysqli_stmt_bind_result)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_change_user(object link, string user, string password, string database)
-   Change logged-in user of the active connection */
+/* {{{ Change logged-in user of the active connection */
 PHP_FUNCTION(mysqli_change_user)
 {
 	MY_MYSQL	*mysql;
@@ -609,7 +604,7 @@ PHP_FUNCTION(mysqli_change_user)
 	char		*user, *password, *dbname;
 	size_t			user_len, password_len, dbname_len;
 	zend_ulong		rc;
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	const		CHARSET_INFO * old_charset;
 #endif
 
@@ -618,11 +613,11 @@ PHP_FUNCTION(mysqli_change_user)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	old_charset = mysql->mysql->charset;
 #endif
 
-#if defined(MYSQLI_USE_MYSQLND)
+#ifdef MYSQLI_USE_MYSQLND
 	rc = mysqlnd_change_user_ex(mysql->mysql, user, password, dbname, FALSE, (size_t) password_len);
 #else
 	rc = mysql_change_user(mysql->mysql, user, password, dbname);
@@ -632,7 +627,7 @@ PHP_FUNCTION(mysqli_change_user)
 	if (rc) {
 		RETURN_FALSE;
 	}
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (mysql_get_server_version(mysql->mysql) < 50123L) {
 		/*
 		  Request the current charset, or it will be reset to the system one.
@@ -647,8 +642,7 @@ PHP_FUNCTION(mysqli_change_user)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_character_set_name(object link)
-   Returns the name of the character set used for this connection */
+/* {{{ Returns the name of the character set used for this connection */
 PHP_FUNCTION(mysqli_character_set_name)
 {
 	MY_MYSQL	*mysql;
@@ -681,12 +675,12 @@ void php_mysqli_close(MY_MYSQL * mysql, int close_type, int resource_status)
 		if ((le = zend_hash_find_ptr(&EG(persistent_list), mysql->hash_key)) != NULL) {
 			if (le->type == php_le_pmysqli()) {
 				mysqli_plist_entry *plist = (mysqli_plist_entry *) le->ptr;
-#if defined(MYSQLI_USE_MYSQLND)
+#ifdef MYSQLI_USE_MYSQLND
 				mysqlnd_end_psession(mysql->mysql);
 #endif
 
 				if (MyG(rollback_on_cached_plink) &&
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 					mysqli_commit_or_rollback_libmysql(mysql->mysql, FALSE, TRANS_COR_NO_OPT, NULL))
 #else
 					FAIL == mysqlnd_rollback(mysql->mysql, TRANS_COR_NO_OPT, NULL))
@@ -708,8 +702,7 @@ void php_mysqli_close(MY_MYSQL * mysql, int close_type, int resource_status)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_close(object link)
-   Close connection */
+/* {{{ Close connection */
 PHP_FUNCTION(mysqli_close)
 {
 	zval		*mysql_link;
@@ -730,8 +723,7 @@ PHP_FUNCTION(mysqli_close)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_commit(object link[, int flags [, string name ]])
-   Commit outstanding actions and close transaction */
+/* {{{ Commit outstanding actions and close transaction */
 PHP_FUNCTION(mysqli_commit)
 {
 	MY_MYSQL	*mysql;
@@ -745,7 +737,7 @@ PHP_FUNCTION(mysqli_commit)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (mysqli_commit_or_rollback_libmysql(mysql->mysql, TRUE, flags, name)) {
 #else
 	if (FAIL == mysqlnd_commit(mysql->mysql, flags, name)) {
@@ -756,8 +748,7 @@ PHP_FUNCTION(mysqli_commit)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_data_seek(object result, int offset)
-   Move internal result pointer */
+/* {{{ Move internal result pointer */
 PHP_FUNCTION(mysqli_data_seek)
 {
 	MYSQL_RES	*result;
@@ -784,8 +775,7 @@ PHP_FUNCTION(mysqli_data_seek)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_debug(string debug)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_debug)
 {
 	char	*debug;
@@ -800,8 +790,7 @@ PHP_FUNCTION(mysqli_debug)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_dump_debug_info(object link)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_dump_debug_info)
 {
 	MY_MYSQL	*mysql;
@@ -816,8 +805,7 @@ PHP_FUNCTION(mysqli_dump_debug_info)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_errno(object link)
-   Returns the numerical value of the error message from previous MySQL operation */
+/* {{{ Returns the numerical value of the error message from previous MySQL operation */
 PHP_FUNCTION(mysqli_errno)
 {
 	MY_MYSQL	*mysql;
@@ -831,8 +819,7 @@ PHP_FUNCTION(mysqli_errno)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_error(object link)
-   Returns the text of the error message from previous MySQL operation */
+/* {{{ Returns the text of the error message from previous MySQL operation */
 PHP_FUNCTION(mysqli_error)
 {
 	MY_MYSQL	*mysql;
@@ -850,8 +837,7 @@ PHP_FUNCTION(mysqli_error)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_execute(object stmt)
-   Execute a prepared statement */
+/* {{{ Execute a prepared statement */
 PHP_FUNCTION(mysqli_stmt_execute)
 {
 	MY_STMT		*stmt;
@@ -1121,11 +1107,10 @@ void mysqli_stmt_fetch_mysqlnd(INTERNAL_FUNCTION_PARAMETERS)
 #endif
 /* }}} */
 
-/* {{{ proto mixed mysqli_stmt_fetch(object stmt)
-   Fetch results from a prepared statement into the bound variables */
+/* {{{ Fetch results from a prepared statement into the bound variables */
 PHP_FUNCTION(mysqli_stmt_fetch)
 {
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	mysqli_stmt_fetch_libmysql(INTERNAL_FUNCTION_PARAM_PASSTHRU);
 #else
 	mysqli_stmt_fetch_mysqlnd(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1163,8 +1148,7 @@ static void php_add_field_properties(zval *value, const MYSQL_FIELD *field)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_fetch_field(object result)
-   Get column information from a result and return as an object */
+/* {{{ Get column information from a result and return as an object */
 PHP_FUNCTION(mysqli_fetch_field)
 {
 	MYSQL_RES	*result;
@@ -1186,8 +1170,7 @@ PHP_FUNCTION(mysqli_fetch_field)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_fetch_fields(object result)
-   Return array of objects containing field meta-data */
+/* {{{ Return array of objects containing field meta-data */
 PHP_FUNCTION(mysqli_fetch_fields)
 {
 	MYSQL_RES	*result;
@@ -1216,8 +1199,7 @@ PHP_FUNCTION(mysqli_fetch_fields)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_fetch_field_direct(object result, int offset)
-   Fetch meta-data for a single field */
+/* {{{ Fetch meta-data for a single field */
 PHP_FUNCTION(mysqli_fetch_field_direct)
 {
 	MYSQL_RES	*result;
@@ -1245,14 +1227,13 @@ PHP_FUNCTION(mysqli_fetch_field_direct)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_fetch_lengths(object result)
-   Get the length of each output in a result */
+/* {{{ Get the length of each output in a result */
 PHP_FUNCTION(mysqli_fetch_lengths)
 {
 	MYSQL_RES		*result;
 	zval			*mysql_result;
 	unsigned int	i, num_fields;
-#if defined(MYSQLI_USE_MYSQLND)
+#ifdef MYSQLI_USE_MYSQLND
 	const size_t	*ret;
 #else
 	const zend_ulong *ret;
@@ -1277,17 +1258,14 @@ PHP_FUNCTION(mysqli_fetch_lengths)
 }
 /* }}} */
 
-/* {{{ proto array mysqli_fetch_row(object result)
-   Get a result row as an enumerated array */
+/* {{{ Get a result row as an enumerated array */
 PHP_FUNCTION(mysqli_fetch_row)
 {
 	php_mysqli_fetch_into_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MYSQLI_NUM, 0);
 }
 /* }}} */
 
-/* {{{ proto int mysqli_field_count(object link)
-   Fetch the number of fields returned by the last query for the given link
-*/
+/* {{{ Fetch the number of fields returned by the last query for the given link */
 PHP_FUNCTION(mysqli_field_count)
 {
 	MY_MYSQL	*mysql;
@@ -1302,9 +1280,7 @@ PHP_FUNCTION(mysqli_field_count)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_field_seek(object result, int fieldnr)
-   Set result pointer to a specified field offset
-*/
+/* {{{ Set result pointer to a specified field offset */
 PHP_FUNCTION(mysqli_field_seek)
 {
 	MYSQL_RES		*result;
@@ -1326,8 +1302,7 @@ PHP_FUNCTION(mysqli_field_seek)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_field_tell(object result)
-   Get current field offset of result pointer */
+/* {{{ Get current field offset of result pointer */
 PHP_FUNCTION(mysqli_field_tell)
 {
 	MYSQL_RES	*result;
@@ -1342,8 +1317,7 @@ PHP_FUNCTION(mysqli_field_tell)
 }
 /* }}} */
 
-/* {{{ proto void mysqli_free_result(object result)
-   Free query result memory for the given result handle */
+/* {{{ Free query result memory for the given result handle */
 PHP_FUNCTION(mysqli_free_result)
 {
 	MYSQL_RES	*result;
@@ -1359,8 +1333,7 @@ PHP_FUNCTION(mysqli_free_result)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_get_client_info(void)
-   Get MySQL client info */
+/* {{{ Get MySQL client info */
 PHP_FUNCTION(mysqli_get_client_info)
 {
 	if (getThis()) {
@@ -1370,7 +1343,7 @@ PHP_FUNCTION(mysqli_get_client_info)
 	} else {
 		zval *mysql_link;
 
-		if (zend_parse_parameters(ZEND_NUM_ARGS(), "|O", &mysql_link, mysqli_link_class_entry) == FAILURE) {
+		if (zend_parse_parameters(ZEND_NUM_ARGS(), "|O!", &mysql_link, mysqli_link_class_entry) == FAILURE) {
 			RETURN_THROWS();
 		}
 	}
@@ -1382,8 +1355,7 @@ PHP_FUNCTION(mysqli_get_client_info)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_get_client_version(void)
-   Get MySQL client info */
+/* {{{ Get MySQL client info */
 PHP_FUNCTION(mysqli_get_client_version)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -1394,8 +1366,7 @@ PHP_FUNCTION(mysqli_get_client_version)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_get_host_info(object link)
-   Get MySQL host info */
+/* {{{ Get MySQL host info */
 PHP_FUNCTION(mysqli_get_host_info)
 {
 	MY_MYSQL	*mysql;
@@ -1405,7 +1376,7 @@ PHP_FUNCTION(mysqli_get_host_info)
 		RETURN_THROWS();
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	RETURN_STRING((mysql->mysql->host_info) ? mysql->mysql->host_info : "");
 #else
 	RETURN_STRING((mysql->mysql->data->host_info) ? mysql->mysql->data->host_info : "");
@@ -1413,8 +1384,7 @@ PHP_FUNCTION(mysqli_get_host_info)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_get_proto_info(object link)
-   Get MySQL protocol information */
+/* {{{ Get MySQL protocol information */
 PHP_FUNCTION(mysqli_get_proto_info)
 {
 	MY_MYSQL	*mysql;
@@ -1428,28 +1398,22 @@ PHP_FUNCTION(mysqli_get_proto_info)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_get_server_info(object link)
-   Get MySQL server info */
+/* {{{ Get MySQL server info */
 PHP_FUNCTION(mysqli_get_server_info)
 {
 	MY_MYSQL	*mysql;
 	zval		*mysql_link = NULL;
-	const char	*info;
 
 	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &mysql_link, mysqli_link_class_entry) == FAILURE) {
 		RETURN_THROWS();
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
-	info = mysql_get_server_info(mysql->mysql);
-	if (info) {
-		RETURN_STRING(info);
-	}
+	RETURN_STRING(mysql_get_server_info(mysql->mysql));
 }
 /* }}} */
 
-/* {{{ proto int mysqli_get_server_version(object link)
-   Return the MySQL version for the server referenced by the given link */
+/* {{{ Return the MySQL version for the server referenced by the given link */
 PHP_FUNCTION(mysqli_get_server_version)
 {
 	MY_MYSQL	*mysql;
@@ -1464,8 +1428,7 @@ PHP_FUNCTION(mysqli_get_server_version)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_info(object link)
-   Get information about the most recent query */
+/* {{{ Get information about the most recent query */
 PHP_FUNCTION(mysqli_info)
 {
 	MY_MYSQL	*mysql;
@@ -1500,7 +1463,7 @@ void php_mysqli_init(INTERNAL_FUNCTION_PARAMETERS, zend_bool is_method)
 
 	mysql = (MY_MYSQL *)ecalloc(1, sizeof(MY_MYSQL));
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (!(mysql->mysql = mysql_init(NULL)))
 #else
 	/*
@@ -1526,24 +1489,21 @@ void php_mysqli_init(INTERNAL_FUNCTION_PARAMETERS, zend_bool is_method)
 }
 /* }}} */
 
-/* {{{ proto resource mysqli_init(void)
-   Initialize mysqli and return a resource for use with mysql_real_connect */
+/* {{{ Initialize mysqli and return a resource for use with mysql_real_connect */
 PHP_FUNCTION(mysqli_init)
 {
 	php_mysqli_init(INTERNAL_FUNCTION_PARAM_PASSTHRU, FALSE);
 }
 /* }}} */
 
-/* {{{ proto resource mysqli::init(void)
-   Initialize mysqli and return a resource for use with mysql_real_connect */
+/* {{{ Initialize mysqli and return a resource for use with mysql_real_connect */
 PHP_FUNCTION(mysqli_init_method)
 {
 	php_mysqli_init(INTERNAL_FUNCTION_PARAM_PASSTHRU, TRUE);
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_insert_id(object link)
-   Get the ID generated from the previous INSERT operation */
+/* {{{ Get the ID generated from the previous INSERT operation */
 PHP_FUNCTION(mysqli_insert_id)
 {
 	MY_MYSQL		*mysql;
@@ -1559,8 +1519,7 @@ PHP_FUNCTION(mysqli_insert_id)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_kill(object link, int processid)
-   Kill a mysql process on the server */
+/* {{{ Kill a mysql process on the server */
 PHP_FUNCTION(mysqli_kill)
 {
 	MY_MYSQL	*mysql;
@@ -1585,8 +1544,7 @@ PHP_FUNCTION(mysqli_kill)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_more_results(object link)
-   check if there any more query results from a multi query */
+/* {{{ check if there any more query results from a multi query */
 PHP_FUNCTION(mysqli_more_results)
 {
 	MY_MYSQL	*mysql;
@@ -1601,8 +1559,7 @@ PHP_FUNCTION(mysqli_more_results)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_next_result(object link)
-   read next result from multi_query */
+/* {{{ read next result from multi_query */
 PHP_FUNCTION(mysqli_next_result) {
 	MY_MYSQL	*mysql;
 	zval		*mysql_link;
@@ -1617,8 +1574,7 @@ PHP_FUNCTION(mysqli_next_result) {
 /* }}} */
 
 #if defined(HAVE_STMT_NEXT_RESULT) && defined(MYSQLI_USE_MYSQLND)
-/* {{{ proto bool mysqli_stmt_more_results(object link)
-   check if there any more query results from a multi query */
+/* {{{ check if there any more query results from a multi query */
 PHP_FUNCTION(mysqli_stmt_more_results)
 {
 	MY_STMT		*stmt;
@@ -1633,8 +1589,7 @@ PHP_FUNCTION(mysqli_stmt_more_results)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_next_result(object link)
-   read next result from multi_query */
+/* {{{ read next result from multi_query */
 PHP_FUNCTION(mysqli_stmt_next_result) {
 	MY_STMT		*stmt;
 	zval		*mysql_stmt;
@@ -1649,8 +1604,7 @@ PHP_FUNCTION(mysqli_stmt_next_result) {
 /* }}} */
 #endif
 
-/* {{{ proto int mysqli_num_fields(object result)
-   Get number of fields in result */
+/* {{{ Get number of fields in result */
 PHP_FUNCTION(mysqli_num_fields)
 {
 	MYSQL_RES	*result;
@@ -1665,8 +1619,7 @@ PHP_FUNCTION(mysqli_num_fields)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_num_rows(object result)
-   Get number of rows in result */
+/* {{{ Get number of rows in result */
 PHP_FUNCTION(mysqli_num_rows)
 {
 	MYSQL_RES	*result;
@@ -1751,8 +1704,7 @@ static int mysqli_options_get_option_zval_type(int option)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_options(object link, int flags, mixed values)
-   Set options */
+/* {{{ Set options */
 PHP_FUNCTION(mysqli_options)
 {
 	MY_MYSQL		*mysql;
@@ -1768,7 +1720,7 @@ PHP_FUNCTION(mysqli_options)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_INITIALIZED);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (PG(open_basedir) && PG(open_basedir)[0] != '\0') {
 		if(mysql_option == MYSQL_OPT_LOCAL_INFILE) {
 			RETURN_FALSE;
@@ -1807,8 +1759,7 @@ PHP_FUNCTION(mysqli_options)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_ping(object link)
-   Ping a server connection or reconnect if there is no connection */
+/* {{{ Ping a server connection or reconnect if there is no connection */
 PHP_FUNCTION(mysqli_ping)
 {
 	MY_MYSQL	*mysql;
@@ -1826,8 +1777,7 @@ PHP_FUNCTION(mysqli_ping)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_prepare(object link, string query)
-   Prepare a SQL statement for execution */
+/* {{{ Prepare a SQL statement for execution */
 PHP_FUNCTION(mysqli_prepare)
 {
 	MY_MYSQL		*mysql;
@@ -1842,7 +1792,7 @@ PHP_FUNCTION(mysqli_prepare)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (mysql->mysql->status == MYSQL_STATUS_GET_RESULT) {
 		php_error_docref(NULL, E_WARNING, "All data must be fetched before a new statement prepare takes place");
 		RETURN_FALSE;
@@ -1854,7 +1804,7 @@ PHP_FUNCTION(mysqli_prepare)
 	if ((stmt->stmt = mysql_stmt_init(mysql->mysql))) {
 		if (mysql_stmt_prepare(stmt->stmt, query, query_len)) {
 			/* mysql_stmt_close() clears errors, so we have to store them temporarily */
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 			char  last_error[MYSQL_ERRMSG_SIZE];
 			char  sqlstate[SQLSTATE_LENGTH+1];
 			unsigned int last_errno;
@@ -1872,7 +1822,7 @@ PHP_FUNCTION(mysqli_prepare)
 			stmt->stmt = NULL;
 
 			/* restore error messages */
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 			mysql->mysql->net.last_errno = last_errno;
 			memcpy(mysql->mysql->net.last_error, last_error, MYSQL_ERRMSG_SIZE);
 			memcpy(mysql->mysql->net.sqlstate, sqlstate, SQLSTATE_LENGTH+1);
@@ -1910,16 +1860,14 @@ PHP_FUNCTION(mysqli_prepare)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_real_connect(object link [,string hostname [,string username [,string passwd [,string dbname [,int port [,string socket [,int flags]]]]]]])
-   Open a connection to a mysql server */
+/* {{{ Open a connection to a mysql server */
 PHP_FUNCTION(mysqli_real_connect)
 {
 	mysqli_common_connect(INTERNAL_FUNCTION_PARAM_PASSTHRU, TRUE, FALSE);
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_real_query(object link, string query)
-   Binary-safe version of mysql_query() */
+/* {{{ Binary-safe version of mysql_query() */
 PHP_FUNCTION(mysqli_real_query)
 {
 	MY_MYSQL	*mysql;
@@ -1949,8 +1897,7 @@ PHP_FUNCTION(mysqli_real_query)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_real_escape_string(object link, string escapestr)
-   Escapes special characters in a string for use in a SQL statement, taking into account the current charset of the connection */
+/* {{{ Escapes special characters in a string for use in a SQL statement, taking into account the current charset of the connection */
 PHP_FUNCTION(mysqli_real_escape_string) {
 	MY_MYSQL	*mysql;
 	zval		*mysql_link = NULL;
@@ -1971,8 +1918,7 @@ PHP_FUNCTION(mysqli_real_escape_string) {
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_rollback(object link)
-   Undo actions from current transaction */
+/* {{{ Undo actions from current transaction */
 PHP_FUNCTION(mysqli_rollback)
 {
 	MY_MYSQL	*mysql;
@@ -1986,7 +1932,7 @@ PHP_FUNCTION(mysqli_rollback)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (mysqli_commit_or_rollback_libmysql(mysql->mysql, FALSE, flags, name)) {
 #else
 	if (FAIL == mysqlnd_rollback(mysql->mysql, flags, name)) {
@@ -1997,8 +1943,7 @@ PHP_FUNCTION(mysqli_rollback)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_send_long_data(object stmt, int param_nr, string data)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_send_long_data)
 {
 	MY_STMT *stmt;
@@ -2023,8 +1968,7 @@ PHP_FUNCTION(mysqli_stmt_send_long_data)
 }
 /* }}} */
 
-/* {{{ proto string|int|false mysqli_stmt_affected_rows(object stmt)
-   Return the number of rows affected in the last query for the given link. */
+/* {{{ Return the number of rows affected in the last query for the given link. */
 PHP_FUNCTION(mysqli_stmt_affected_rows)
 {
 	MY_STMT			*stmt;
@@ -2044,8 +1988,7 @@ PHP_FUNCTION(mysqli_stmt_affected_rows)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_close(object stmt)
-   Close statement */
+/* {{{ Close statement */
 PHP_FUNCTION(mysqli_stmt_close)
 {
 	MY_STMT		*stmt;
@@ -2064,8 +2007,7 @@ PHP_FUNCTION(mysqli_stmt_close)
 }
 /* }}} */
 
-/* {{{ proto void mysqli_stmt_data_seek(object stmt, int offset)
-   Move internal result pointer */
+/* {{{ Move internal result pointer */
 PHP_FUNCTION(mysqli_stmt_data_seek)
 {
 	MY_STMT		*stmt;
@@ -2086,8 +2028,7 @@ PHP_FUNCTION(mysqli_stmt_data_seek)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_stmt_field_count(object stmt) {
-   Return the number of result columns for the given statement */
+/* {{{ Return the number of result columns for the given statement */
 PHP_FUNCTION(mysqli_stmt_field_count)
 {
 	MY_STMT		*stmt;
@@ -2102,8 +2043,7 @@ PHP_FUNCTION(mysqli_stmt_field_count)
 }
 /* }}} */
 
-/* {{{ proto void mysqli_stmt_free_result(object stmt)
-   Free stored result memory for the given statement handle */
+/* {{{ Free stored result memory for the given statement handle */
 PHP_FUNCTION(mysqli_stmt_free_result)
 {
 	MY_STMT		*stmt;
@@ -2119,8 +2059,7 @@ PHP_FUNCTION(mysqli_stmt_free_result)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_stmt_insert_id(object stmt)
-   Get the ID generated from the previous INSERT operation */
+/* {{{ Get the ID generated from the previous INSERT operation */
 PHP_FUNCTION(mysqli_stmt_insert_id)
 {
 	MY_STMT			*stmt;
@@ -2136,8 +2075,7 @@ PHP_FUNCTION(mysqli_stmt_insert_id)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_stmt_param_count(object stmt)
-   Return the number of parameter for the given statement */
+/* {{{ Return the number of parameter for the given statement */
 PHP_FUNCTION(mysqli_stmt_param_count)
 {
 	MY_STMT		*stmt;
@@ -2152,8 +2090,7 @@ PHP_FUNCTION(mysqli_stmt_param_count)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_reset(object stmt)
-   reset a prepared statement */
+/* {{{ reset a prepared statement */
 PHP_FUNCTION(mysqli_stmt_reset)
 {
 	MY_STMT		*stmt;
@@ -2172,8 +2109,7 @@ PHP_FUNCTION(mysqli_stmt_reset)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_stmt_num_rows(object stmt)
-   Return the number of rows in statements result set */
+/* {{{ Return the number of rows in statements result set */
 PHP_FUNCTION(mysqli_stmt_num_rows)
 {
 	MY_STMT			*stmt;
@@ -2191,8 +2127,7 @@ PHP_FUNCTION(mysqli_stmt_num_rows)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_select_db(object link, string dbname)
-   Select a MySQL database */
+/* {{{ Select a MySQL database */
 PHP_FUNCTION(mysqli_select_db)
 {
 	MY_MYSQL	*mysql;
@@ -2213,8 +2148,7 @@ PHP_FUNCTION(mysqli_select_db)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_sqlstate(object link)
-   Returns the SQLSTATE error from previous MySQL operation */
+/* {{{ Returns the SQLSTATE error from previous MySQL operation */
 PHP_FUNCTION(mysqli_sqlstate)
 {
 	MY_MYSQL	*mysql;
@@ -2232,8 +2166,7 @@ PHP_FUNCTION(mysqli_sqlstate)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_ssl_set(object link ,string key ,string cert ,string ca ,string capath ,string cipher])
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_ssl_set)
 {
 	MY_MYSQL	*mysql;
@@ -2258,13 +2191,12 @@ PHP_FUNCTION(mysqli_ssl_set)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_stat(object link)
-   Get current system status */
+/* {{{ Get current system status */
 PHP_FUNCTION(mysqli_stat)
 {
 	MY_MYSQL	*mysql;
 	zval		*mysql_link;
-#if defined(MYSQLI_USE_MYSQLND)
+#ifdef MYSQLI_USE_MYSQLND
 	zend_string *stat;
 #else
 	char		*stat;
@@ -2275,7 +2207,7 @@ PHP_FUNCTION(mysqli_stat)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if ((stat = (char *)mysql_stat(mysql->mysql)))
 	{
 		RETURN_STRING(stat);
@@ -2291,8 +2223,7 @@ PHP_FUNCTION(mysqli_stat)
 
 /* }}} */
 
-/* {{{ proto bool mysqli_refresh(object link, int options)
-   Flush tables or caches, or reset replication server information */
+/* {{{ Flush tables or caches, or reset replication server information */
 PHP_FUNCTION(mysqli_refresh)
 {
 	MY_MYSQL *mysql;
@@ -2311,8 +2242,7 @@ PHP_FUNCTION(mysqli_refresh)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_stmt_attr_set(object stmt, int attr, int mode)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_attr_set)
 {
 	MY_STMT	*stmt;
@@ -2347,7 +2277,7 @@ PHP_FUNCTION(mysqli_stmt_attr_set)
 		mode_p = &mode;
 		break;
 	}
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	if (mysql_stmt_attr_set(stmt->stmt, attr, mode_p)) {
 #else
 	if (FAIL == mysql_stmt_attr_set(stmt->stmt, attr, mode_p)) {
@@ -2358,8 +2288,7 @@ PHP_FUNCTION(mysqli_stmt_attr_set)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_stmt_attr_get(object stmt, int attr)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_attr_get)
 {
 	MY_STMT	*stmt;
@@ -2385,8 +2314,7 @@ PHP_FUNCTION(mysqli_stmt_attr_get)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_stmt_errno(object stmt)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_errno)
 {
 	MY_STMT	*stmt;
@@ -2401,8 +2329,7 @@ PHP_FUNCTION(mysqli_stmt_errno)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_stmt_error(object stmt)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_error)
 {
 	MY_STMT	*stmt;
@@ -2421,9 +2348,7 @@ PHP_FUNCTION(mysqli_stmt_error)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_stmt_init(object link)
-   Initialize statement object
-*/
+/* {{{ Initialize statement object */
 PHP_FUNCTION(mysqli_stmt_init)
 {
 	MY_MYSQL		*mysql;
@@ -2453,9 +2378,7 @@ PHP_FUNCTION(mysqli_stmt_init)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_prepare(object stmt, string query)
-   prepare server side statement with query
-*/
+/* {{{ prepare server side statement with query */
 PHP_FUNCTION(mysqli_stmt_prepare)
 {
 	MY_STMT	*stmt;
@@ -2478,8 +2401,7 @@ PHP_FUNCTION(mysqli_stmt_prepare)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_stmt_result_metadata(object stmt)
-   return result set from statement */
+/* {{{ return result set from statement */
 PHP_FUNCTION(mysqli_stmt_result_metadata)
 {
 	MY_STMT			*stmt;
@@ -2504,8 +2426,7 @@ PHP_FUNCTION(mysqli_stmt_result_metadata)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_stmt_store_result(object stmt)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_store_result)
 {
 	MY_STMT	*stmt;
@@ -2516,7 +2437,7 @@ PHP_FUNCTION(mysqli_stmt_store_result)
 	}
 	MYSQLI_FETCH_RESOURCE_STMT(stmt, mysql_stmt, MYSQLI_STATUS_VALID);
 
-#if !defined(MYSQLI_USE_MYSQLND)
+#ifndef MYSQLI_USE_MYSQLND
 	{
 		/*
 		  If the user wants to store the data and we have BLOBs/TEXTs we try to allocate
@@ -2553,8 +2474,7 @@ PHP_FUNCTION(mysqli_stmt_store_result)
 }
 /* }}} */
 
-/* {{{ proto string mysqli_stmt_sqlstate(object stmt)
-*/
+/* {{{ */
 PHP_FUNCTION(mysqli_stmt_sqlstate)
 {
 	MY_STMT	*stmt;
@@ -2573,8 +2493,7 @@ PHP_FUNCTION(mysqli_stmt_sqlstate)
 }
 /* }}} */
 
-/* {{{ proto object mysqli_store_result(object link [, int flags])
-   Buffer result set on client */
+/* {{{ Buffer result set on client */
 PHP_FUNCTION(mysqli_store_result)
 {
 	MY_MYSQL		*mysql;
@@ -2588,7 +2507,7 @@ PHP_FUNCTION(mysqli_store_result)
 		RETURN_THROWS();
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
-#if MYSQLI_USE_MYSQLND
+#ifdef MYSQLI_USE_MYSQLND
 	result = flags & MYSQLI_STORE_RESULT_COPY_DATA? mysqlnd_store_result_ofs(mysql->mysql) : mysqlnd_store_result(mysql->mysql);
 #else
 	result = mysql_store_result(mysql->mysql);
@@ -2608,8 +2527,7 @@ PHP_FUNCTION(mysqli_store_result)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_thread_id(object link)
-   Return the current thread ID */
+/* {{{ Return the current thread ID */
 PHP_FUNCTION(mysqli_thread_id)
 {
 	MY_MYSQL	*mysql;
@@ -2624,8 +2542,7 @@ PHP_FUNCTION(mysqli_thread_id)
 }
 /* }}} */
 
-/* {{{ proto bool mysqli_thread_safe(void)
-   Return whether thread safety is given or not */
+/* {{{ Return whether thread safety is given or not */
 PHP_FUNCTION(mysqli_thread_safe)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2636,8 +2553,7 @@ PHP_FUNCTION(mysqli_thread_safe)
 }
 /* }}} */
 
-/* {{{ proto mixed mysqli_use_result(object link)
-   Directly retrieve query results - do not buffer results on client side */
+/* {{{ Directly retrieve query results - do not buffer results on client side */
 PHP_FUNCTION(mysqli_use_result)
 {
 	MY_MYSQL		*mysql;
@@ -2665,8 +2581,7 @@ PHP_FUNCTION(mysqli_use_result)
 }
 /* }}} */
 
-/* {{{ proto int mysqli_warning_count(object link)
-   Return number of warnings from the last query for the given link */
+/* {{{ Return number of warnings from the last query for the given link */
 PHP_FUNCTION(mysqli_warning_count)
 {
 	MY_MYSQL	*mysql;

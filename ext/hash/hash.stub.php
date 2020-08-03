@@ -30,10 +30,6 @@ function hash_hmac_algos(): array {}
 
 function hash_pbkdf2(string $algo, string $password, string $salt, int $iterations, int $length = 0, bool $raw_output = false): string {}
 
-/**
- * @param $known_string no type juggling is performed
- * @param $user_string no type juggling is performed
- */
 function hash_equals(string $known_string, string $user_string): bool {}
 
 function hash_hkdf(string $algo, string $ikm, int $length = 0, string $info = '', string $salt = ''): string {}
@@ -50,6 +46,11 @@ function mhash_count(): int {}
 function mhash(int $hash, string $data, string $key = UNKNOWN): string|false {}
 #endif
 
-class HashContext {
+final class HashContext
+{
     private function __construct() {}
+
+    public function __serialize(): array {}
+
+    public function __unserialize(array $serialized): void {}
 }

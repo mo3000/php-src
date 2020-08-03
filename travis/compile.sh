@@ -1,4 +1,5 @@
 #!/bin/bash
+set -ex
 if [[ "$ENABLE_ZTS" == 1 ]]; then
 	TS="--enable-zts";
 else
@@ -45,7 +46,6 @@ $S390X_CONFIG \
 --enable-xmlreader \
 --with-xsl \
 --with-tidy \
---with-xmlrpc \
 --enable-sysvsem \
 --enable-sysvshm \
 --enable-shmop \

@@ -129,7 +129,7 @@ PHP_METHOD(com, __construct)
 		info.pwszName = php_com_string_to_olestring(server_name, server_name_len, obj->code_page);
 
 		if (user_name) {
-			authid.User = php_com_string_to_olestring(user_name, -1, obj->code_page);
+			authid.User = (OLECHAR*)user_name;
 			authid.UserLength = (ULONG)user_name_len;
 
 			if (password) {
@@ -282,23 +282,27 @@ PHP_METHOD(com, __construct)
 }
 /* }}} */
 
-/* {{{ proto object com_get_active_object(string progid [, int code_page ])
-   Returns a handle to an already running instance of a COM object */
+/* {{{ Returns a handle to an already running instance of a COM object */
 PHP_FUNCTION(com_get_active_object)
 {
 	CLSID clsid;
 	char *module_name;
 	size_t module_name_len;
-	zend_long code_page = COMG(code_page);
+	zend_long code_page;
+	zend_bool code_page_is_null = 1;
 	IUnknown *unk = NULL;
 	IDispatch *obj = NULL;
 	HRESULT res;
 	OLECHAR *module = NULL;
 
 	php_com_initialize();
-	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "s|l",
-				&module_name, &module_name_len, &code_page)) {
+	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "s|l!",
+				&module_name, &module_name_len, &code_page, &code_page_is_null)) {
 		RETURN_THROWS();
+	}
+
+	if (code_page_is_null) {
+		code_page = COMG(code_page);
 	}
 
 	module = php_com_string_to_olestring(module_name, module_name_len, (int)code_page);
@@ -658,8 +662,7 @@ int php_com_do_invoke(php_com_dotnet_object *obj, char *name, size_t namelen,
 	return php_com_do_invoke_by_id(obj, dispid, flags, v, nargs, args, 0, allow_noarg);
 }
 
-/* {{{ proto string com_create_guid()
-   Generate a globally unique identifier (GUID) */
+/* {{{ Generate a globally unique identifier (GUID) */
 PHP_FUNCTION(com_create_guid)
 {
 	GUID retval;
@@ -686,8 +689,7 @@ PHP_FUNCTION(com_create_guid)
 }
 /* }}} */
 
-/* {{{ proto bool com_event_sink(object comobject, object sinkobject [, mixed sinkinterface])
-   Connect events from a COM object to a PHP object */
+/* {{{ Connect events from a COM object to a PHP object */
 PHP_FUNCTION(com_event_sink)
 {
 	zval *object, *sinkobject, *sink=NULL;
@@ -746,8 +748,7 @@ PHP_FUNCTION(com_event_sink)
 }
 /* }}} */
 
-/* {{{ proto bool com_print_typeinfo(object comobject | string typelib, string dispinterface, bool wantsink)
-   Print out a PHP class definition for a dispatchable interface */
+/* {{{ Print out a PHP class definition for a dispatchable interface */
 PHP_FUNCTION(com_print_typeinfo)
 {
 	zval *arg1;
@@ -783,8 +784,7 @@ PHP_FUNCTION(com_print_typeinfo)
 }
 /* }}} */
 
-/* {{{ proto bool com_message_pump([int timeoutms])
-   Process COM messages, sleeping for up to timeoutms milliseconds */
+/* {{{ Process COM messages, sleeping for up to timeoutms milliseconds */
 PHP_FUNCTION(com_message_pump)
 {
 	zend_long timeoutms = 0;
@@ -811,8 +811,7 @@ PHP_FUNCTION(com_message_pump)
 }
 /* }}} */
 
-/* {{{ proto bool com_load_typelib(string typelib_name [, bool case_insensitive])
-   Loads a Typelibrary and registers its constants */
+/* {{{ Loads a Typelibrary and registers its constants */
 PHP_FUNCTION(com_load_typelib)
 {
 	char *name;
@@ -827,8 +826,7 @@ PHP_FUNCTION(com_load_typelib)
 	}
 
 	if (!cs) {
-		php_error_docref(NULL, E_WARNING, "Declaration of case-insensitive constants is no longer supported");
-		RETURN_FALSE;
+		php_error_docref(NULL, E_WARNING, "com_load_typelib(): Argument #2 ($case_insensitive) is ignored since declaration of case-insensitive constants is no longer supported");
 	}
 
 	RETVAL_FALSE;

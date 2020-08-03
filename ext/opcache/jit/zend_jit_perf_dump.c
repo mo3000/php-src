@@ -22,15 +22,21 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/mman.h>
-#include <sys/syscall.h>
 
-#if defined(__darwin__)
+#if defined(__linux__)
+#include <sys/syscall.h>
+#elif defined(__darwin__)
 # include <pthread.h>
 #elif defined(__FreeBSD__)
 # include <sys/thr.h>
 # include <sys/sysctl.h>
 #elif defined(__NetBSD__)
 # include <lwp.h>
+#elif defined(__sun)
+// avoiding thread.h inclusion as it conflicts with vtunes types.
+extern unsigned int thr_self(void);
+#elif defined(__HAIKU__)
+#include <kernel/image.h>
 #endif
 
 #include "zend_elf.h"
@@ -126,6 +132,24 @@ static void zend_jit_perf_jitdump_open(void)
 		return;
 	}
 	fd = open(path, O_RDONLY);
+#elif defined(__sun)
+	const char *path = getexecname();
+	fd = open(path, O_RDONLY);
+#elif defined(__HAIKU__)
+	image_info ii;
+	int32_t ic = 0;
+
+	while (get_next_image_info(0, &ic, &ii) == B_OK) {
+		if (ii.type == B_APP_IMAGE) {
+			break;
+		}
+	}
+
+	if (ii.type != B_APP_IMAGE) {
+		return;
+	}
+
+	fd = open(ii.name, O_RDONLY);
 #else
 	fd = -1;
 #endif
@@ -209,6 +233,8 @@ static void zend_jit_perf_jitdump_register(const char *name, void *start, size_t
 		thread_id = getthrid();
 #elif defined(__NetBSD__)
 		thread_id = _lwp_self();
+#elif defined(__sun)
+		thread_id = thr_self();
 #endif
 
 		memset(&rec, 0, sizeof(rec));

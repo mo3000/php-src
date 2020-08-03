@@ -2,12 +2,6 @@
 Test array_uintersect_uassoc() function : usage variation
 --FILE--
 <?php
-/* Prototype  : array array_uintersect_uassoc(array arr1, array arr2 [, array ...], callback data_compare_func, callback key_compare_func)
- * Description: Returns the entries of arr1 that have values which are present in all the other arguments. Keys are used to do more restrictive check. Both data and keys are compared by using user-supplied callbacks.
- * Source code: ext/standard/array.c
- * Alias to functions:
- */
-
 echo "*** Testing array_uintersect_uassoc() : usage variation ***\n";
 
 // Initialise function arguments not being substituted (if any)
@@ -168,10 +162,10 @@ array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, string giv
 array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, string given
 
 --instance of classWithToString--
-array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, object given
+array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, object given
+array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, classWithoutToString given
 
 --undefined var--
 array_uintersect_uassoc(): Argument #2 ($arr2) must be of type array, null given

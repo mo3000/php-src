@@ -168,12 +168,12 @@ static int phar_file_action(phar_archive_data *phar, phar_entry_info *info, char
 		case PHAR_MIME_OTHER:
 			/* send headers, output file contents */
 			efree(basename);
-			ctr.line_len = spprintf(&(ctr.line), 0, "Content-type: %s", mime_type);
+			ctr.line_len = spprintf((char **) &(ctr.line), 0, "Content-type: %s", mime_type);
 			sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
-			efree(ctr.line);
-			ctr.line_len = spprintf(&(ctr.line), 0, "Content-length: %u", info->uncompressed_filesize);
+			efree((void *) ctr.line);
+			ctr.line_len = spprintf((char **) &(ctr.line), 0, "Content-length: %u", info->uncompressed_filesize);
 			sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
-			efree(ctr.line);
+			efree((void *) ctr.line);
 
 			if (FAILURE == sapi_send_headers()) {
 				zend_bailout();
@@ -388,8 +388,7 @@ static void phar_postprocess_ru_web(char *fname, size_t fname_len, char **entry,
 }
 /* }}} */
 
-/* {{{ proto void Phar::running([bool retphar = true])
- * return the name of the currently running phar archive.  If the optional parameter
+/* {{{ return the name of the currently running phar archive.  If the optional parameter
  * is set to true, return the phar:// URL to the currently running phar
  */
 PHP_METHOD(Phar, running)
@@ -423,8 +422,7 @@ PHP_METHOD(Phar, running)
 }
 /* }}} */
 
-/* {{{ proto void Phar::mount(string pharpath, string externalfile)
- * mount an external file or path to a location within the phar.  This maps
+/* {{{ mount an external file or path to a location within the phar.  This maps
  * an external file or directory to a location within the phar archive, allowing
  * reference to an external location as if it were within the phar archive.  This
  * is useful for writable temp files like databases
@@ -531,8 +529,7 @@ finish: ;
 }
 /* }}} */
 
-/* {{{ proto void Phar::webPhar([string alias, [string index, [string f404, [array mimetypes, [callback rewrites]]]]])
- * mapPhar for web-based phars. Reads the currently executed file (a phar)
+/* {{{ mapPhar for web-based phars. Reads the currently executed file (a phar)
  * and registers its manifest. When executed in the CLI or CGI command-line sapi,
  * this works exactly like mapPhar().  When executed by a web-based sapi, this
  * reads $_SERVER['REQUEST_URI'] (the actual original value) and parses out the
@@ -681,39 +678,30 @@ PHP_METHOD(Phar, webPhar)
 		if (FAILURE == zend_fcall_info_init(rewrite, 0, &fci, &fcc, NULL, NULL)) {
 			zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: invalid rewrite callback");
 
+cleanup_fail:
+			zval_ptr_dtor(&params);
 			if (free_pathinfo) {
 				efree(path_info);
 			}
+			efree(entry);
 			efree(pt);
-
 			RETURN_THROWS();
 		}
 
 		fci.param_count = 1;
 		fci.params = &params;
-		Z_ADDREF(params);
 		fci.retval = &retval;
 
 		if (FAILURE == zend_call_function(&fci, &fcc)) {
 			if (!EG(exception)) {
 				zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: failed to call rewrite callback");
 			}
-
-			if (free_pathinfo) {
-				efree(path_info);
-			}
-			efree(pt);
-
-			RETURN_THROWS();
+			goto cleanup_fail;
 		}
 
 		if (Z_TYPE_P(fci.retval) == IS_UNDEF || Z_TYPE(retval) == IS_UNDEF) {
-			if (free_pathinfo) {
-				efree(path_info);
-			}
 			zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: rewrite callback must return a string or false");
-			efree(pt);
-			RETURN_THROWS();
+			goto cleanup_fail;
 		}
 
 		switch (Z_TYPE(retval)) {
@@ -734,13 +722,8 @@ PHP_METHOD(Phar, webPhar)
 				zend_bailout();
 				return;
 			default:
-				if (free_pathinfo) {
-					efree(path_info);
-				}
-				efree(pt);
-
 				zend_throw_exception_ex(phar_ce_PharException, 0, "phar error: rewrite callback must return a string or false");
-				RETURN_THROWS();
+				goto cleanup_fail;
 		}
 	}
 
@@ -790,9 +773,9 @@ PHP_METHOD(Phar, webPhar)
 			ctr.response_code = 0;
 
 			if (path_info[strlen(path_info)-1] == '/') {
-				ctr.line_len = spprintf(&(ctr.line), 4096, "Location: %s%s", path_info, entry + 1);
+				ctr.line_len = spprintf((char **) &(ctr.line), 4096, "Location: %s%s", path_info, entry + 1);
 			} else {
-				ctr.line_len = spprintf(&(ctr.line), 4096, "Location: %s%s", path_info, entry);
+				ctr.line_len = spprintf((char **) &(ctr.line), 4096, "Location: %s%s", path_info, entry);
 			}
 
 			if (not_cgi) {
@@ -805,7 +788,7 @@ PHP_METHOD(Phar, webPhar)
 
 			sapi_header_op(SAPI_HEADER_REPLACE, &ctr);
 			sapi_send_headers();
-			efree(ctr.line);
+			efree((void *) ctr.line);
 			zend_bailout();
 		}
 	}
@@ -872,8 +855,7 @@ PHP_METHOD(Phar, webPhar)
 }
 /* }}} */
 
-/* {{{ proto void Phar::mungServer(array munglist)
- * Defines a list of up to 4 $_SERVER variables that should be modified for execution
+/* {{{ Defines a list of up to 4 $_SERVER variables that should be modified for execution
  * to mask the presence of the phar archive.  This should be used in conjunction with
  * Phar::webPhar(), and has no effect otherwise
  * SCRIPT_NAME, PHP_SELF, REQUEST_URI and SCRIPT_FILENAME
@@ -925,8 +907,7 @@ PHP_METHOD(Phar, mungServer)
 }
 /* }}} */
 
-/* {{{ proto void Phar::interceptFileFuncs()
- * instructs phar to intercept fopen, file_get_contents, opendir, and all of the stat-related functions
+/* {{{ instructs phar to intercept fopen, file_get_contents, opendir, and all of the stat-related functions
  * and return stat on files within the phar for relative paths
  *
  * Once called, this cannot be reversed, and continue until the end of the request.
@@ -942,8 +923,7 @@ PHP_METHOD(Phar, interceptFileFuncs)
 }
 /* }}} */
 
-/* {{{ proto array Phar::createDefaultStub([string indexfile[, string webindexfile]])
- * Return a stub that can be used to run a phar-based archive without the phar extension
+/* {{{ Return a stub that can be used to run a phar-based archive without the phar extension
  * indexfile is the CLI startup filename, which defaults to "index.php", webindexfile
  * is the web startup filename, and also defaults to "index.php"
  */
@@ -968,8 +948,7 @@ PHP_METHOD(Phar, createDefaultStub)
 }
 /* }}} */
 
-/* {{{ proto mixed Phar::mapPhar([string alias, [int dataoffset]])
- * Reads the currently executed file (a phar) and registers its manifest */
+/* {{{ Reads the currently executed file (a phar) and registers its manifest */
 PHP_METHOD(Phar, mapPhar)
 {
 	char *alias = NULL, *error;
@@ -990,8 +969,7 @@ PHP_METHOD(Phar, mapPhar)
 	}
 } /* }}} */
 
-/* {{{ proto mixed Phar::loadPhar(string filename [, string alias])
- * Loads any phar archive with an alias */
+/* {{{ Loads any phar archive with an alias */
 PHP_METHOD(Phar, loadPhar)
 {
 	char *fname, *alias = NULL, *error;
@@ -1011,8 +989,7 @@ PHP_METHOD(Phar, loadPhar)
 	}
 } /* }}} */
 
-/* {{{ proto string Phar::apiVersion()
- * Returns the api version */
+/* {{{ Returns the api version */
 PHP_METHOD(Phar, apiVersion)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -1022,8 +999,7 @@ PHP_METHOD(Phar, apiVersion)
 }
 /* }}}*/
 
-/* {{{ proto bool Phar::canCompress([int method])
- * Returns whether phar extension supports compression using zlib/bzip2 */
+/* {{{ Returns whether phar extension supports compression using zlib/bzip2 */
 PHP_METHOD(Phar, canCompress)
 {
 	zend_long method = 0;
@@ -1056,8 +1032,7 @@ PHP_METHOD(Phar, canCompress)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::canWrite()
- * Returns whether phar extension supports writing and creating phars */
+/* {{{ Returns whether phar extension supports writing and creating phars */
 PHP_METHOD(Phar, canWrite)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -1067,8 +1042,7 @@ PHP_METHOD(Phar, canWrite)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::isValidPharFilename(string filename[, bool executable = true])
- * Returns whether the given filename is a valid phar filename */
+/* {{{ Returns whether the given filename is a valid phar filename */
 PHP_METHOD(Phar, isValidPharFilename)
 {
 	char *fname;
@@ -1120,8 +1094,7 @@ static const spl_other_handler phar_spl_foreign_handler = {
 	phar_spl_foreign_clone
 };
 
-/* {{{ proto Phar::__construct(string fname [, int flags [, string alias]])
- * Construct a Phar archive object
+/* {{{ Construct a Phar archive object
  *
  * proto PharData::__construct(string fname [[, int flags [, string alias]], int file format = Phar::TAR])
  * Construct a PharData archive object
@@ -1242,8 +1215,8 @@ PHP_METHOD(Phar, __construct)
 	ZVAL_STRINGL(&arg1, fname, fname_len);
 	ZVAL_LONG(&arg2, flags);
 
-	zend_call_method_with_2_params(Z_OBJ_P(zobj), Z_OBJCE_P(zobj),
-		&spl_ce_RecursiveDirectoryIterator->constructor, "__construct", NULL, &arg1, &arg2);
+	zend_call_known_instance_method_with_2_params(spl_ce_RecursiveDirectoryIterator->constructor,
+		Z_OBJ_P(zobj), NULL, &arg1, &arg2);
 
 	zval_ptr_dtor(&arg1);
 
@@ -1259,9 +1232,7 @@ PHP_METHOD(Phar, __construct)
 }
 /* }}} */
 
-/* {{{ proto array Phar::getSupportedSignatures()
- * Return array of supported signature types
- */
+/* {{{ Return array of supported signature types */
 PHP_METHOD(Phar, getSupportedSignatures)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -1274,7 +1245,7 @@ PHP_METHOD(Phar, getSupportedSignatures)
 	add_next_index_stringl(return_value, "SHA-1", 5);
 	add_next_index_stringl(return_value, "SHA-256", 7);
 	add_next_index_stringl(return_value, "SHA-512", 7);
-#if PHAR_HAVE_OPENSSL
+#ifdef PHAR_HAVE_OPENSSL
 	add_next_index_stringl(return_value, "OpenSSL", 7);
 #else
 	if (zend_hash_str_exists(&module_registry, "openssl", sizeof("openssl")-1)) {
@@ -1284,9 +1255,7 @@ PHP_METHOD(Phar, getSupportedSignatures)
 }
 /* }}} */
 
-/* {{{ proto array Phar::getSupportedCompression()
- * Return array of supported comparession algorithms
- */
+/* {{{ Return array of supported comparession algorithms */
 PHP_METHOD(Phar, getSupportedCompression)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -1306,9 +1275,7 @@ PHP_METHOD(Phar, getSupportedCompression)
 }
 /* }}} */
 
-/* {{{ proto array Phar::unlinkArchive(string archive)
- * Completely remove a phar archive from memory and disk
- */
+/* {{{ Completely remove a phar archive from memory and disk */
 PHP_METHOD(Phar, unlinkArchive)
 {
 	char *fname, *error, *zname, *arch, *entry;
@@ -1381,9 +1348,7 @@ PHP_METHOD(Phar, unlinkArchive)
 		RETURN_THROWS(); \
 	}
 
-/* {{{ proto Phar::__destruct()
- * if persistent, remove from the cache
- */
+/* {{{ if persistent, remove from the cache */
 PHP_METHOD(Phar, __destruct)
 {
 	zval *zobj = ZEND_THIS;
@@ -1725,8 +1690,7 @@ after_open_fp:
 }
 /* }}} */
 
-/* {{{ proto array Phar::buildFromDirectory(string base_dir[, string regex])
- * Construct a phar archive from an existing directory, recursively.
+/* {{{ Construct a phar archive from an existing directory, recursively.
  * Optional second parameter is a regular expression for filtering directory contents.
  *
  * Return value is an array mapping phar index to actual files added.
@@ -1764,8 +1728,8 @@ PHP_METHOD(Phar, buildFromDirectory)
 	ZVAL_STRINGL(&arg, dir, dir_len);
 	ZVAL_LONG(&arg2, SPL_FILE_DIR_SKIPDOTS|SPL_FILE_DIR_UNIXPATHS);
 
-	zend_call_method_with_2_params(Z_OBJ(iter), spl_ce_RecursiveDirectoryIterator,
-			&spl_ce_RecursiveDirectoryIterator->constructor, "__construct", NULL, &arg, &arg2);
+	zend_call_known_instance_method_with_2_params(spl_ce_RecursiveDirectoryIterator->constructor,
+		Z_OBJ(iter), NULL, &arg, &arg2);
 
 	zval_ptr_dtor(&arg);
 	if (EG(exception)) {
@@ -1780,8 +1744,8 @@ PHP_METHOD(Phar, buildFromDirectory)
 		RETURN_THROWS();
 	}
 
-	zend_call_method_with_1_params(Z_OBJ(iteriter), spl_ce_RecursiveIteratorIterator,
-			&spl_ce_RecursiveIteratorIterator->constructor, "__construct", NULL, &iter);
+	zend_call_known_instance_method_with_1_params(spl_ce_RecursiveIteratorIterator->constructor,
+		Z_OBJ(iteriter), NULL, &iter);
 
 	if (EG(exception)) {
 		zval_ptr_dtor(&iter);
@@ -1803,8 +1767,8 @@ PHP_METHOD(Phar, buildFromDirectory)
 
 		ZVAL_STRINGL(&arg2, regex, regex_len);
 
-		zend_call_method_with_2_params(Z_OBJ(regexiter), spl_ce_RegexIterator,
-			&spl_ce_RegexIterator->constructor, "__construct", NULL, &iteriter, &arg2);
+		zend_call_known_instance_method_with_2_params(spl_ce_RegexIterator->constructor,
+			Z_OBJ(regexiter), NULL, &iteriter, &arg2);
 		zval_ptr_dtor(&arg2);
 	}
 
@@ -1857,8 +1821,7 @@ PHP_METHOD(Phar, buildFromDirectory)
 }
 /* }}} */
 
-/* {{{ proto array Phar::buildFromIterator(Iterator iter[, string base_directory])
- * Construct a phar archive from an iterator.  The iterator must return a series of strings
+/* {{{ Construct a phar archive from an iterator.  The iterator must return a series of strings
  * that are full paths to files that should be added to the phar.  The iterator key should
  * be the path that the file will have within the phar archive.
  *
@@ -1923,9 +1886,7 @@ PHP_METHOD(Phar, buildFromIterator)
 }
 /* }}} */
 
-/* {{{ proto int Phar::count()
- * Returns the number of entries in the Phar archive
- */
+/* {{{ Returns the number of entries in the Phar archive */
 PHP_METHOD(Phar, count)
 {
 	/* mode can be ignored, maximum depth is 1 */
@@ -1940,8 +1901,7 @@ PHP_METHOD(Phar, count)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::isFileFormat(int format)
- * Returns true if the phar archive is based on the tar/zip/phar file format depending
+/* {{{ Returns true if the phar archive is based on the tar/zip/phar file format depending
  * on whether Phar::TAR, Phar::ZIP or Phar::PHAR was passed in
  */
 PHP_METHOD(Phar, isFileFormat)
@@ -2256,7 +2216,7 @@ its_ok:
 
 	ZVAL_STRINGL(&arg1, phar->fname, phar->fname_len);
 
-	zend_call_method_with_1_params(Z_OBJ(ret), ce, &ce->constructor, "__construct", NULL, &arg1);
+	zend_call_known_instance_method_with_1_params(ce->constructor, Z_OBJ(ret), NULL, &arg1);
 	zval_ptr_dtor(&arg1);
 	return Z_OBJ(ret);
 }
@@ -2306,10 +2266,7 @@ static zend_object *phar_convert_to_other(phar_archive_data *source, int convert
 	phar->is_temporary_alias = source->is_temporary_alias;
 	phar->alias = source->alias;
 
-	if (Z_TYPE(source->metadata) != IS_UNDEF) {
-		ZVAL_DUP(&phar->metadata, &source->metadata);
-		phar->metadata_len = 0;
-	}
+	phar_metadata_tracker_copy(&phar->metadata_tracker, &source->metadata_tracker, phar->is_persistent);
 
 	/* first copy each file's uncompressed contents to a temporary file and set per-file flags */
 	ZEND_HASH_FOREACH_PTR(&source->manifest, entry) {
@@ -2326,8 +2283,6 @@ static zend_object *phar_convert_to_other(phar_archive_data *source, int convert
 			goto no_copy;
 		}
 
-		newentry.metadata_str.s = NULL;
-
 		if (FAILURE == phar_copy_file_contents(&newentry, phar->fp)) {
 			zend_hash_destroy(&(phar->manifest));
 			php_stream_close(phar->fp);
@@ -2338,10 +2293,7 @@ static zend_object *phar_convert_to_other(phar_archive_data *source, int convert
 no_copy:
 		newentry.filename = estrndup(newentry.filename, newentry.filename_len);
 
-		if (Z_TYPE(newentry.metadata) != IS_UNDEF) {
-			zval_copy_ctor(&newentry.metadata);
-			newentry.metadata_str.s = NULL;
-		}
+		phar_metadata_tracker_clone(&newentry.metadata_tracker);
 
 		newentry.is_zip = phar->is_zip;
 		newentry.is_tar = phar->is_tar;
@@ -2376,8 +2328,7 @@ no_copy:
 }
 /* }}} */
 
-/* {{{ proto object Phar::convertToExecutable([int format[, int compression [, string file_ext]]])
- * Convert a phar.tar or phar.zip archive to the phar file format. The
+/* {{{ Convert a phar.tar or phar.zip archive to the phar file format. The
  * optional parameter allows the user to determine the new
  * filename extension (default is phar).
  */
@@ -2473,15 +2424,14 @@ PHP_METHOD(Phar, convertToExecutable)
 	phar_obj->archive->is_data = is_data;
 
 	if (ret) {
-		ZVAL_OBJ(return_value, ret);
+		RETURN_OBJ(ret);
 	} else {
 		RETURN_NULL();
 	}
 }
 /* }}} */
 
-/* {{{ proto object Phar::convertToData([int format[, int compression [, string file_ext]]])
- * Convert an archive to a non-executable .tar or .zip.
+/* {{{ Convert an archive to a non-executable .tar or .zip.
  * The optional parameter allows the user to determine the new
  * filename extension (default is .zip or .tar).
  */
@@ -2576,15 +2526,14 @@ PHP_METHOD(Phar, convertToData)
 	phar_obj->archive->is_data = is_data;
 
 	if (ret) {
-		ZVAL_OBJ(return_value, ret);
+		RETURN_OBJ(ret);
 	} else {
 		RETURN_NULL();
 	}
 }
 /* }}} */
 
-/* {{{ proto int|false Phar::isCompressed()
- * Returns Phar::GZ or PHAR::BZ2 if the entire archive is compressed
+/* {{{ Returns Phar::GZ or PHAR::BZ2 if the entire archive is compressed
  * (.tar.gz/tar.bz2 and so on), or FALSE otherwise.
  */
 PHP_METHOD(Phar, isCompressed)
@@ -2607,9 +2556,7 @@ PHP_METHOD(Phar, isCompressed)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::isWritable()
- * Returns true if phar.readonly=0 or phar is a PharData AND the actual file is writable.
- */
+/* {{{ Returns true if phar.readonly=0 or phar is a PharData AND the actual file is writable. */
 PHP_METHOD(Phar, isWritable)
 {
 	php_stream_statbuf ssb;
@@ -2635,9 +2582,7 @@ PHP_METHOD(Phar, isWritable)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::delete(string entry)
- * Deletes a named file within the archive.
- */
+/* {{{ Deletes a named file within the archive. */
 PHP_METHOD(Phar, delete)
 {
 	char *fname;
@@ -2687,9 +2632,7 @@ PHP_METHOD(Phar, delete)
 }
 /* }}} */
 
-/* {{{ proto int Phar::getAlias()
- * Returns the alias for the Phar or NULL.
- */
+/* {{{ Returns the alias for the Phar or NULL. */
 PHP_METHOD(Phar, getAlias)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -2704,9 +2647,7 @@ PHP_METHOD(Phar, getAlias)
 }
 /* }}} */
 
-/* {{{ proto int Phar::getPath()
- * Returns the real path to the phar archive on disk
- */
+/* {{{ Returns the real path to the phar archive on disk */
 PHP_METHOD(Phar, getPath)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -2719,8 +2660,7 @@ PHP_METHOD(Phar, getPath)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::setAlias(string alias)
- * Sets the alias for a Phar archive. The default value is the full path
+/* {{{ Sets the alias for a Phar archive. The default value is the full path
  * to the archive.
  */
 PHP_METHOD(Phar, setAlias)
@@ -2821,9 +2761,7 @@ valid_alias:
 }
 /* }}} */
 
-/* {{{ proto string Phar::getVersion()
- * Return version info of Phar archive
- */
+/* {{{ Return version info of Phar archive */
 PHP_METHOD(Phar, getVersion)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -2836,9 +2774,7 @@ PHP_METHOD(Phar, getVersion)
 }
 /* }}} */
 
-/* {{{ proto void Phar::startBuffering()
- * Do not flush a writeable phar (save its contents) until explicitly requested
- */
+/* {{{ Do not flush a writeable phar (save its contents) until explicitly requested */
 PHP_METHOD(Phar, startBuffering)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -2851,9 +2787,7 @@ PHP_METHOD(Phar, startBuffering)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::isBuffering()
- * Returns whether write operations are flushing to disk immediately.
- */
+/* {{{ Returns whether write operations are flushing to disk immediately. */
 PHP_METHOD(Phar, isBuffering)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -2866,9 +2800,7 @@ PHP_METHOD(Phar, isBuffering)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::stopBuffering()
- * Saves the contents of a modified archive to disk.
- */
+/* {{{ Saves the contents of a modified archive to disk. */
 PHP_METHOD(Phar, stopBuffering)
 {
 	char *error;
@@ -2895,8 +2827,7 @@ PHP_METHOD(Phar, stopBuffering)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::setStub(string|stream stub [, int len])
- * Change the stub in a phar, phar.tar or phar.zip archive to something other
+/* {{{ Change the stub in a phar, phar.tar or phar.zip archive to something other
  * than the default. The stub *must* end with a call to __HALT_COMPILER().
  */
 PHP_METHOD(Phar, setStub)
@@ -2966,8 +2897,7 @@ PHP_METHOD(Phar, setStub)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::setDefaultStub([string index[, string webindex]])
- * In a pure phar archive, sets a stub that can be used to run the archive
+/* {{{ In a pure phar archive, sets a stub that can be used to run the archive
  * regardless of whether the phar extension is available. The first parameter
  * is the CLI startup filename, which defaults to "index.php". The second
  * parameter is the web startup filename and also defaults to "index.php"
@@ -3048,8 +2978,7 @@ PHP_METHOD(Phar, setDefaultStub)
 }
 /* }}} */
 
-/* {{{ proto array Phar::setSignatureAlgorithm(int sigtype[, string privatekey])
- * Sets the signature algorithm for a phar and applies it. The signature
+/* {{{ Sets the signature algorithm for a phar and applies it. The signature
  * algorithm must be one of Phar::MD5, Phar::SHA1, Phar::SHA256,
  * Phar::SHA512, or Phar::OPENSSL. Note that zip- based phar archives
  * cannot support signatures.
@@ -3100,9 +3029,7 @@ PHP_METHOD(Phar, setSignatureAlgorithm)
 }
 /* }}} */
 
-/* {{{ proto array|false Phar::getSignature()
- * Returns a hash signature, or FALSE if the archive is unsigned.
- */
+/* {{{ Returns a hash signature, or FALSE if the archive is unsigned. */
 PHP_METHOD(Phar, getSignature)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -3143,9 +3070,7 @@ PHP_METHOD(Phar, getSignature)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::getModified()
- * Return whether phar was modified
- */
+/* {{{ Return whether phar was modified */
 PHP_METHOD(Phar, getModified)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -3215,8 +3140,7 @@ static int pharobj_cancompress(HashTable *manifest) /* {{{ */
 }
 /* }}} */
 
-/* {{{ proto object Phar::compress(int method[, string extension])
- * Compress a .tar, or .phar.tar with whole-file compression
+/* {{{ Compress a .tar, or .phar.tar with whole-file compression
  * The parameter can be one of Phar::GZ or Phar::BZ2 to specify
  * the kind of compression desired
  */
@@ -3279,16 +3203,14 @@ PHP_METHOD(Phar, compress)
 	}
 
 	if (ret) {
-		ZVAL_OBJ(return_value, ret);
+		RETURN_OBJ(ret);
 	} else {
 		RETURN_NULL();
 	}
 }
 /* }}} */
 
-/* {{{ proto object Phar::decompress([string extension])
- * Decompress a .tar, or .phar.tar with whole-file compression
- */
+/* {{{ Decompress a .tar, or .phar.tar with whole-file compression */
 PHP_METHOD(Phar, decompress)
 {
 	char *ext = NULL;
@@ -3319,15 +3241,14 @@ PHP_METHOD(Phar, decompress)
 	}
 
 	if (ret) {
-		ZVAL_OBJ(return_value, ret);
+		RETURN_OBJ(ret);
 	} else {
 		RETURN_NULL();
 	}
 }
 /* }}} */
 
-/* {{{ proto object Phar::compressFiles(int method)
- * Compress all files within a phar or zip archive using the specified compression
+/* {{{ Compress all files within a phar or zip archive using the specified compression
  * The parameter can be one of Phar::GZ or Phar::BZ2 to specify
  * the kind of compression desired
  */
@@ -3404,9 +3325,7 @@ PHP_METHOD(Phar, compressFiles)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::decompressFiles()
- * decompress every file
- */
+/* {{{ decompress every file */
 PHP_METHOD(Phar, decompressFiles)
 {
 	char *error;
@@ -3450,9 +3369,7 @@ PHP_METHOD(Phar, decompressFiles)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::copy(string oldfile, string newfile)
- * copy a file internal to the phar archive to another new file within the phar
- */
+/* {{{ copy a file internal to the phar archive to another new file within the phar */
 PHP_METHOD(Phar, copy)
 {
 	char *oldfile, *newfile, *error;
@@ -3519,10 +3436,7 @@ PHP_METHOD(Phar, copy)
 
 	memcpy((void *) &newentry, oldentry, sizeof(phar_entry_info));
 
-	if (Z_TYPE(newentry.metadata) != IS_UNDEF) {
-		zval_copy_ctor(&newentry.metadata);
-		newentry.metadata_str.s = NULL;
-	}
+	phar_metadata_tracker_clone(&newentry.metadata_tracker);
 
 	newentry.filename = estrndup(newfile, newfile_len);
 	newentry.filename_len = newfile_len;
@@ -3551,9 +3465,7 @@ PHP_METHOD(Phar, copy)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::offsetExists(string entry)
- * determines whether a file exists in the phar
- */
+/* {{{ determines whether a file exists in the phar */
 PHP_METHOD(Phar, offsetExists)
 {
 	char *fname;
@@ -3588,9 +3500,7 @@ PHP_METHOD(Phar, offsetExists)
 }
 /* }}} */
 
-/* {{{ proto PharFileInfo Phar::offsetGet(string entry)
- * get a PharFileInfo object for a specific file
- */
+/* {{{ get a PharFileInfo object for a specific file */
 PHP_METHOD(Phar, offsetGet)
 {
 	char *fname, *error;
@@ -3636,8 +3546,7 @@ PHP_METHOD(Phar, offsetGet)
 }
 /* }}} */
 
-/* {{{ add a file within the phar archive from a string or resource
- */
+/* {{{ add a file within the phar archive from a string or resource */
 static void phar_add_file(phar_archive_data **pphar, char *filename, size_t filename_len, char *cont_str, size_t cont_len, zval *zresource)
 {
 	size_t start_pos=0;
@@ -3732,8 +3641,7 @@ finish: ;
 }
 /* }}} */
 
-/* {{{ create a directory within the phar archive
- */
+/* {{{ create a directory within the phar archive */
 static void phar_mkdir(phar_archive_data **pphar, char *dirname, size_t dirname_len)
 {
 	char *error;
@@ -3768,9 +3676,7 @@ static void phar_mkdir(phar_archive_data **pphar, char *dirname, size_t dirname_
 }
 /* }}} */
 
-/* {{{ proto void Phar::offsetSet(string entry, string value)
- * set the contents of an internal file to those of an external file
- */
+/* {{{ set the contents of an internal file to those of an external file */
 PHP_METHOD(Phar, offsetSet)
 {
 	char *fname, *cont_str = NULL;
@@ -3806,9 +3712,7 @@ PHP_METHOD(Phar, offsetSet)
 }
 /* }}} */
 
-/* {{{ proto bool Phar::offsetUnset(string entry)
- * remove a file from a phar
- */
+/* {{{ remove a file from a phar */
 PHP_METHOD(Phar, offsetUnset)
 {
 	char *fname, *error;
@@ -3858,9 +3762,7 @@ PHP_METHOD(Phar, offsetUnset)
 }
 /* }}} */
 
-/* {{{ proto string Phar::addEmptyDir(string dirname)
- * Adds an empty directory to the phar archive
- */
+/* {{{ Adds an empty directory to the phar archive */
 PHP_METHOD(Phar, addEmptyDir)
 {
 	char *dirname;
@@ -3881,9 +3783,7 @@ PHP_METHOD(Phar, addEmptyDir)
 }
 /* }}} */
 
-/* {{{ proto string Phar::addFile(string filename[, string localname])
- * Adds a file to the archive using the filename, or the second parameter as the name within the archive
- */
+/* {{{ Adds a file to the archive using the filename, or the second parameter as the name within the archive */
 PHP_METHOD(Phar, addFile)
 {
 	char *fname, *localname = NULL;
@@ -3918,9 +3818,7 @@ PHP_METHOD(Phar, addFile)
 }
 /* }}} */
 
-/* {{{ proto string Phar::addFromString(string localname, string contents)
- * Adds a file to the archive using its contents as a string
- */
+/* {{{ Adds a file to the archive using its contents as a string */
 PHP_METHOD(Phar, addFromString)
 {
 	char *localname, *cont_str;
@@ -3936,9 +3834,7 @@ PHP_METHOD(Phar, addFromString)
 }
 /* }}} */
 
-/* {{{ proto string Phar::getStub()
- * Returns the stub at the head of a phar archive as a string.
- */
+/* {{{ Returns the stub at the head of a phar archive as a string. */
 PHP_METHOD(Phar, getStub)
 {
 	size_t len;
@@ -4035,9 +3931,7 @@ carry_on:
 }
 /* }}}*/
 
-/* {{{ proto int Phar::hasMetaData()
- * Returns TRUE if the phar has global metadata, FALSE otherwise.
- */
+/* {{{ Returns TRUE if the phar has global metadata, FALSE otherwise. */
 PHP_METHOD(Phar, hasMetadata)
 {
 	PHAR_ARCHIVE_OBJECT();
@@ -4046,37 +3940,61 @@ PHP_METHOD(Phar, hasMetadata)
 		RETURN_THROWS();
 	}
 
-	RETURN_BOOL(Z_TYPE(phar_obj->archive->metadata) != IS_UNDEF);
+	RETURN_BOOL(phar_metadata_tracker_has_data(&phar_obj->archive->metadata_tracker, phar_obj->archive->is_persistent));
 }
 /* }}} */
 
-/* {{{ proto int Phar::getMetaData()
- * Returns the global metadata of the phar
- */
+/* {{{ Returns the global metadata of the phar */
 PHP_METHOD(Phar, getMetadata)
 {
+	HashTable *unserialize_options = NULL;
+	phar_metadata_tracker *tracker;
 	PHAR_ARCHIVE_OBJECT();
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		RETURN_THROWS();
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ARRAY_HT(unserialize_options)
+	ZEND_PARSE_PARAMETERS_END();
 
-	if (Z_TYPE(phar_obj->archive->metadata) != IS_UNDEF) {
-		if (phar_obj->archive->is_persistent) {
-			char *buf = estrndup((char *) Z_PTR(phar_obj->archive->metadata), phar_obj->archive->metadata_len);
-			/* assume success, we would have failed before */
-			phar_parse_metadata(&buf, return_value, phar_obj->archive->metadata_len);
-			efree(buf);
-		} else {
-			ZVAL_COPY(return_value, &phar_obj->archive->metadata);
-		}
+	tracker = &phar_obj->archive->metadata_tracker;
+	if (phar_metadata_tracker_has_data(tracker, phar_obj->archive->is_persistent)) {
+		phar_metadata_tracker_unserialize_or_copy(tracker, return_value, phar_obj->archive->is_persistent, unserialize_options, "Phar::getMetadata");
 	}
 }
 /* }}} */
 
-/* {{{ proto int Phar::setMetaData(mixed $metadata)
- * Sets the global metadata of the phar
- */
+/* {{{ Modifies the phar metadata or throws */
+static int serialize_metadata_or_throw(phar_metadata_tracker *tracker, int persistent, zval *metadata)
+{
+	php_serialize_data_t metadata_hash;
+	smart_str main_metadata_str = {0};
+
+	PHP_VAR_SERIALIZE_INIT(metadata_hash);
+	php_var_serialize(&main_metadata_str, metadata, &metadata_hash);
+	PHP_VAR_SERIALIZE_DESTROY(metadata_hash);
+	if (EG(exception)) {
+		/* Serialization can throw. Don't overwrite the original value or original string. */
+		return FAILURE;
+	}
+
+	phar_metadata_tracker_free(tracker, persistent);
+	if (EG(exception)) {
+		/* Destructor can throw. */
+		zend_string_release(main_metadata_str.s);
+		return FAILURE;
+	}
+
+	if (tracker->str) {
+		zend_throw_exception_ex(phar_ce_PharException, 0, "Metadata unexpectedly changed during setMetadata()");
+		zend_string_release(main_metadata_str.s);
+		return FAILURE;
+	}
+	ZVAL_COPY(&tracker->val, metadata);
+	tracker->str = main_metadata_str.s;
+	return SUCCESS;
+}
+
+/* {{{ Sets the global metadata of the phar */
 PHP_METHOD(Phar, setMetadata)
 {
 	char *error;
@@ -4097,12 +4015,12 @@ PHP_METHOD(Phar, setMetadata)
 		zend_throw_exception_ex(phar_ce_PharException, 0, "phar \"%s\" is persistent, unable to copy on write", phar_obj->archive->fname);
 		RETURN_THROWS();
 	}
-	if (Z_TYPE(phar_obj->archive->metadata) != IS_UNDEF) {
-		zval_ptr_dtor(&phar_obj->archive->metadata);
-		ZVAL_UNDEF(&phar_obj->archive->metadata);
+
+	ZEND_ASSERT(!phar_obj->archive->is_persistent); /* Should no longer be persistent */
+	if (serialize_metadata_or_throw(&phar_obj->archive->metadata_tracker, phar_obj->archive->is_persistent, metadata) != SUCCESS) {
+		RETURN_THROWS();
 	}
 
-	ZVAL_COPY(&phar_obj->archive->metadata, metadata);
 	phar_obj->archive->is_modified = 1;
 	phar_flush(phar_obj->archive, 0, 0, 0, &error);
 
@@ -4113,9 +4031,7 @@ PHP_METHOD(Phar, setMetadata)
 }
 /* }}} */
 
-/* {{{ proto int Phar::delMetadata()
- * Deletes the global metadata of the phar
- */
+/* {{{ Deletes the global metadata of the phar */
 PHP_METHOD(Phar, delMetadata)
 {
 	char *error;
@@ -4131,20 +4047,18 @@ PHP_METHOD(Phar, delMetadata)
 		RETURN_THROWS();
 	}
 
-	if (Z_TYPE(phar_obj->archive->metadata) != IS_UNDEF) {
-		zval_ptr_dtor(&phar_obj->archive->metadata);
-		ZVAL_UNDEF(&phar_obj->archive->metadata);
-		phar_obj->archive->is_modified = 1;
-		phar_flush(phar_obj->archive, 0, 0, 0, &error);
+	if (!phar_metadata_tracker_has_data(&phar_obj->archive->metadata_tracker, phar_obj->archive->is_persistent)) {
+		RETURN_TRUE;
+	}
 
-		if (error) {
-			zend_throw_exception_ex(phar_ce_PharException, 0, "%s", error);
-			efree(error);
-			RETURN_THROWS();
-		} else {
-			RETURN_TRUE;
-		}
+	phar_metadata_tracker_free(&phar_obj->archive->metadata_tracker, phar_obj->archive->is_persistent);
+	phar_obj->archive->is_modified = 1;
+	phar_flush(phar_obj->archive, 0, 0, 0, &error);
 
+	if (error) {
+		zend_throw_exception_ex(phar_ce_PharException, 0, "%s", error);
+		efree(error);
+		RETURN_THROWS();
 	} else {
 		RETURN_TRUE;
 	}
@@ -4362,9 +4276,7 @@ static int extract_helper(phar_archive_data *archive, zend_string *search, char 
 }
 /* }}} */
 
-/* {{{ proto bool Phar::extractTo(string pathto[[, mixed files], bool overwrite])
- * Extract one or more file from a phar archive, optionally overwriting existing files
- */
+/* {{{ Extract one or more file from a phar archive, optionally overwriting existing files */
 PHP_METHOD(Phar, extractTo)
 {
 	php_stream *fp;
@@ -4480,9 +4392,7 @@ PHP_METHOD(Phar, extractTo)
 /* }}} */
 
 
-/* {{{ proto PharFileInfo::__construct(string entry)
- * Construct a Phar entry object
- */
+/* {{{ Construct a Phar entry object */
 PHP_METHOD(PharFileInfo, __construct)
 {
 	char *fname, *arch, *entry, *error;
@@ -4539,8 +4449,8 @@ PHP_METHOD(PharFileInfo, __construct)
 
 	ZVAL_STRINGL(&arg1, fname, fname_len);
 
-	zend_call_method_with_1_params(Z_OBJ_P(zobj), Z_OBJCE_P(zobj),
-		&spl_ce_SplFileInfo->constructor, "__construct", NULL, &arg1);
+	zend_call_known_instance_method_with_1_params(spl_ce_SplFileInfo->constructor,
+		Z_OBJ_P(zobj), NULL, &arg1);
 
 	zval_ptr_dtor(&arg1);
 }
@@ -4555,13 +4465,15 @@ PHP_METHOD(PharFileInfo, __construct)
 		RETURN_THROWS(); \
 	}
 
-/* {{{ proto PharFileInfo::__destruct()
- * clean up directory-based entry objects
- */
+/* {{{ clean up directory-based entry objects */
 PHP_METHOD(PharFileInfo, __destruct)
 {
 	zval *zobj = ZEND_THIS;
 	phar_entry_object *entry_obj = (phar_entry_object*)((char*)Z_OBJ_P(zobj) - Z_OBJ_P(zobj)->handlers->offset);
+
+	if (zend_parse_parameters_none() == FAILURE) {
+		RETURN_THROWS();
+	}
 
 	if (entry_obj->entry && entry_obj->entry->is_temp_dir) {
 		if (entry_obj->entry->filename) {
@@ -4575,9 +4487,7 @@ PHP_METHOD(PharFileInfo, __destruct)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::getCompressedSize()
- * Returns the compressed size
- */
+/* {{{ Returns the compressed size */
 PHP_METHOD(PharFileInfo, getCompressedSize)
 {
 	PHAR_ENTRY_OBJECT();
@@ -4590,9 +4500,7 @@ PHP_METHOD(PharFileInfo, getCompressedSize)
 }
 /* }}} */
 
-/* {{{ proto bool PharFileInfo::isCompressed([int compression_type])
- * Returns whether the entry is compressed, and whether it is compressed with Phar::GZ or Phar::BZ2 if specified
- */
+/* {{{ Returns whether the entry is compressed, and whether it is compressed with Phar::GZ or Phar::BZ2 if specified */
 PHP_METHOD(PharFileInfo, isCompressed)
 {
 	/* a number that is not Phar::GZ or Phar::BZ2 */
@@ -4617,9 +4525,7 @@ PHP_METHOD(PharFileInfo, isCompressed)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::getCRC32()
- * Returns CRC32 code or throws an exception if not CRC checked
- */
+/* {{{ Returns CRC32 code or throws an exception if not CRC checked */
 PHP_METHOD(PharFileInfo, getCRC32)
 {
 	PHAR_ENTRY_OBJECT();
@@ -4643,9 +4549,7 @@ PHP_METHOD(PharFileInfo, getCRC32)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::isCRCChecked()
- * Returns whether file entry is CRC checked
- */
+/* {{{ Returns whether file entry is CRC checked */
 PHP_METHOD(PharFileInfo, isCRCChecked)
 {
 	PHAR_ENTRY_OBJECT();
@@ -4658,9 +4562,7 @@ PHP_METHOD(PharFileInfo, isCRCChecked)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::getPharFlags()
- * Returns the Phar file entry flags
- */
+/* {{{ Returns the Phar file entry flags */
 PHP_METHOD(PharFileInfo, getPharFlags)
 {
 	PHAR_ENTRY_OBJECT();
@@ -4673,9 +4575,7 @@ PHP_METHOD(PharFileInfo, getPharFlags)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::chmod()
- * set the file permissions for the Phar.  This only allows setting execution bit, read/write
- */
+/* {{{ set the file permissions for the Phar.  This only allows setting execution bit, read/write */
 PHP_METHOD(PharFileInfo, chmod)
 {
 	char *error;
@@ -4736,9 +4636,7 @@ PHP_METHOD(PharFileInfo, chmod)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::hasMetaData()
- * Returns the metadata of the entry
- */
+/* {{{ Returns the metadata of the entry */
 PHP_METHOD(PharFileInfo, hasMetadata)
 {
 	PHAR_ENTRY_OBJECT();
@@ -4747,37 +4645,30 @@ PHP_METHOD(PharFileInfo, hasMetadata)
 		RETURN_THROWS();
 	}
 
-	RETURN_BOOL(Z_TYPE(entry_obj->entry->metadata) != IS_UNDEF);
+	RETURN_BOOL(phar_metadata_tracker_has_data(&entry_obj->entry->metadata_tracker, entry_obj->entry->is_persistent));
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::getMetaData()
- * Returns the metadata of the entry
- */
+/* {{{ Returns the metadata of the entry */
 PHP_METHOD(PharFileInfo, getMetadata)
 {
+	HashTable *unserialize_options = NULL;
+	phar_metadata_tracker *tracker;
 	PHAR_ENTRY_OBJECT();
 
-	if (zend_parse_parameters_none() == FAILURE) {
-		RETURN_THROWS();
-	}
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_ARRAY_HT(unserialize_options)
+	ZEND_PARSE_PARAMETERS_END();
 
-	if (Z_TYPE(entry_obj->entry->metadata) != IS_UNDEF) {
-		if (entry_obj->entry->is_persistent) {
-			char *buf = estrndup((char *) Z_PTR(entry_obj->entry->metadata), entry_obj->entry->metadata_len);
-			/* assume success, we would have failed before */
-			phar_parse_metadata(&buf, return_value, entry_obj->entry->metadata_len);
-			efree(buf);
-		} else {
-			ZVAL_COPY(return_value, &entry_obj->entry->metadata);
-		}
+	tracker = &entry_obj->entry->metadata_tracker;
+	if (phar_metadata_tracker_has_data(tracker, entry_obj->entry->is_persistent)) {
+		phar_metadata_tracker_unserialize_or_copy(tracker, return_value, entry_obj->entry->is_persistent, unserialize_options, "PharFileInfo::getMetadata");
 	}
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::setMetaData(mixed $metadata)
- * Sets the metadata of the entry
- */
+/* {{{ Sets the metadata of the entry */
 PHP_METHOD(PharFileInfo, setMetadata)
 {
 	char *error;
@@ -4809,13 +4700,12 @@ PHP_METHOD(PharFileInfo, setMetadata)
 		}
 		/* re-populate after copy-on-write */
 		entry_obj->entry = zend_hash_str_find_ptr(&phar->manifest, entry_obj->entry->filename, entry_obj->entry->filename_len);
-	}
-	if (Z_TYPE(entry_obj->entry->metadata) != IS_UNDEF) {
-		zval_ptr_dtor(&entry_obj->entry->metadata);
-		ZVAL_UNDEF(&entry_obj->entry->metadata);
+		ZEND_ASSERT(!entry_obj->entry->is_persistent); /* Should no longer be persistent */
 	}
 
-	ZVAL_COPY(&entry_obj->entry->metadata, metadata);
+	if (serialize_metadata_or_throw(&entry_obj->entry->metadata_tracker, entry_obj->entry->is_persistent, metadata) != SUCCESS) {
+		RETURN_THROWS();
+	}
 
 	entry_obj->entry->is_modified = 1;
 	entry_obj->entry->phar->is_modified = 1;
@@ -4828,9 +4718,7 @@ PHP_METHOD(PharFileInfo, setMetadata)
 }
 /* }}} */
 
-/* {{{ proto bool PharFileInfo::delMetaData()
- * Deletes the metadata of the entry
- */
+/* {{{ Deletes the metadata of the entry */
 PHP_METHOD(PharFileInfo, delMetadata)
 {
 	char *error;
@@ -4852,7 +4740,7 @@ PHP_METHOD(PharFileInfo, delMetadata)
 		RETURN_THROWS();
 	}
 
-	if (Z_TYPE(entry_obj->entry->metadata) != IS_UNDEF) {
+	if (phar_metadata_tracker_has_data(&entry_obj->entry->metadata_tracker, entry_obj->entry->is_persistent)) {
 		if (entry_obj->entry->is_persistent) {
 			phar_archive_data *phar = entry_obj->entry->phar;
 
@@ -4863,8 +4751,8 @@ PHP_METHOD(PharFileInfo, delMetadata)
 			/* re-populate after copy-on-write */
 			entry_obj->entry = zend_hash_str_find_ptr(&phar->manifest, entry_obj->entry->filename, entry_obj->entry->filename_len);
 		}
-		zval_ptr_dtor(&entry_obj->entry->metadata);
-		ZVAL_UNDEF(&entry_obj->entry->metadata);
+		/* multiple values may reference the metadata */
+		phar_metadata_tracker_free(&entry_obj->entry->metadata_tracker, entry_obj->entry->is_persistent);
 		entry_obj->entry->is_modified = 1;
 		entry_obj->entry->phar->is_modified = 1;
 
@@ -4884,9 +4772,7 @@ PHP_METHOD(PharFileInfo, delMetadata)
 }
 /* }}} */
 
-/* {{{ proto string PharFileInfo::getContent()
- * return the complete file contents of the entry (like file_get_contents)
- */
+/* {{{ return the complete file contents of the entry (like file_get_contents) */
 PHP_METHOD(PharFileInfo, getContent)
 {
 	char *error;
@@ -4935,9 +4821,7 @@ PHP_METHOD(PharFileInfo, getContent)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::compress(int compression_type)
- * Instructs the Phar class to compress the current file using zlib or bzip2 compression
- */
+/* {{{ Instructs the Phar class to compress the current file using zlib or bzip2 compression */
 PHP_METHOD(PharFileInfo, compress)
 {
 	zend_long method;
@@ -5063,9 +4947,7 @@ PHP_METHOD(PharFileInfo, compress)
 }
 /* }}} */
 
-/* {{{ proto int PharFileInfo::decompress()
- * Instructs the Phar class to decompress the current file
- */
+/* {{{ Instructs the Phar class to decompress the current file */
 PHP_METHOD(PharFileInfo, decompress)
 {
 	char *error;

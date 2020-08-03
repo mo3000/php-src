@@ -17,7 +17,7 @@
 #ifndef PHP_SHMOP_H
 #define PHP_SHMOP_H
 
-#if HAVE_SHMOP
+#ifdef HAVE_SHMOP
 
 extern zend_module_entry shmop_module_entry;
 #define phpext_shmop_ptr &shmop_module_entry
@@ -30,26 +30,6 @@ PHP_MINFO_FUNCTION(shmop);
 
 #ifdef PHP_WIN32
 # include "win32/ipc.h"
-#endif
-
-struct php_shmop
-{
-	int shmid;
-	key_t key;
-	int shmflg;
-	int shmatflg;
-	char *addr;
-	zend_long size;
-};
-
-typedef struct {
-	int le_shmop;
-} php_shmop_globals;
-
-#ifdef ZTS
-#define SHMOPG(v) TSRMG(shmop_globals_id, php_shmop_globals *, v)
-#else
-#define SHMOPG(v) (shmop_globals.v)
 #endif
 
 #else

@@ -167,14 +167,14 @@ static void do_inherit_parent_constructor(zend_class_entry *ce) /* {{{ */
 	if (EXPECTED(!ce->clone)) {
 		ce->clone = parent->clone;
 	}
-	if (EXPECTED(!ce->serialize_func)) {
-		ce->serialize_func = parent->serialize_func;
+	if (EXPECTED(!ce->__serialize)) {
+		ce->__serialize = parent->__serialize;
+	}
+	if (EXPECTED(!ce->__unserialize)) {
+		ce->__unserialize = parent->__unserialize;
 	}
 	if (EXPECTED(!ce->serialize)) {
 		ce->serialize = parent->serialize;
-	}
-	if (EXPECTED(!ce->unserialize_func)) {
-		ce->unserialize_func = parent->unserialize_func;
 	}
 	if (EXPECTED(!ce->unserialize)) {
 		ce->unserialize = parent->unserialize;
@@ -507,8 +507,8 @@ static inheritance_status zend_do_perform_arg_type_hint_check(
 		zend_class_entry *fe_scope, zend_arg_info *fe_arg_info,
 		zend_class_entry *proto_scope, zend_arg_info *proto_arg_info) /* {{{ */
 {
-	if (!ZEND_TYPE_IS_SET(fe_arg_info->type)) {
-		/* Child with no type is always compatible */
+	if (!ZEND_TYPE_IS_SET(fe_arg_info->type) || ZEND_TYPE_PURE_MASK(fe_arg_info->type) == MAY_BE_ANY) {
+		/* Child with no type or mixed type is always compatible */
 		return INHERITANCE_SUCCESS;
 	}
 
@@ -828,6 +828,14 @@ static zend_always_inline inheritance_status do_inheritance_check_on_method_ex(
 	uint32_t parent_flags = parent->common.fn_flags;
 	zend_function *proto;
 
+	if (UNEXPECTED((parent_flags & ZEND_ACC_PRIVATE) && !(parent_flags & ZEND_ACC_ABSTRACT) && !(parent_flags & ZEND_ACC_CTOR))) {
+		if (!check_only) {
+			child->common.fn_flags |= ZEND_ACC_CHANGED;
+		}
+		/* The parent method is private and not an abstract so we don't need to check any inheritance rules */
+		return INHERITANCE_SUCCESS;
+	}
+
 	if (!checked && UNEXPECTED(parent_flags & ZEND_ACC_FINAL)) {
 		if (check_only) {
 			return INHERITANCE_ERROR;
@@ -867,10 +875,6 @@ static zend_always_inline inheritance_status do_inheritance_check_on_method_ex(
 
 	if (!check_only && (parent_flags & (ZEND_ACC_PRIVATE|ZEND_ACC_CHANGED))) {
 		child->common.fn_flags |= ZEND_ACC_CHANGED;
-	}
-
-	if ((parent_flags & ZEND_ACC_PRIVATE) && !(parent_flags & ZEND_ACC_ABSTRACT)) {
-		return INHERITANCE_SUCCESS;
 	}
 
 	proto = parent->common.prototype ?
@@ -1280,7 +1284,7 @@ ZEND_API void zend_do_inheritance_ex(zend_class_entry *ce, zend_class_entry *par
 				zend_class_init_statics(parent_ce);
 			}
 			if (UNEXPECTED(zend_update_class_constants(parent_ce) != SUCCESS)) {
-				ZEND_ASSERT(0);
+				ZEND_UNREACHABLE();
 			}
 			src = CE_STATIC_MEMBERS(parent_ce) + parent_ce->default_static_members_count;
 			do {
@@ -1555,44 +1559,6 @@ static void zend_do_implement_interfaces(zend_class_entry *ce, zend_class_entry 
 }
 /* }}} */
 
-static void zend_add_magic_methods(zend_class_entry* ce, zend_string* mname, zend_function* fe) /* {{{ */
-{
-	if (zend_string_equals_literal(mname, "serialize")) {
-		ce->serialize_func = fe;
-	} else if (zend_string_equals_literal(mname, "unserialize")) {
-		ce->unserialize_func = fe;
-	} else if (ZSTR_VAL(mname)[0] != '_' || ZSTR_VAL(mname)[1] != '_') {
-		/* pass */
-	} else if (zend_string_equals_literal(mname, ZEND_CLONE_FUNC_NAME)) {
-		ce->clone = fe;
-	} else if (zend_string_equals_literal(mname, ZEND_CONSTRUCTOR_FUNC_NAME)) {
-		ce->constructor = fe;
-	} else if (zend_string_equals_literal(mname, ZEND_DESTRUCTOR_FUNC_NAME)) {
-		ce->destructor = fe;
-	} else if (zend_string_equals_literal(mname, ZEND_GET_FUNC_NAME)) {
-		ce->__get = fe;
-		ce->ce_flags |= ZEND_ACC_USE_GUARDS;
-	} else if (zend_string_equals_literal(mname, ZEND_SET_FUNC_NAME)) {
-		ce->__set = fe;
-		ce->ce_flags |= ZEND_ACC_USE_GUARDS;
-	} else if (zend_string_equals_literal(mname, ZEND_CALL_FUNC_NAME)) {
-		ce->__call = fe;
-	} else if (zend_string_equals_literal(mname, ZEND_UNSET_FUNC_NAME)) {
-		ce->__unset = fe;
-		ce->ce_flags |= ZEND_ACC_USE_GUARDS;
-	} else if (zend_string_equals_literal(mname, ZEND_ISSET_FUNC_NAME)) {
-		ce->__isset = fe;
-		ce->ce_flags |= ZEND_ACC_USE_GUARDS;
-	} else if (zend_string_equals_literal(mname, ZEND_CALLSTATIC_FUNC_NAME)) {
-		ce->__callstatic = fe;
-	} else if (zend_string_equals_literal(mname, ZEND_TOSTRING_FUNC_NAME)) {
-		ce->__tostring = fe;
-	} else if (zend_string_equals_literal(mname, ZEND_DEBUGINFO_FUNC_NAME)) {
-		ce->__debugInfo = fe;
-	}
-}
-/* }}} */
-
 static void zend_add_trait_method(zend_class_entry *ce, zend_string *name, zend_string *key, zend_function *fn) /* {{{ */
 {
 	zend_function *existing_fn = NULL;
@@ -1655,7 +1621,7 @@ static void zend_add_trait_method(zend_class_entry *ce, zend_string *name, zend_
 	new_fn->common.function_name = name;
 	function_add_ref(new_fn);
 	fn = zend_hash_update_ptr(&ce->function_table, key, new_fn);
-	zend_add_magic_methods(ce, key, fn);
+	zend_add_magic_method(ce, fn, key);
 }
 /* }}} */
 
@@ -1967,6 +1933,7 @@ static void zend_do_traits_property_binding(zend_class_entry *ce, zend_class_ent
 	size_t i;
 	zend_property_info *property_info;
 	zend_property_info *coliding_prop;
+	zend_property_info *new_prop;
 	zend_string* prop_name;
 	const char* class_name_unused;
 	zend_bool not_compatible;
@@ -2072,8 +2039,18 @@ static void zend_do_traits_property_binding(zend_class_entry *ce, zend_class_ent
 
 			Z_TRY_ADDREF_P(prop_value);
 			doc_comment = property_info->doc_comment ? zend_string_copy(property_info->doc_comment) : NULL;
+
 			zend_type_copy_ctor(&property_info->type, /* persistent */ 0);
-			zend_declare_typed_property(ce, prop_name, prop_value, flags, doc_comment, property_info->type);
+			new_prop = zend_declare_typed_property(ce, prop_name, prop_value, flags, doc_comment, property_info->type);
+
+			if (property_info->attributes) {
+				new_prop->attributes = property_info->attributes;
+
+				if (!(GC_FLAGS(new_prop->attributes) & IS_ARRAY_IMMUTABLE)) {
+					GC_ADDREF(new_prop->attributes);
+				}
+			}
+
 			zend_string_release_ex(prop_name, 0);
 		} ZEND_HASH_FOREACH_END();
 	}
@@ -2405,8 +2382,7 @@ static void check_unrecoverable_load_failure(zend_class_entry *ce) {
 		zend_string *exception_str;
 		zval exception_zv;
 		ZEND_ASSERT(EG(exception) && "Exception must have been thrown");
-		ZVAL_OBJ(&exception_zv, EG(exception));
-		Z_ADDREF(exception_zv);
+		ZVAL_OBJ_COPY(&exception_zv, EG(exception));
 		zend_clear_exception();
 		exception_str = zval_get_string(&exception_zv);
 		zend_error_noreturn(E_ERROR,

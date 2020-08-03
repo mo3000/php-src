@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: df98b2edbdf806c52a9c165b52124b6b0de7acb2 */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_IntlTimeZone___construct, 0, 0, 0)
 ZEND_END_ARG_INFO()
@@ -75,7 +76,7 @@ ZEND_END_ARG_INFO()
 #if U_ICU_VERSION_MAJOR_NUM >= 52
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_IntlTimeZone_getIDForWindowsID, 0, 0, 1)
 	ZEND_ARG_TYPE_INFO(0, timezone, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, region, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, region, IS_STRING, 1, "null")
 ZEND_END_ARG_INFO()
 #endif
 

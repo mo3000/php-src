@@ -21,7 +21,7 @@ class PDO
     /** @return int|false */
     public function exec(string $statement) {}
 
-    /** @return mixed */
+    /** @return bool|int|string|array|null */
     public function getAttribute(int $attribute) {}
 
     /** @return array */
@@ -37,7 +37,7 @@ class PDO
     public function prepare(string $statement, array $driver_options = []) {}
 
     /** @return PDOStatement|false */
-    public function query(string $statement) {}
+    public function query(string $statement, ?int $fetch_mode = null, ...$fetch_mode_args) {}
 
     /** @return string|false */
     public function quote(string $string, int $parameter_type = PDO::PARAM_STR) {}

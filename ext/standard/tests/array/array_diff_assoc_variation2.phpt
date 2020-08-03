@@ -2,12 +2,6 @@
 Test array_diff_assoc() function : usage variations  - unexpected values for 'arr1' argument
 --FILE--
 <?php
-/* Prototype  : array array_diff_assoc(array $arr1, array $arr2 [, array ...])
- * Description: Returns the entries of arr1 that have values which are not present
- * in any of the others arguments but do additional checks whether the keys are equal
- * Source code: ext/standard/array.c
- */
-
 /*
  * pass array_diff_assoc arguments which are not arrays in place of $arr2
  */
@@ -172,7 +166,7 @@ array_diff_assoc(): Argument #2 ($arr2) must be of type array, string given
 array_diff_assoc(): Argument #2 ($arr2) must be of type array, string given
 
 -- Iteration 23 --
-array_diff_assoc(): Argument #2 ($arr2) must be of type array, object given
+array_diff_assoc(): Argument #2 ($arr2) must be of type array, classA given
 
 -- Iteration 24 --
 array_diff_assoc(): Argument #2 ($arr2) must be of type array, null given

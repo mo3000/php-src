@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: 8b8a98d5035880031ac42fda5e58bde54c1d85fc */
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_IntlCalendar___construct, 0, 0, 0)
 ZEND_END_ARG_INFO()
@@ -141,7 +142,14 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_IntlCalendar_toDateTime arginfo_class_IntlCalendar___construct
 
-#define arginfo_class_IntlGregorianCalendar___construct arginfo_class_IntlCalendar___construct
+ZEND_BEGIN_ARG_INFO_EX(arginfo_class_IntlGregorianCalendar___construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, timeZoneOrYear)
+	ZEND_ARG_INFO(0, localeOrMonth)
+	ZEND_ARG_INFO(0, dayOfMonth)
+	ZEND_ARG_INFO(0, hour)
+	ZEND_ARG_INFO(0, minute)
+	ZEND_ARG_INFO(0, second)
+ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_IntlGregorianCalendar_setGregorianChange, 0, 0, 1)
 	ZEND_ARG_TYPE_INFO(0, change, IS_DOUBLE, 0)

@@ -2,12 +2,6 @@
 Test array_udiff_assoc() function : usage variation
 --FILE--
 <?php
-/* Prototype  : array array_udiff_assoc(array arr1, array arr2 [, array ...], callback key_comp_func)
- * Description: Returns the entries of arr1 that have values which are not present in any of the others arguments but do additional checks whether the keys are equal. Keys are compared by user supplied function.
- * Source code: ext/standard/array.c
- * Alias to functions:
- */
-
 echo "*** Testing array_udiff_assoc() : usage variation ***\n";
 
 // Initialise function arguments not being substituted (if any)
@@ -167,10 +161,10 @@ array_udiff_assoc(): Argument #1 ($arr1) must be of type array, string given
 array_udiff_assoc(): Argument #1 ($arr1) must be of type array, string given
 
 --instance of classWithToString--
-array_udiff_assoc(): Argument #1 ($arr1) must be of type array, object given
+array_udiff_assoc(): Argument #1 ($arr1) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_udiff_assoc(): Argument #1 ($arr1) must be of type array, object given
+array_udiff_assoc(): Argument #1 ($arr1) must be of type array, classWithoutToString given
 
 --undefined var--
 array_udiff_assoc(): Argument #1 ($arr1) must be of type array, null given

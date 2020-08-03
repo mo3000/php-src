@@ -99,7 +99,7 @@ const char *intl_locale_get_default( void )
 PHP_INI_BEGIN()
     STD_PHP_INI_ENTRY(LOCALE_INI_NAME, NULL, PHP_INI_ALL, OnUpdateStringUnempty, default_locale, zend_intl_globals, intl_globals)
     STD_PHP_INI_ENTRY("intl.error_level", "0", PHP_INI_ALL, OnUpdateLong, error_level, zend_intl_globals, intl_globals)
-	STD_PHP_INI_ENTRY("intl.use_exceptions", "0", PHP_INI_ALL, OnUpdateBool, use_exceptions, zend_intl_globals, intl_globals)
+	STD_PHP_INI_BOOLEAN("intl.use_exceptions", "0", PHP_INI_ALL, OnUpdateBool, use_exceptions, zend_intl_globals, intl_globals)
 PHP_INI_END()
 /* }}} */
 
@@ -141,8 +141,7 @@ static PHP_GINIT_FUNCTION(intl)
 }
 /* }}} */
 
-/* {{{ PHP_MINIT_FUNCTION
- */
+/* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION( intl )
 {
 	/* For the default locale php.ini setting */
@@ -242,8 +241,7 @@ PHP_MINIT_FUNCTION( intl )
 
 #define EXPLICIT_CLEANUP_ENV_VAR "INTL_EXPLICIT_CLEANUP"
 
-/* {{{ PHP_MSHUTDOWN_FUNCTION
- */
+/* {{{ PHP_MSHUTDOWN_FUNCTION */
 PHP_MSHUTDOWN_FUNCTION( intl )
 {
 	const char *cleanup;
@@ -259,21 +257,17 @@ PHP_MSHUTDOWN_FUNCTION( intl )
 }
 /* }}} */
 
-/* {{{ PHP_RINIT_FUNCTION
- */
+/* {{{ PHP_RINIT_FUNCTION */
 PHP_RINIT_FUNCTION( intl )
 {
 	return SUCCESS;
 }
 /* }}} */
 
-/* {{{ PHP_RSHUTDOWN_FUNCTION
- */
+/* {{{ PHP_RSHUTDOWN_FUNCTION */
 PHP_RSHUTDOWN_FUNCTION( intl )
 {
-	if(!Z_ISUNDEF(INTL_G(current_collator))) {
-		ZVAL_UNDEF(&INTL_G(current_collator));
-	}
+	INTL_G(current_collator) = NULL;
 	if (INTL_G(grapheme_iterator)) {
 		grapheme_close_global_iterator(  );
 		INTL_G(grapheme_iterator) = NULL;
@@ -284,11 +278,10 @@ PHP_RSHUTDOWN_FUNCTION( intl )
 }
 /* }}} */
 
-/* {{{ PHP_MINFO_FUNCTION
- */
+/* {{{ PHP_MINFO_FUNCTION */
 PHP_MINFO_FUNCTION( intl )
 {
-#if !UCONFIG_NO_FORMATTING
+#ifndef UCONFIG_NO_FORMATTING
 	UErrorCode status = U_ZERO_ERROR;
 	const char *tzdata_ver = NULL;
 #endif
@@ -299,7 +292,7 @@ PHP_MINFO_FUNCTION( intl )
 #ifdef U_ICU_DATA_VERSION
 	php_info_print_table_row( 2, "ICU Data version", U_ICU_DATA_VERSION );
 #endif
-#if !UCONFIG_NO_FORMATTING
+#ifndef UCONFIG_NO_FORMATTING
 	tzdata_ver = ucal_getTZDataVersion(&status);
 	if (U_ZERO_ERROR == status) {
 		php_info_print_table_row( 2, "ICU TZData version", tzdata_ver);

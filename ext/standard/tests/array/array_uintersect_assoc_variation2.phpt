@@ -2,12 +2,6 @@
 Test array_uintersect_assoc() function : usage variation
 --FILE--
 <?php
-/* Prototype  : array array_uintersect_assoc(array arr1, array arr2 [, array ...], callback data_compare_func)
- * Description: U
- * Source code: ext/standard/array.c
- * Alias to functions:
- */
-
 echo "*** Testing array_uintersect_assoc() : usage variation ***\n";
 
 // Initialise function arguments not being substituted (if any)
@@ -167,10 +161,10 @@ array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, string give
 array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, string given
 
 --instance of classWithToString--
-array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, object given
+array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, object given
+array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, classWithoutToString given
 
 --undefined var--
 array_uintersect_assoc(): Argument #2 ($arr2) must be of type array, null given

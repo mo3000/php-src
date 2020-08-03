@@ -328,11 +328,9 @@ void zend_signal_activate(void)
 
 	SIGG(active) = 1;
 	SIGG(depth)  = 0;
-	SIGG(check)  = ZEND_DEBUG;
 } /* }}} */
 
-/* {{{ zend_signal_deactivate
- * */
+/* {{{ zend_signal_deactivate */
 void zend_signal_deactivate(void)
 {
 	if (SIGG(check)) {

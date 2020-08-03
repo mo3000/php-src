@@ -27,61 +27,21 @@
 #include "zend_inference.h"
 #include "zend_call_graph.h"
 
-typedef int (*zend_op_array_func_t)(zend_call_graph *call_graph, zend_op_array *op_array);
-
-static int zend_op_array_calc(zend_call_graph *call_graph, zend_op_array *op_array)
+static void zend_op_array_calc(zend_op_array *op_array, void *context)
 {
-	(void) op_array;
-
+	zend_call_graph *call_graph = context;
 	call_graph->op_arrays_count++;
-	return SUCCESS;
 }
 
-static int zend_op_array_collect(zend_call_graph *call_graph, zend_op_array *op_array)
+static void zend_op_array_collect(zend_op_array *op_array, void *context)
 {
+	zend_call_graph *call_graph = context;
     zend_func_info *func_info = call_graph->func_infos + call_graph->op_arrays_count;
 
 	ZEND_SET_FUNC_INFO(op_array, func_info);
 	call_graph->op_arrays[call_graph->op_arrays_count] = op_array;
 	func_info->num = call_graph->op_arrays_count;
-	func_info->num_args = -1;
-	func_info->return_value_used = -1;
 	call_graph->op_arrays_count++;
-	return SUCCESS;
-}
-
-static int zend_foreach_op_array(zend_call_graph *call_graph, zend_script *script, zend_op_array_func_t func)
-{
-	zend_class_entry *ce;
-	zend_string *key;
-	zend_op_array *op_array;
-
-	if (func(call_graph, &script->main_op_array) != SUCCESS) {
-		return FAILURE;
-	}
-
-	ZEND_HASH_FOREACH_PTR(&script->function_table, op_array) {
-		if (func(call_graph, op_array) != SUCCESS) {
-			return FAILURE;
-		}
-	} ZEND_HASH_FOREACH_END();
-
-	ZEND_HASH_FOREACH_STR_KEY_PTR(&script->class_table, key, ce) {
-		if (ce->refcount > 1 && !zend_string_equals_ci(key, ce->name)) {
-			continue;
-		}
-		ZEND_HASH_FOREACH_PTR(&ce->function_table, op_array) {
-			if (op_array->scope == ce
-			 && op_array->type == ZEND_USER_FUNCTION
-			 && !(op_array->fn_flags & ZEND_ACC_TRAIT_CLONE)) {
-				if (func(call_graph, op_array) != SUCCESS) {
-					return FAILURE;
-				}
-			}
-		} ZEND_HASH_FOREACH_END();
-	} ZEND_HASH_FOREACH_END();
-
-	return SUCCESS;
 }
 
 int zend_analyze_calls(zend_arena **arena, zend_script *script, uint32_t build_flags, zend_op_array *op_array, zend_func_info *func_info)
@@ -164,8 +124,12 @@ int zend_analyze_calls(zend_arena **arena, zend_script *script, uint32_t build_f
 			case ZEND_SEND_VAR_NO_REF_EX:
 			case ZEND_SEND_USER:
 				if (call_info) {
-					uint32_t num = opline->op2.num;
+					if (opline->op2_type == IS_CONST) {
+						call_info->named_args = 1;
+						break;
+					}
 
+					uint32_t num = opline->op2.num;
 					if (num > 0) {
 						num--;
 					}
@@ -174,9 +138,8 @@ int zend_analyze_calls(zend_arena **arena, zend_script *script, uint32_t build_f
 				break;
 			case ZEND_SEND_ARRAY:
 			case ZEND_SEND_UNPACK:
-				/* TODO: set info about var_arg call ??? */
 				if (call_info) {
-					call_info->num_args = -1;
+					call_info->send_unpack = 1;
 				}
 				break;
 			case ZEND_EXIT:
@@ -259,15 +222,12 @@ static void zend_sort_op_arrays(zend_call_graph *call_graph)
 int zend_build_call_graph(zend_arena **arena, zend_script *script, zend_call_graph *call_graph) /* {{{ */
 {
 	call_graph->op_arrays_count = 0;
-	if (zend_foreach_op_array(call_graph, script, zend_op_array_calc) != SUCCESS) {
-		return FAILURE;
-	}
+	zend_foreach_op_array(script, zend_op_array_calc, call_graph);
+
 	call_graph->op_arrays = (zend_op_array**)zend_arena_calloc(arena, call_graph->op_arrays_count, sizeof(zend_op_array*));
 	call_graph->func_infos = (zend_func_info*)zend_arena_calloc(arena, call_graph->op_arrays_count, sizeof(zend_func_info));
 	call_graph->op_arrays_count = 0;
-	if (zend_foreach_op_array(call_graph, script, zend_op_array_collect) != SUCCESS) {
-		return FAILURE;
-	}
+	zend_foreach_op_array(script, zend_op_array_collect, call_graph);
 
 	return SUCCESS;
 }

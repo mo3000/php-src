@@ -16,7 +16,7 @@ var_dump(`"$php" -n --rc exception`);
 echo "Done\n";
 ?>
 --EXPECT--
-string(40) "Exception: Class unknown does not exist
+string(42) "Exception: Class "unknown" does not exist
 "
 string(183) "Class [ <internal:Core> class stdClass ] {
 
@@ -37,7 +37,7 @@ string(183) "Class [ <internal:Core> class stdClass ] {
 }
 
 "
-string(2159) "Class [ <internal:Core> class Exception implements Throwable, Stringable ] {
+string(2177) "Class [ <internal:Core> class Exception implements Throwable, Stringable ] {
 
   - Constants [0] {
   }
@@ -54,8 +54,8 @@ string(2159) "Class [ <internal:Core> class Exception implements Throwable, Stri
     Property [ protected $code = 0 ]
     Property [ protected $file = NULL ]
     Property [ protected $line = NULL ]
-    Property [ private $trace = NULL ]
-    Property [ private $previous = NULL ]
+    Property [ private array $trace = Array ]
+    Property [ private ?Throwable $previous = NULL ]
   }
 
   - Methods [11] {

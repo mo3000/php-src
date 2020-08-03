@@ -30,10 +30,10 @@
 #include "pdo/php_pdo_error.h"
 #include "ext/standard/file.h"
 #undef SIZEOF_OFF_T
-#include "pg_config.h" /* needed for PG_VERSION */
 #include "php_pdo_pgsql.h"
 #include "php_pdo_pgsql_int.h"
 #include "zend_exceptions.h"
+#include "pgsql_driver_arginfo.h"
 
 static char * _pdo_pgsql_trim_message(const char *message, int persistent)
 {
@@ -156,7 +156,7 @@ static int pgsql_lob_seek(php_stream *stream, zend_off_t offset, int whence,
 		zend_off_t *newoffset)
 {
 	struct pdo_pgsql_lob_self *self = (struct pdo_pgsql_lob_self*)stream->abstract;
-#if HAVE_PG_LO64 && ZEND_ENABLE_ZVAL_LONG64
+#if defined(HAVE_PG_LO64) && defined(ZEND_ENABLE_ZVAL_LONG64)
 	zend_off_t pos = lo_lseek64(self->conn, self->lfd, offset, whence);
 #else
 	zend_off_t pos = lo_lseek(self->conn, self->lfd, offset, whence);
@@ -377,6 +377,20 @@ static char *pdo_pgsql_last_insert_id(pdo_dbh_t *dbh, const char *name, size_t *
 	return id;
 }
 
+void pdo_libpq_version(char *buf, size_t len)
+{
+	int version = PQlibVersion();
+	int major = version / 10000;
+	if (major >= 10) {
+		int minor = version % 10000;
+		snprintf(buf, len, "%d.%d", major, minor);
+	} else {
+		int minor = version / 100 % 100;
+		int revision = version % 100;
+		snprintf(buf, len, "%d.%d.%d", major, minor, revision);
+	}
+}
+
 static int pdo_pgsql_get_attribute(pdo_dbh_t *dbh, zend_long attr, zval *return_value)
 {
 	pdo_pgsql_db_handle *H = (pdo_pgsql_db_handle *)dbh->driver_data;
@@ -390,9 +404,12 @@ static int pdo_pgsql_get_attribute(pdo_dbh_t *dbh, zend_long attr, zval *return_
 			ZVAL_BOOL(return_value, H->disable_prepares);
 			break;
 
-		case PDO_ATTR_CLIENT_VERSION:
-			ZVAL_STRING(return_value, PG_VERSION);
+		case PDO_ATTR_CLIENT_VERSION: {
+			char buf[16];
+			pdo_libpq_version(buf, sizeof(buf));
+			ZVAL_STRING(return_value, buf);
 			break;
+		}
 
 		case PDO_ATTR_SERVER_VERSION:
 			if (PQprotocolVersion(H->server) >= 3) { /* PostgreSQL 7.4 or later */
@@ -458,8 +475,8 @@ static int pdo_pgsql_get_attribute(pdo_dbh_t *dbh, zend_long attr, zval *return_
 					(char*)PQparameterStatus(H->server, "DateStyle"));
 
 			ZVAL_STR(return_value, str_info);
-		}
 			break;
+		}
 
 		default:
 			return 0;
@@ -528,9 +545,8 @@ static int pgsql_handle_rollback(pdo_dbh_t *dbh)
 	return pdo_pgsql_transaction_cmd("ROLLBACK", dbh);
 }
 
-/* {{{ proto string PDO::pgsqlCopyFromArray(string $table_name , array $rows [, string $delimiter [, string $null_as ] [, string $fields])
-   Returns true if the copy worked fine or false if error */
-static PHP_METHOD(PDO, pgsqlCopyFromArray)
+/* {{{ Returns true if the copy worked fine or false if error */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlCopyFromArray)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -642,9 +658,8 @@ static PHP_METHOD(PDO, pgsqlCopyFromArray)
 }
 /* }}} */
 
-/* {{{ proto string PDO::pgsqlCopyFromFile(string $table_name , string $filename [, string $delimiter [, string $null_as ] [, string $fields])
-   Returns true if the copy worked fine or false if error */
-static PHP_METHOD(PDO, pgsqlCopyFromFile)
+/* {{{ Returns true if the copy worked fine or false if error */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlCopyFromFile)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -741,9 +756,8 @@ static PHP_METHOD(PDO, pgsqlCopyFromFile)
 /* }}} */
 
 
-/* {{{ proto string PDO::pgsqlCopyToFile(string $table_name , string $filename, [string $delimiter [, string $null_as [, string $fields]]])
-   Returns true if the copy worked fine or false if error */
-static PHP_METHOD(PDO, pgsqlCopyToFile)
+/* {{{ Returns true if the copy worked fine or false if error */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlCopyToFile)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -836,9 +850,8 @@ static PHP_METHOD(PDO, pgsqlCopyToFile)
 }
 /* }}} */
 
-/* {{{ proto string PDO::pgsqlCopyToArray(string $table_name , [string $delimiter [, string $null_as [, string $fields]]])
-   Returns true if the copy worked fine or false if error */
-static PHP_METHOD(PDO, pgsqlCopyToArray)
+/* {{{ Returns true if the copy worked fine or false if error */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlCopyToArray)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -913,9 +926,8 @@ static PHP_METHOD(PDO, pgsqlCopyToArray)
 /* }}} */
 
 
-/* {{{ proto string PDO::pgsqlLOBCreate()
-   Creates a new large object, returning its identifier.  Must be called inside a transaction. */
-static PHP_METHOD(PDO, pgsqlLOBCreate)
+/* {{{ Creates a new large object, returning its identifier.  Must be called inside a transaction. */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlLOBCreate)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -942,9 +954,8 @@ static PHP_METHOD(PDO, pgsqlLOBCreate)
 }
 /* }}} */
 
-/* {{{ proto resource PDO::pgsqlLOBOpen(string oid [, string mode = 'rb'])
-   Opens an existing large object stream.  Must be called inside a transaction. */
-static PHP_METHOD(PDO, pgsqlLOBOpen)
+/* {{{ Opens an existing large object stream.  Must be called inside a transaction. */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlLOBOpen)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -994,9 +1005,8 @@ static PHP_METHOD(PDO, pgsqlLOBOpen)
 }
 /* }}} */
 
-/* {{{ proto bool PDO::pgsqlLOBUnlink(string oid)
-   Deletes the large object identified by oid.  Must be called inside a transaction. */
-static PHP_METHOD(PDO, pgsqlLOBUnlink)
+/* {{{ Deletes the large object identified by oid.  Must be called inside a transaction. */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlLOBUnlink)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -1030,9 +1040,8 @@ static PHP_METHOD(PDO, pgsqlLOBUnlink)
 }
 /* }}} */
 
-/* {{{ proto mixed PDO::pgsqlGetNotify([ int $result_type = PDO::FETCH_USE_DEFAULT] [, int $ms_timeout = 0 ]])
-   Get asynchronous notification */
-static PHP_METHOD(PDO, pgsqlGetNotify)
+/* {{{ Get asynchronous notification */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlGetNotify)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -1060,7 +1069,7 @@ static PHP_METHOD(PDO, pgsqlGetNotify)
 	if (ms_timeout < 0) {
 		php_error_docref(NULL, E_WARNING, "Invalid timeout");
  		RETURN_FALSE;
-#if ZEND_ENABLE_ZVAL_LONG64
+#ifdef ZEND_ENABLE_ZVAL_LONG64
 	} else if (ms_timeout > INT_MAX) {
 		php_error_docref(NULL, E_WARNING, "Timeout was shrunk to %d", INT_MAX);
 		ms_timeout = INT_MAX;
@@ -1111,9 +1120,8 @@ static PHP_METHOD(PDO, pgsqlGetNotify)
 }
 /* }}} */
 
-/* {{{ proto int PDO::pgsqlGetPid()
-   Get backend(server) pid */
-static PHP_METHOD(PDO, pgsqlGetPid)
+/* {{{ Get backend(server) pid */
+PHP_METHOD(PDO_PGSql_Ext, pgsqlGetPid)
 {
 	pdo_dbh_t *dbh;
 	pdo_pgsql_db_handle *H;
@@ -1129,25 +1137,11 @@ static PHP_METHOD(PDO, pgsqlGetPid)
 }
 /* }}} */
 
-
-static const zend_function_entry dbh_methods[] = {
-	PHP_ME(PDO, pgsqlLOBCreate, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, pgsqlLOBOpen, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, pgsqlLOBUnlink, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, pgsqlCopyFromArray, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, pgsqlCopyFromFile, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, pgsqlCopyToArray, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(PDO, pgsqlCopyToFile, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(PDO, pgsqlGetNotify, NULL, ZEND_ACC_PUBLIC)
-    PHP_ME(PDO, pgsqlGetPid, NULL, ZEND_ACC_PUBLIC)
-	PHP_FE_END
-};
-
 static const zend_function_entry *pdo_pgsql_get_driver_methods(pdo_dbh_t *dbh, int kind)
 {
 	switch (kind) {
 		case PDO_DBH_DRIVER_METHOD_KIND_DBH:
-			return dbh_methods;
+			return class_PDO_PGSql_Ext_methods;
 		default:
 			return NULL;
 	}

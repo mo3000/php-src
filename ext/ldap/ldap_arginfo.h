@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: fb889b72e823f3033a54209059f8c6803961cef3 */
 
 #if defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ldap_connect, 0, 0, 0)
@@ -204,7 +205,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_control_paged_result_respon
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_rename, 0, 5, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 	ZEND_ARG_TYPE_INFO(0, dn, IS_STRING, 0)
@@ -215,7 +216,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_rename, 0, 5, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ldap_rename_ext, 0, 0, 5)
 	ZEND_ARG_INFO(0, link_identifier)
 	ZEND_ARG_TYPE_INFO(0, dn, IS_STRING, 0)
@@ -226,7 +227,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_ldap_rename_ext, 0, 0, 5)
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_get_option, 0, 2, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 	ZEND_ARG_TYPE_INFO(0, option, IS_LONG, 0)
@@ -234,7 +235,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_get_option, 0, 2, _IS_BOOL,
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_set_option, 0, 3, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, link_identifier)
 	ZEND_ARG_TYPE_INFO(0, option, IS_LONG, 0)
@@ -242,21 +243,28 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_set_option, 0, 3, _IS_BOOL,
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_count_references, 0, 2, IS_LONG, 0)
+	ZEND_ARG_INFO(0, link_identifier)
+	ZEND_ARG_INFO(0, result_identifier)
+ZEND_END_ARG_INFO()
+#endif
+
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ldap_first_reference, 0, 0, 2)
 	ZEND_ARG_INFO(0, link)
 	ZEND_ARG_INFO(0, result)
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_BEGIN_ARG_INFO_EX(arginfo_ldap_next_reference, 0, 0, 2)
 	ZEND_ARG_INFO(0, link)
 	ZEND_ARG_INFO(0, entry)
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP && defined(HAVE_LDAP_PARSE_REFERENCE)
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP) && defined(HAVE_LDAP_PARSE_REFERENCE)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_parse_reference, 0, 3, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, link)
 	ZEND_ARG_INFO(0, entry)
@@ -264,7 +272,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_parse_reference, 0, 3, _IS_
 ZEND_END_ARG_INFO()
 #endif
 
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP && defined(HAVE_LDAP_PARSE_RESULT)
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP) && defined(HAVE_LDAP_PARSE_RESULT)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_parse_result, 0, 3, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, link)
 	ZEND_ARG_INFO(0, result)
@@ -279,7 +287,7 @@ ZEND_END_ARG_INFO()
 #if defined(LDAP_API_FEATURE_X_OPENLDAP) && defined(HAVE_3ARG_SETREBINDPROC)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ldap_set_rebind_proc, 0, 2, _IS_BOOL, 0)
 	ZEND_ARG_INFO(0, link)
-	ZEND_ARG_INFO(0, callback)
+	ZEND_ARG_TYPE_INFO(0, callback, IS_CALLABLE, 1)
 ZEND_END_ARG_INFO()
 #endif
 
@@ -336,7 +344,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_ldap_exop_refresh, 0, 3, MAY_BE_LONG|MAY_BE_FALSE)
 	ZEND_ARG_INFO(0, link)
 	ZEND_ARG_TYPE_INFO(0, dn, IS_STRING, 0)
-	ZEND_ARG_INFO(0, ttl)
+	ZEND_ARG_TYPE_INFO(0, ttl, IS_LONG, 0)
 ZEND_END_ARG_INFO()
 #endif
 
@@ -398,28 +406,31 @@ ZEND_FUNCTION(ldap_control_paged_result);
 #if defined(LDAP_CONTROL_PAGEDRESULTS)
 ZEND_FUNCTION(ldap_control_paged_result_response);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_FUNCTION(ldap_rename);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_FUNCTION(ldap_rename_ext);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_FUNCTION(ldap_get_option);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_FUNCTION(ldap_set_option);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
+ZEND_FUNCTION(ldap_count_references);
+#endif
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_FUNCTION(ldap_first_reference);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 ZEND_FUNCTION(ldap_next_reference);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP && defined(HAVE_LDAP_PARSE_REFERENCE)
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP) && defined(HAVE_LDAP_PARSE_REFERENCE)
 ZEND_FUNCTION(ldap_parse_reference);
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP && defined(HAVE_LDAP_PARSE_RESULT)
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP) && defined(HAVE_LDAP_PARSE_RESULT)
 ZEND_FUNCTION(ldap_parse_result);
 #endif
 #if defined(LDAP_API_FEATURE_X_OPENLDAP) && defined(HAVE_3ARG_SETREBINDPROC)
@@ -504,28 +515,31 @@ static const zend_function_entry ext_functions[] = {
 #if defined(LDAP_CONTROL_PAGEDRESULTS)
 	ZEND_DEP_FE(ldap_control_paged_result_response, arginfo_ldap_control_paged_result_response)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 	ZEND_FE(ldap_rename, arginfo_ldap_rename)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 	ZEND_FE(ldap_rename_ext, arginfo_ldap_rename_ext)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 	ZEND_FE(ldap_get_option, arginfo_ldap_get_option)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 	ZEND_FE(ldap_set_option, arginfo_ldap_set_option)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
+	ZEND_FE(ldap_count_references, arginfo_ldap_count_references)
+#endif
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 	ZEND_FE(ldap_first_reference, arginfo_ldap_first_reference)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP)
 	ZEND_FE(ldap_next_reference, arginfo_ldap_next_reference)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP && defined(HAVE_LDAP_PARSE_REFERENCE)
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP) && defined(HAVE_LDAP_PARSE_REFERENCE)
 	ZEND_FE(ldap_parse_reference, arginfo_ldap_parse_reference)
 #endif
-#if (LDAP_API_VERSION > 2000) || HAVE_ORALDAP && defined(HAVE_LDAP_PARSE_RESULT)
+#if (LDAP_API_VERSION > 2000) || defined(HAVE_ORALDAP) && defined(HAVE_LDAP_PARSE_RESULT)
 	ZEND_FE(ldap_parse_result, arginfo_ldap_parse_result)
 #endif
 #if defined(LDAP_API_FEATURE_X_OPENLDAP) && defined(HAVE_3ARG_SETREBINDPROC)

@@ -2,11 +2,6 @@
 Test array_intersect_ukey() function : usage variation - Passing unexpected values to second argument
 --FILE--
 <?php
-/* Prototype  : array array_intersect_ukey(array arr1, array arr2 [, array ...], callback key_compare_func)
- * Description: Computes the intersection of arrays using a callback function on the keys for comparison.
- * Source code: ext/standard/array.c
- */
-
 echo "*** Testing array_intersect_ukey() : usage variation ***\n";
 
 //Initialise arguments
@@ -202,12 +197,12 @@ array_intersect_ukey(): Argument #2 ($arr2) must be of type array, string given
 array_intersect_ukey(): Argument #2 ($arr2) must be of type array, string given
 
 --instance of classWithToString--
-array_intersect_ukey(): Argument #2 ($arr2) must be of type array, object given
-array_intersect_ukey(): Argument #2 ($arr2) must be of type array, object given
+array_intersect_ukey(): Argument #2 ($arr2) must be of type array, classWithToString given
+array_intersect_ukey(): Argument #2 ($arr2) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_intersect_ukey(): Argument #2 ($arr2) must be of type array, object given
-array_intersect_ukey(): Argument #2 ($arr2) must be of type array, object given
+array_intersect_ukey(): Argument #2 ($arr2) must be of type array, classWithoutToString given
+array_intersect_ukey(): Argument #2 ($arr2) must be of type array, classWithoutToString given
 
 --undefined var--
 array_intersect_ukey(): Argument #2 ($arr2) must be of type array, null given

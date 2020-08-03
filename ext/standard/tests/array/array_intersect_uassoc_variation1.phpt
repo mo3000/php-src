@@ -2,11 +2,6 @@
 Test array_intersect_uassoc() function : usage variation - Passing unexpected values to first argument
 --FILE--
 <?php
-/* Prototype  : array array_intersect_uassoc(array arr1, array arr2 [, array ...], callback key_compare_func)
- * Description: Computes the intersection of arrays with additional index check, compares indexes by a callback function
- * Source code: ext/standard/array.c
- */
-
 echo "*** Testing array_intersect_uassoc() : usage variation ***\n";
 
 // Initialise function arguments
@@ -204,12 +199,12 @@ array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, string give
 array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, string given
 
 --instance of classWithToString--
-array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, object given
-array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, object given
+array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, classWithToString given
+array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, object given
-array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, object given
+array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, classWithoutToString given
+array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, classWithoutToString given
 
 --undefined var--
 array_intersect_uassoc(): Argument #1 ($arr1) must be of type array, null given

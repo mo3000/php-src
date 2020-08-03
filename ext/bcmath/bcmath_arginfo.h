@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: a1e223f29a06a2292a88c0e90e104cb956f80500 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_bcadd, 0, 2, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, left_operand, IS_STRING, 0)
@@ -18,7 +19,7 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_bcmod arginfo_bcdiv
 
-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_bcpowmod, 0, 3, MAY_BE_STRING|MAY_BE_FALSE)
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_bcpowmod, 0, 3, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, base, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, exponent, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, modulus, IS_STRING, 0)

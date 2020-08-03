@@ -6,12 +6,6 @@ extension_loaded('mbstring') or die('skip');
 ?>
 --FILE--
 <?php
-/* Prototype  : string|int|true mb_substitute_character([string|int|null substitute_character])
- * Description: Sets the current substitute_character or returns the current substitute_character
- * Source code: ext/mbstring/mbstring.c
- * Alias to functions:
- */
-
 echo "*** Testing mb_substitute_character(): various types in weak typing mode ***\n";
 
 // Initialise function arguments not being substituted (if any)
@@ -127,9 +121,9 @@ bool(true)
 --float -10.5--
 ValueError: mb_substitute_character(): Argument #1 ($substitute_character) is not a valid codepoint
 --float 10.0e19--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --float -10.0e19--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --float .5--
 bool(true)
 --empty array--
@@ -153,21 +147,21 @@ bool(true)
 --uppercase FALSE--
 bool(true)
 --empty string DQ--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --empty string SQ--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --string DQ--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --string SQ--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --mixed case string--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --heredoc--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --instance of classWithToString--
-ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+ValueError: mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint
 --instance of classWithoutToString--
-TypeError: mb_substitute_character(): Argument #1 ($substitute_character) must be of type string|int|null, object given
+TypeError: mb_substitute_character(): Argument #1 ($substitute_character) must be of type string|int|null, classWithoutToString given
 --undefined var--
 int(0)
 --unset var--

@@ -86,7 +86,7 @@ END_EXTERN_C()
 #define ZSTR_ALLOCA_ALLOC(str, _len, use_heap) do { \
 	(str) = (zend_string *)do_alloca(ZEND_MM_ALIGNED_SIZE_EX(_ZSTR_STRUCT_SIZE(_len), 8), (use_heap)); \
 	GC_SET_REFCOUNT(str, 1); \
-	GC_TYPE_INFO(str) = IS_STRING; \
+	GC_TYPE_INFO(str) = GC_STRING; \
 	ZSTR_H(str) = 0; \
 	ZSTR_LEN(str) = _len; \
 } while (0)
@@ -141,7 +141,7 @@ static zend_always_inline zend_string *zend_string_alloc(size_t len, int persist
 	zend_string *ret = (zend_string *)pemalloc(ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(len)), persistent);
 
 	GC_SET_REFCOUNT(ret, 1);
-	GC_TYPE_INFO(ret) = IS_STRING | ((persistent ? IS_STR_PERSISTENT : 0) << GC_FLAGS_SHIFT);
+	GC_TYPE_INFO(ret) = GC_STRING | ((persistent ? IS_STR_PERSISTENT : 0) << GC_FLAGS_SHIFT);
 	ZSTR_H(ret) = 0;
 	ZSTR_LEN(ret) = len;
 	return ret;
@@ -152,7 +152,7 @@ static zend_always_inline zend_string *zend_string_safe_alloc(size_t n, size_t m
 	zend_string *ret = (zend_string *)safe_pemalloc(n, m, ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(l)), persistent);
 
 	GC_SET_REFCOUNT(ret, 1);
-	GC_TYPE_INFO(ret) = IS_STRING | ((persistent ? IS_STR_PERSISTENT : 0) << GC_FLAGS_SHIFT);
+	GC_TYPE_INFO(ret) = GC_STRING | ((persistent ? IS_STR_PERSISTENT : 0) << GC_FLAGS_SHIFT);
 	ZSTR_H(ret) = 0;
 	ZSTR_LEN(ret) = (n * m) + l;
 	return ret;
@@ -165,6 +165,17 @@ static zend_always_inline zend_string *zend_string_init(const char *str, size_t 
 	memcpy(ZSTR_VAL(ret), str, len);
 	ZSTR_VAL(ret)[len] = '\0';
 	return ret;
+}
+
+static zend_always_inline zend_string *zend_string_init_fast(const char *str, size_t len)
+{
+	if (len > 1) {
+		return zend_string_init(str, len, 0);
+	} else if (len == 0) {
+		return zend_empty_string;
+	} else /* if (len == 1) */ {
+		return ZSTR_CHAR((zend_uchar) *str);
+	}
 }
 
 static zend_always_inline zend_string *zend_string_copy(zend_string *s)
@@ -522,6 +533,7 @@ EMPTY_SWITCH_DEFAULT_CASE()
 	_(ZEND_STR_VOID,                   "void") \
 	_(ZEND_STR_FALSE,                  "false") \
 	_(ZEND_STR_NULL_LOWERCASE,         "null") \
+	_(ZEND_STR_MIXED,                  "mixed") \
 
 
 typedef enum _zend_known_string_id {

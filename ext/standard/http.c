@@ -25,7 +25,7 @@ PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 				const char *num_prefix, size_t num_prefix_len,
 				const char *key_prefix, size_t key_prefix_len,
 				const char *key_suffix, size_t key_suffix_len,
-			  zval *type, char *arg_sep, int enc_type)
+			  zval *type, const char *arg_sep, int enc_type)
 {
 	zend_string *key = NULL;
 	char *newprefix, *p;
@@ -228,8 +228,7 @@ PHPAPI int php_url_encode_hash_ex(HashTable *ht, smart_str *formstr,
 }
 /* }}} */
 
-/* {{{ proto string|false http_build_query(mixed formdata [, string prefix [, string arg_separator [, int enc_type]]])
-   Generates a form-encoded query string from an associative array or object. */
+/* {{{ Generates a form-encoded query string from an associative array or object. */
 PHP_FUNCTION(http_build_query)
 {
 	zval *formdata;

@@ -274,6 +274,14 @@ static void place_essa_pis(
 					}
 				}
 				continue;
+			case ZEND_JMP_NULL:
+				if (opline->op1_type == IS_CV) {
+					int var = EX_VAR_TO_NUM(opline->op1.var);
+					if ((pi = add_pi(arena, op_array, dfg, ssa, j, blocks[j].successors[1], var))) {
+						pi_not_type_mask(pi, MAY_BE_NULL);
+					}
+				}
+				continue;
 			default:
 				continue;
 		}
@@ -1189,7 +1197,7 @@ int zend_ssa_unlink_use_chain(zend_ssa *ssa, int op, int var) /* {{{ */
 			}
 		}
 		/* something wrong */
-		ZEND_ASSERT(0);
+		ZEND_UNREACHABLE();
 		return 0;
 	}
 }
@@ -1238,7 +1246,7 @@ static inline zend_ssa_phi **zend_ssa_next_use_phi_ptr(zend_ssa *ssa, int var, z
 			}
 		}
 	}
-	ZEND_ASSERT(0);
+	ZEND_UNREACHABLE();
 	return NULL;
 }
 /* }}} */

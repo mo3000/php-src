@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: 962dc7537b44115477b38efaefefa352e06b13bf */
 
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_tidy_parse_string, 0, 1, tidy, MAY_BE_FALSE)
 	ZEND_ARG_TYPE_INFO(0, input, IS_STRING, 0)
@@ -43,7 +44,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_tidy_get_release, 0, 0, IS_STRING, 0)
 ZEND_END_ARG_INFO()
 
-#if HAVE_TIDYOPTGETDOC
+#if defined(HAVE_TIDYOPTGETDOC)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_tidy_get_opt_doc, 0, 2, MAY_BE_STRING|MAY_BE_FALSE)
 	ZEND_ARG_OBJ_INFO(0, object, tidy, 0)
 	ZEND_ARG_TYPE_INFO(0, optname, IS_STRING, 0)
@@ -139,7 +140,7 @@ ZEND_END_ARG_INFO()
 
 #define arginfo_class_tidy_getHtmlVer arginfo_class_tidy_cleanRepair
 
-#if HAVE_TIDYOPTGETDOC
+#if defined(HAVE_TIDYOPTGETDOC)
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_tidy_getOptDoc, 0, 0, 1)
 	ZEND_ARG_TYPE_INFO(0, optname, IS_STRING, 0)
 ZEND_END_ARG_INFO()
@@ -189,7 +190,7 @@ ZEND_FUNCTION(tidy_repair_string);
 ZEND_FUNCTION(tidy_repair_file);
 ZEND_FUNCTION(tidy_diagnose);
 ZEND_FUNCTION(tidy_get_release);
-#if HAVE_TIDYOPTGETDOC
+#if defined(HAVE_TIDYOPTGETDOC)
 ZEND_FUNCTION(tidy_get_opt_doc);
 #endif
 ZEND_FUNCTION(tidy_get_config);
@@ -231,7 +232,7 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(tidy_repair_file, arginfo_tidy_repair_file)
 	ZEND_FE(tidy_diagnose, arginfo_tidy_diagnose)
 	ZEND_FE(tidy_get_release, arginfo_tidy_get_release)
-#if HAVE_TIDYOPTGETDOC
+#if defined(HAVE_TIDYOPTGETDOC)
 	ZEND_FE(tidy_get_opt_doc, arginfo_tidy_get_opt_doc)
 #endif
 	ZEND_FE(tidy_get_config, arginfo_tidy_get_config)
@@ -265,7 +266,7 @@ static const zend_function_entry class_tidy_methods[] = {
 	ZEND_ME_MAPPING(getConfig, tidy_get_config, arginfo_class_tidy_getConfig, ZEND_ACC_PUBLIC)
 	ZEND_ME_MAPPING(getStatus, tidy_get_status, arginfo_class_tidy_getStatus, ZEND_ACC_PUBLIC)
 	ZEND_ME_MAPPING(getHtmlVer, tidy_get_html_ver, arginfo_class_tidy_getHtmlVer, ZEND_ACC_PUBLIC)
-#if HAVE_TIDYOPTGETDOC
+#if defined(HAVE_TIDYOPTGETDOC)
 	ZEND_ME_MAPPING(getOptDoc, tidy_get_opt_doc, arginfo_class_tidy_getOptDoc, ZEND_ACC_PUBLIC)
 #endif
 	ZEND_ME_MAPPING(isXhtml, tidy_is_xhtml, arginfo_class_tidy_isXhtml, ZEND_ACC_PUBLIC)

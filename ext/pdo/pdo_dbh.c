@@ -190,7 +190,7 @@ static char *dsn_from_uri(char *uri, char *buf, size_t buflen) /* {{{ */
 }
 /* }}} */
 
-/* {{{ proto PDO::__construct(string dsn[, string username[, string passwd [, array options]]]) */
+/* {{{ */
 PHP_METHOD(PDO, __construct)
 {
 	zval *object = ZEND_THIS;
@@ -437,7 +437,7 @@ static void pdo_stmt_construct(zend_execute_data *execute_data, pdo_stmt_t *stmt
 		fci.retval = &retval;
 		fci.param_count = 0;
 		fci.params = NULL;
-		fci.no_separation = 1;
+		fci.named_params = NULL;
 
 		zend_fcall_info_args(&fci, ctor_args);
 
@@ -454,8 +454,7 @@ static void pdo_stmt_construct(zend_execute_data *execute_data, pdo_stmt_t *stmt
 }
 /* }}} */
 
-/* {{{ proto object PDO::prepare(string statement [, array options])
-   Prepares a statement for execution and returns a statement object */
+/* {{{ Prepares a statement for execution and returns a statement object */
 PHP_METHOD(PDO, prepare)
 {
 	pdo_stmt_t *stmt;
@@ -535,8 +534,7 @@ PHP_METHOD(PDO, prepare)
 	stmt->default_fetch_type = dbh->default_fetch_type;
 	stmt->dbh = dbh;
 	/* give it a reference to me */
-	ZVAL_OBJ(&stmt->database_object_handle, &dbh_obj->std);
-	Z_ADDREF(stmt->database_object_handle);
+	ZVAL_OBJ_COPY(&stmt->database_object_handle, &dbh_obj->std);
 	/* we haven't created a lazy object yet */
 	ZVAL_UNDEF(&stmt->lazy_object_ref);
 
@@ -554,8 +552,7 @@ PHP_METHOD(PDO, prepare)
 }
 /* }}} */
 
-/* {{{ proto bool PDO::beginTransaction()
-   Initiates a transaction */
+/* {{{ Initiates a transaction */
 PHP_METHOD(PDO, beginTransaction)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -586,8 +583,7 @@ PHP_METHOD(PDO, beginTransaction)
 }
 /* }}} */
 
-/* {{{ proto bool PDO::commit()
-   Commit a transaction */
+/* {{{ Commit a transaction */
 PHP_METHOD(PDO, commit)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -611,8 +607,7 @@ PHP_METHOD(PDO, commit)
 }
 /* }}} */
 
-/* {{{ proto bool PDO::rollBack()
-   roll back a transaction */
+/* {{{ roll back a transaction */
 PHP_METHOD(PDO, rollBack)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -636,8 +631,7 @@ PHP_METHOD(PDO, rollBack)
 }
 /* }}} */
 
-/* {{{ proto bool PDO::inTransaction()
-   determine if inside a transaction */
+/* {{{ determine if inside a transaction */
 PHP_METHOD(PDO, inTransaction)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -808,8 +802,7 @@ fail:
 }
 /* }}} */
 
-/* {{{ proto bool PDO::setAttribute(int attribute, mixed value)
-   Set an attribute */
+/* {{{ Set an attribute */
 PHP_METHOD(PDO, setAttribute)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -831,8 +824,7 @@ PHP_METHOD(PDO, setAttribute)
 }
 /* }}} */
 
-/* {{{ proto mixed PDO::getAttribute(int attribute)
-   Get an attribute */
+/* {{{ Get an attribute */
 PHP_METHOD(PDO, getAttribute)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -896,8 +888,7 @@ PHP_METHOD(PDO, getAttribute)
 }
 /* }}} */
 
-/* {{{ proto int PDO::exec(string statement)
-   Execute a statement that does not return a row set, returning the number of affected rows */
+/* {{{ Execute a statement that does not return a row set, returning the number of affected rows */
 PHP_METHOD(PDO, exec)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -925,8 +916,7 @@ PHP_METHOD(PDO, exec)
 }
 /* }}} */
 
-/* {{{ proto string PDO::lastInsertId([string name])
-   Returns the id of the last row that we affected on this connection. Some databases require a sequence or table name to be passed in. Not always meaningful. */
+/* {{{ Returns the id of the last row that we affected on this connection. Some databases require a sequence or table name to be passed in. Not always meaningful. */
 PHP_METHOD(PDO, lastInsertId)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -959,8 +949,7 @@ PHP_METHOD(PDO, lastInsertId)
 }
 /* }}} */
 
-/* {{{ proto string PDO::errorCode()
-   Fetch the error code associated with the last operation on the database handle */
+/* {{{ Fetch the error code associated with the last operation on the database handle */
 PHP_METHOD(PDO, errorCode)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -985,8 +974,7 @@ PHP_METHOD(PDO, errorCode)
 }
 /* }}} */
 
-/* {{{ proto array PDO::errorInfo()
-   Fetch extended error information associated with the last operation on the database handle */
+/* {{{ Fetch extended error information associated with the last operation on the database handle */
 PHP_METHOD(PDO, errorInfo)
 {
 	int error_count;
@@ -1032,24 +1020,20 @@ fill_array:
 }
 /* }}} */
 
-/* {{{ proto object PDO::query(string sql [, PDOStatement::setFetchMode() args])
-   Prepare and execute $sql; returns the statement object for iteration */
+/* {{{ Prepare and execute $sql; returns the statement object for iteration */
 PHP_METHOD(PDO, query)
 {
 	pdo_stmt_t *stmt;
 	char *statement;
 	size_t statement_len;
+	zend_long fetch_mode;
+	zend_bool fetch_mode_is_null = 1;
+	zval *args = NULL;
+	uint32_t num_args = 0;
 	pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(ZEND_THIS);
 	pdo_dbh_t *dbh = dbh_obj->inner;
 
-	/* Return a meaningful error when no parameters were passed */
-	if (!ZEND_NUM_ARGS()) {
-		zend_parse_parameters(0, "z|z", NULL, NULL);
-		RETURN_THROWS();
-	}
-
-	if (FAILURE == zend_parse_parameters(1, "s", &statement,
-			&statement_len)) {
+	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "s|l!*", &statement, &statement_len, &fetch_mode, &fetch_mode_is_null, &args, &num_args)) {
 		RETURN_THROWS();
 	}
 
@@ -1073,14 +1057,13 @@ PHP_METHOD(PDO, query)
 	stmt->active_query_stringlen = statement_len;
 	stmt->dbh = dbh;
 	/* give it a reference to me */
-	ZVAL_OBJ(&stmt->database_object_handle, &dbh_obj->std);
-	Z_ADDREF(stmt->database_object_handle);
+	ZVAL_OBJ_COPY(&stmt->database_object_handle, &dbh_obj->std);
 	/* we haven't created a lazy object yet */
 	ZVAL_UNDEF(&stmt->lazy_object_ref);
 
 	if (dbh->methods->preparer(dbh, statement, statement_len, stmt, NULL)) {
 		PDO_STMT_CLEAR_ERR();
-		if (ZEND_NUM_ARGS() == 1 || SUCCESS == pdo_stmt_setup_fetch_mode(INTERNAL_FUNCTION_PARAM_PASSTHRU, stmt, 1)) {
+		if (fetch_mode_is_null || SUCCESS == pdo_stmt_setup_fetch_mode(stmt, fetch_mode, args, num_args)) {
 
 			/* now execute the statement */
 			PDO_STMT_CLEAR_ERR();
@@ -1113,8 +1096,7 @@ PHP_METHOD(PDO, query)
 }
 /* }}} */
 
-/* {{{ proto string PDO::quote(string string [, int paramtype])
-   quotes string for use in a query. The optional paramtype acts as a hint for drivers that have alternate quoting styles. The default value is PDO_PARAM_STR */
+/* {{{ quotes string for use in a query. The optional paramtype acts as a hint for drivers that have alternate quoting styles. The default value is PDO_PARAM_STR */
 PHP_METHOD(PDO, quote)
 {
 	pdo_dbh_t *dbh = Z_PDO_DBH_P(ZEND_THIS);
@@ -1147,8 +1129,7 @@ PHP_METHOD(PDO, quote)
 }
 /* }}} */
 
-/* {{{ proto array PDO::getAvailableDrivers()
-   Return array of available PDO drivers */
+/* {{{ Return array of available PDO drivers */
 PHP_METHOD(PDO, getAvailableDrivers)
 {
 	pdo_driver_t *pdriver;

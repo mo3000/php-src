@@ -52,7 +52,7 @@ struct php_unserialize_data {
 	var_entries       entries;
 };
 
-PHPAPI php_unserialize_data_t php_var_unserialize_init() {
+PHPAPI php_unserialize_data_t php_var_unserialize_init(void) {
 	php_unserialize_data_t d;
 	/* fprintf(stderr, "UNSERIALIZE_INIT    == lock: %u, level: %u\n", BG(serialize_lock), BG(unserialize).level); */
 	if (BG(serialize_lock) || !BG(unserialize).level) {
@@ -218,9 +218,8 @@ PHPAPI void var_destroy(php_unserialize_data_t *var_hashx)
 	var_entries *var_hash = (*var_hashx)->entries.next;
 	var_dtor_entries *var_dtor_hash = (*var_hashx)->first_dtor;
 	zend_bool delayed_call_failed = 0;
-	zval wakeup_name, unserialize_name;
+	zval wakeup_name;
 	ZVAL_UNDEF(&wakeup_name);
-	ZVAL_UNDEF(&unserialize_name);
 
 #if VAR_ENTRIES_DBG
 	fprintf(stderr, "var_destroy( " ZEND_LONG_FMT ")\n", var_hash?var_hash->used_slots:-1L);
@@ -261,22 +260,18 @@ PHPAPI void var_destroy(php_unserialize_data_t *var_hashx)
 			} else if (Z_EXTRA_P(zv) == VAR_UNSERIALIZE_FLAG) {
 				/* Perform delayed __unserialize calls */
 				if (!delayed_call_failed) {
-					zval retval, param;
+					zval param;
 					ZVAL_COPY(&param, &var_dtor_hash->data[i + 1]);
 
-					if (Z_ISUNDEF(unserialize_name)) {
-						ZVAL_STRINGL(&unserialize_name, "__unserialize", sizeof("__unserialize") - 1);
-					}
-
 					BG(serialize_lock)++;
-					if (call_user_function(CG(function_table), zv, &unserialize_name, &retval, 1, &param) == FAILURE || Z_ISUNDEF(retval)) {
+					zend_call_known_instance_method_with_1_params(
+						Z_OBJCE_P(zv)->__unserialize, Z_OBJ_P(zv), NULL, &param);
+					if (EG(exception)) {
 						delayed_call_failed = 1;
 						GC_ADD_FLAGS(Z_OBJ_P(zv), IS_OBJ_DESTRUCTOR_CALLED);
 					}
 					BG(serialize_lock)--;
-
 					zval_ptr_dtor(&param);
-					zval_ptr_dtor(&retval);
 				} else {
 					GC_ADD_FLAGS(Z_OBJ_P(zv), IS_OBJ_DESTRUCTOR_CALLED);
 				}
@@ -290,7 +285,6 @@ PHPAPI void var_destroy(php_unserialize_data_t *var_hashx)
 	}
 
 	zval_ptr_dtor_nogc(&wakeup_name);
-	zval_ptr_dtor_nogc(&unserialize_name);
 
 	if ((*var_hashx)->ref_props) {
 		zend_hash_destroy((*var_hashx)->ref_props);
@@ -943,14 +937,10 @@ use_double:
 	YYCURSOR += 2;
 	*p = YYCURSOR;
 
-	if (len == 0) {
-		ZVAL_EMPTY_STRING(rval);
-	} else if (len == 1) {
-		ZVAL_INTERNED_STR(rval, ZSTR_CHAR((zend_uchar)*str));
-	} else if (as_key) {
+	if (as_key) {
 		ZVAL_STR(rval, zend_string_init_interned(str, len, 0));
 	} else {
-		ZVAL_STRINGL(rval, str, len);
+		ZVAL_STRINGL_FAST(rval, str, len);
 	}
 	return 1;
 }
@@ -1107,7 +1097,7 @@ object ":" uiv ":" ["]	{
 
 		ZVAL_STR_COPY(&args[0], class_name);
 		BG(serialize_lock)++;
-		if (call_user_function_ex(NULL, NULL, &user_func, &retval, 1, args, 0, NULL) != SUCCESS) {
+		if (call_user_function(NULL, NULL, &user_func, &retval, 1, args) != SUCCESS) {
 			BG(serialize_lock)--;
 			if (EG(exception)) {
 				zend_string_release_ex(class_name, 0);
@@ -1173,8 +1163,7 @@ object ":" uiv ":" ["]	{
 
 	*p += 2;
 
-	has_unserialize = !incomplete_class
-		&& zend_hash_str_exists(&ce->function_table, "__unserialize", sizeof("__unserialize")-1);
+	has_unserialize = !incomplete_class && ce->__unserialize;
 
 	/* If this class implements Serializable, it should not land here but in object_custom().
 	 * The passed string obviously doesn't descend from the regular serializer. However, if

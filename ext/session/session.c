@@ -283,7 +283,7 @@ static void bin_to_readable(unsigned char *in, size_t inlen, char *out, size_t o
 				have += 8;
 			} else {
 				/* Should never happen. Input must be large enough. */
-				ZEND_ASSERT(0);
+				ZEND_UNREACHABLE();
 				break;
 			}
 		}
@@ -471,8 +471,7 @@ static void php_session_save_current_state(int write) /* {{{ */
 					if (PS(lazy_write) && PS(session_vars)
 						&& PS(mod)->s_update_timestamp
 						&& PS(mod)->s_update_timestamp != php_session_update_timestamp
-						&& ZSTR_LEN(val) == ZSTR_LEN(PS(session_vars))
-						&& !memcmp(ZSTR_VAL(val), ZSTR_VAL(PS(session_vars)), ZSTR_LEN(val))
+						&& zend_string_equals(val, PS(session_vars))
 					) {
 						ret = PS(mod)->s_update_timestamp(&PS(mod_data), PS(id), val, PS(gc_maxlifetime));
 					} else {
@@ -782,8 +781,7 @@ static PHP_INI_MH(OnUpdateRfc1867Freq) /* {{{ */
 	return SUCCESS;
 } /* }}} */
 
-/* {{{ PHP_INI
- */
+/* {{{ PHP_INI */
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("session.save_path",          "",          PHP_INI_ALL, OnUpdateSaveDir,       save_path,          php_ps_globals,    ps_globals)
 	STD_PHP_INI_ENTRY("session.name",               "PHPSESSID", PHP_INI_ALL, OnUpdateName,          session_name,       php_ps_globals,    ps_globals)
@@ -873,7 +871,7 @@ PS_SERIALIZER_DECODE_FUNC(php_serialize) /* {{{ */
 	Z_ADDREF_P(&PS(http_session_vars));
 	zend_hash_update_ind(&EG(symbol_table), var_name, &PS(http_session_vars));
 	zend_string_release_ex(var_name, 0);
-	return SUCCESS;
+	return result || !vallen ? SUCCESS : FAILURE;
 }
 /* }}} */
 
@@ -990,7 +988,10 @@ PS_SERIALIZER_DECODE_FUNC(php) /* {{{ */
 	while (p < endptr) {
 		q = p;
 		while (*q != PS_DELIMITER) {
-			if (++q >= endptr) goto break_outer_loop;
+			if (++q >= endptr) {
+				retval = FAILURE;
+				goto break_outer_loop;
+			}
 		}
 
 		namelen = q - p;
@@ -1374,7 +1375,7 @@ static int php_session_send_cookie(void) /* {{{ */
 }
 /* }}} */
 
-PHPAPI const ps_module *_php_find_ps_module(char *name) /* {{{ */
+PHPAPI const ps_module *_php_find_ps_module(const char *name) /* {{{ */
 {
 	const ps_module *ret = NULL;
 	const ps_module **mod;
@@ -1390,7 +1391,7 @@ PHPAPI const ps_module *_php_find_ps_module(char *name) /* {{{ */
 }
 /* }}} */
 
-PHPAPI const ps_serializer *_php_find_ps_serializer(char *name) /* {{{ */
+PHPAPI const ps_serializer *_php_find_ps_serializer(const char *name) /* {{{ */
 {
 	const ps_serializer *ret = NULL;
 	const ps_serializer *mod;
@@ -1648,10 +1649,10 @@ static int php_session_reset(void) /* {{{ */
 /* This API is not used by any PHP modules including session currently.
    session_adapt_url() may be used to set Session ID to target url without
    starting "URL-Rewriter" output handler. */
-PHPAPI void session_adapt_url(const char *url, size_t urllen, char **new, size_t *newlen) /* {{{ */
+PHPAPI void session_adapt_url(const char *url, size_t url_len, char **new_url, size_t *new_len) /* {{{ */
 {
 	if (APPLY_TRANS_SID && (PS(session_status) == php_session_active)) {
-		*new = php_url_scanner_adapt_single_url(url, urllen, PS(session_name), ZSTR_VAL(PS(id)), newlen, 1);
+		*new_url = php_url_scanner_adapt_single_url(url, url_len, PS(session_name), ZSTR_VAL(PS(id)), new_len, 1);
 	}
 }
 /* }}} */
@@ -1660,8 +1661,7 @@ PHPAPI void session_adapt_url(const char *url, size_t urllen, char **new, size_t
    * Userspace exported functions *
    ******************************** */
 
-/* {{{ proto bool session_set_cookie_params(int lifetime [, string path [, string domain [, bool secure[, bool httponly]]]])
-                  session_set_cookie_params(array options)
+/* {{{ session_set_cookie_params(array options)
    Set session cookie parameters */
 PHP_FUNCTION(session_set_cookie_params)
 {
@@ -1820,8 +1820,7 @@ cleanup:
 }
 /* }}} */
 
-/* {{{ proto array session_get_cookie_params(void)
-   Return the session cookie parameters */
+/* {{{ Return the session cookie parameters */
 PHP_FUNCTION(session_get_cookie_params)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -1839,14 +1838,13 @@ PHP_FUNCTION(session_get_cookie_params)
 }
 /* }}} */
 
-/* {{{ proto string session_name([string newname])
-   Return the current session name. If newname is given, the session name is replaced with newname */
+/* {{{ Return the current session name. If newname is given, the session name is replaced with newname */
 PHP_FUNCTION(session_name)
 {
 	zend_string *name = NULL;
 	zend_string *ini_name;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S", &name) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S!", &name) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -1870,14 +1868,13 @@ PHP_FUNCTION(session_name)
 }
 /* }}} */
 
-/* {{{ proto string session_module_name([string newname])
-   Return the current module name used for accessing session data. If newname is given, the module name is replaced with newname */
+/* {{{ Return the current module name used for accessing session data. If newname is given, the module name is replaced with newname */
 PHP_FUNCTION(session_module_name)
 {
 	zend_string *name = NULL;
 	zend_string *ini_name;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S", &name) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S!", &name) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -1917,23 +1914,26 @@ PHP_FUNCTION(session_module_name)
 }
 /* }}} */
 
-/* {{{ proto bool session_set_save_handler(string open, string close, string read, string write, string destroy, string gc, string create_sid)
-   Sets user-level functions */
+static int save_handler_check_session() {
+	if (PS(session_status) == php_session_active) {
+		php_error_docref(NULL, E_WARNING, "Cannot change save handler when session is active");
+		return FAILURE;
+	}
+
+	if (SG(headers_sent)) {
+		php_error_docref(NULL, E_WARNING, "Cannot change save handler when headers already sent");
+		return FAILURE;
+	}
+
+	return SUCCESS;
+}
+
+/* {{{ Sets user-level functions */
 PHP_FUNCTION(session_set_save_handler)
 {
 	zval *args = NULL;
 	int i, num_args, argc = ZEND_NUM_ARGS();
 	zend_string *ini_name, *ini_val;
-
-	if (PS(session_status) == php_session_active) {
-		php_error_docref(NULL, E_WARNING, "Cannot change save handler when session is active");
-		RETURN_FALSE;
-	}
-
-	if (SG(headers_sent)) {
-		php_error_docref(NULL, E_WARNING, "Cannot change save handler when headers already sent");
-		RETURN_FALSE;
-	}
 
 	if (argc > 0 && argc <= 2) {
 		zval *obj = NULL;
@@ -1943,6 +1943,10 @@ PHP_FUNCTION(session_set_save_handler)
 
 		if (zend_parse_parameters(ZEND_NUM_ARGS(), "O|b", &obj, php_session_iface_entry, &register_shutdown) == FAILURE) {
 			RETURN_THROWS();
+		}
+
+		if (save_handler_check_session() == FAILURE) {
+			RETURN_FALSE;
 		}
 
 		/* For compatibility reason, implemented interface is not checked */
@@ -2047,6 +2051,10 @@ PHP_FUNCTION(session_set_save_handler)
 		RETURN_THROWS();
 	}
 
+	if (save_handler_check_session() == FAILURE) {
+		RETURN_FALSE;
+	}
+
 	/* remove shutdown function */
 	remove_user_shutdown_function("session_shutdown", sizeof("session_shutdown") - 1);
 
@@ -2081,14 +2089,13 @@ PHP_FUNCTION(session_set_save_handler)
 }
 /* }}} */
 
-/* {{{ proto string session_save_path([string newname])
-   Return the current save path passed to module_name. If newname is given, the save path is replaced with newname */
+/* {{{ Return the current save path passed to module_name. If newname is given, the save path is replaced with newname */
 PHP_FUNCTION(session_save_path)
 {
 	zend_string *name = NULL;
 	zend_string *ini_name;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S", &name) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|P!", &name) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -2105,11 +2112,6 @@ PHP_FUNCTION(session_save_path)
 	RETVAL_STRING(PS(save_path));
 
 	if (name) {
-		if (memchr(ZSTR_VAL(name), '\0', ZSTR_LEN(name)) != NULL) {
-			php_error_docref(NULL, E_WARNING, "The save_path cannot contain NULL characters");
-			zval_ptr_dtor_str(return_value);
-			RETURN_FALSE;
-		}
 		ini_name = zend_string_init("session.save_path", sizeof("session.save_path") - 1, 0);
 		zend_alter_ini_entry(ini_name, name, PHP_INI_USER, PHP_INI_STAGE_RUNTIME);
 		zend_string_release_ex(ini_name, 0);
@@ -2117,14 +2119,13 @@ PHP_FUNCTION(session_save_path)
 }
 /* }}} */
 
-/* {{{ proto string session_id([string newid])
-   Return the current session id. If newid is given, the session id is replaced with newid */
+/* {{{ Return the current session id. If newid is given, the session id is replaced with newid */
 PHP_FUNCTION(session_id)
 {
 	zend_string *name = NULL;
 	int argc = ZEND_NUM_ARGS();
 
-	if (zend_parse_parameters(argc, "|S", &name) == FAILURE) {
+	if (zend_parse_parameters(argc, "|S!", &name) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -2160,8 +2161,7 @@ PHP_FUNCTION(session_id)
 }
 /* }}} */
 
-/* {{{ proto bool session_regenerate_id([bool delete_old_session])
-   Update the current session id with a newly generated one. If delete_old_session is set to true, remove the old session. */
+/* {{{ Update the current session id with a newly generated one. If delete_old_session is set to true, remove the old session. */
 PHP_FUNCTION(session_regenerate_id)
 {
 	zend_bool del_ses = 0;
@@ -2260,8 +2260,7 @@ PHP_FUNCTION(session_regenerate_id)
 }
 /* }}} */
 
-/* {{{ proto string session_create_id([string prefix])
-   Generate new session ID. Intended for user save handlers. */
+/* {{{ Generate new session ID. Intended for user save handlers. */
 /* This is not used yet */
 PHP_FUNCTION(session_create_id)
 {
@@ -2315,14 +2314,13 @@ PHP_FUNCTION(session_create_id)
 }
 /* }}} */
 
-/* {{{ proto string session_cache_limiter([string new_cache_limiter])
-   Return the current cache limiter. If new_cache_limited is given, the current cache_limiter is replaced with new_cache_limiter */
+/* {{{ Return the current cache limiter. If new_cache_limited is given, the current cache_limiter is replaced with new_cache_limiter */
 PHP_FUNCTION(session_cache_limiter)
 {
 	zend_string *limiter = NULL;
 	zend_string *ini_name;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S", &limiter) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|S!", &limiter) == FAILURE) {
 		RETURN_THROWS();
 	}
 
@@ -2346,8 +2344,7 @@ PHP_FUNCTION(session_cache_limiter)
 }
 /* }}} */
 
-/* {{{ proto int session_cache_expire([int new_cache_expire])
-   Return the current cache expire. If new_cache_expire is given, the current cache_expire is replaced with new_cache_expire */
+/* {{{ Return the current cache expire. If new_cache_expire is given, the current cache_expire is replaced with new_cache_expire */
 PHP_FUNCTION(session_cache_expire)
 {
 	zend_long expires;
@@ -2379,8 +2376,7 @@ PHP_FUNCTION(session_cache_expire)
 }
 /* }}} */
 
-/* {{{ proto string session_encode(void)
-   Serializes the current setup and returns the serialized representation */
+/* {{{ Serializes the current setup and returns the serialized representation */
 PHP_FUNCTION(session_encode)
 {
 	zend_string *enc;
@@ -2398,8 +2394,7 @@ PHP_FUNCTION(session_encode)
 }
 /* }}} */
 
-/* {{{ proto bool session_decode(string data)
-   Deserializes data and reinitializes the variables */
+/* {{{ Deserializes data and reinitializes the variables */
 PHP_FUNCTION(session_decode)
 {
 	zend_string *str = NULL;
@@ -2432,8 +2427,7 @@ static int php_session_start_set_ini(zend_string *varname, zend_string *new_valu
 	return ret;
 }
 
-/* {{{ proto bool session_start([array options])
-+   Begin session */
+/* {{{ +   Begin session */
 PHP_FUNCTION(session_start)
 {
 	zval *options = NULL;
@@ -2510,8 +2504,7 @@ PHP_FUNCTION(session_start)
 }
 /* }}} */
 
-/* {{{ proto bool session_destroy(void)
-   Destroy the current session and all data associated with it */
+/* {{{ Destroy the current session and all data associated with it */
 PHP_FUNCTION(session_destroy)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2522,8 +2515,7 @@ PHP_FUNCTION(session_destroy)
 }
 /* }}} */
 
-/* {{{ proto bool session_unset(void)
-   Unset all registered variables */
+/* {{{ Unset all registered variables */
 PHP_FUNCTION(session_unset)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2545,8 +2537,7 @@ PHP_FUNCTION(session_unset)
 }
 /* }}} */
 
-/* {{{ proto int session_gc(void)
-   Perform GC and return number of deleted sessions */
+/* {{{ Perform GC and return number of deleted sessions */
 PHP_FUNCTION(session_gc)
 {
 	zend_long num;
@@ -2570,8 +2561,7 @@ PHP_FUNCTION(session_gc)
 /* }}} */
 
 
-/* {{{ proto bool session_write_close(void)
-   Write session data and end session */
+/* {{{ Write session data and end session */
 PHP_FUNCTION(session_write_close)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2586,8 +2576,7 @@ PHP_FUNCTION(session_write_close)
 }
 /* }}} */
 
-/* {{{ proto bool session_abort(void)
-   Abort session and end session. Session data will not be written */
+/* {{{ Abort session and end session. Session data will not be written */
 PHP_FUNCTION(session_abort)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2602,8 +2591,7 @@ PHP_FUNCTION(session_abort)
 }
 /* }}} */
 
-/* {{{ proto bool session_reset(void)
-   Reset session data from saved session data */
+/* {{{ Reset session data from saved session data */
 PHP_FUNCTION(session_reset)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2618,8 +2606,7 @@ PHP_FUNCTION(session_reset)
 }
 /* }}} */
 
-/* {{{ proto int session_status(void)
-   Returns the current session status */
+/* {{{ Returns the current session status */
 PHP_FUNCTION(session_status)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -2630,8 +2617,7 @@ PHP_FUNCTION(session_status)
 }
 /* }}} */
 
-/* {{{ proto void session_register_shutdown(void)
-   Registers session_write_close() as a shutdown function */
+/* {{{ Registers session_write_close() as a shutdown function */
 PHP_FUNCTION(session_register_shutdown)
 {
 	php_shutdown_function_entry shutdown_function_entry;
@@ -2821,7 +2807,7 @@ static PHP_MSHUTDOWN_FUNCTION(session) /* {{{ */
 	}
 
 	ps_serializers[PREDEFINED_SERIALIZERS].name = NULL;
-	memset(&ps_modules[PREDEFINED_MODULES], 0, (MAX_MODULES-PREDEFINED_MODULES)*sizeof(ps_module *));
+	memset(ZEND_VOIDP(&ps_modules[PREDEFINED_MODULES]), 0, (MAX_MODULES-PREDEFINED_MODULES)*sizeof(ps_module *));
 
 	return SUCCESS;
 }

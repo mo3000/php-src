@@ -122,7 +122,6 @@ static inline int phpdbg_call_register(phpdbg_param_t *stack) /* {{{ */
 			//???fci.symbol_table = zend_rebuild_symbol_table();
 			fci.object = NULL;
 			fci.retval = &fretval;
-			fci.no_separation = 1;
 
 			if (name->next) {
 				zval params;
@@ -726,7 +725,7 @@ static inline void phpdbg_handle_exception(void) /* {{{ */
 	EG(exception) = NULL;
 
 	ZVAL_OBJ(&zv, ex);
-	zend_call_method_with_0_params(ex, ex->ce, &ex->ce->__tostring, "__tostring", &tmp);
+	zend_call_known_instance_method_with_0_params(ex->ce->__tostring, ex, &tmp);
 	file = zval_get_string(zend_read_property(zend_get_exception_base(&zv), &zv, ZEND_STRL("file"), 1, &rv));
 	line = zval_get_long(zend_read_property(zend_get_exception_base(&zv), &zv, ZEND_STRL("line"), 1, &rv));
 
@@ -1707,9 +1706,14 @@ void phpdbg_execute_ex(zend_execute_data *execute_data) /* {{{ */
 
 #ifdef ZEND_WIN32
 		if (EG(timed_out)) {
-			zend_timeout(0);
+			zend_timeout();
 		}
 #endif
+
+		if (exception && zend_is_unwind_exit(exception)) {
+			/* Restore bailout based exit. */
+			zend_bailout();
+		}
 
 		if (PHPDBG_G(flags) & PHPDBG_PREVENT_INTERACTIVE) {
 			phpdbg_print_opline_ex(execute_data, 0);

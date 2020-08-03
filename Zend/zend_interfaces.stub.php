@@ -31,17 +31,19 @@ interface Iterator extends Traversable
 interface ArrayAccess
 {
     /** @return bool */
-    public function offsetExists($offset);
+    public function offsetExists(mixed $offset);
 
-    /* actually this should be return by ref but atm cannot be */
-    /** @return mixed */
-    public function offsetGet($offset);
+    /**
+     * Actually this should be return by ref but atm cannot be.
+     * @return mixed
+     */
+    public function offsetGet(mixed $offset);
 
     /** @return void */
-    public function offsetSet($offset, $value);
+    public function offsetSet(mixed $offset, mixed $value);
 
     /** @return void */
-    public function offsetUnset($offset);
+    public function offsetUnset(mixed $offset);
 }
 
 interface Serializable
@@ -62,4 +64,21 @@ interface Countable
 interface Stringable
 {
     public function __toString(): string;
+}
+
+final class InternalIterator implements Iterator
+{
+    private function __construct();
+
+    /** @return mixed */
+    public function current();
+
+    /** @return mixed */
+    public function key();
+
+    public function next(): void;
+
+    public function valid(): bool;
+
+    public function rewind(): void;
 }

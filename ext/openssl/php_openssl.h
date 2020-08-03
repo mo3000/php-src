@@ -92,16 +92,39 @@ php_stream_transport_factory_func php_openssl_ssl_socket_factory;
 
 void php_openssl_store_errors();
 
-PHP_OPENSSL_API zend_long php_openssl_cipher_iv_length(char *method);
+PHP_OPENSSL_API zend_long php_openssl_cipher_iv_length(const char *method);
 PHP_OPENSSL_API zend_string* php_openssl_random_pseudo_bytes(zend_long length);
-PHP_OPENSSL_API zend_string* php_openssl_encrypt(char *data, size_t data_len,
-		char *method, size_t method_len, char *password,
-		size_t password_len, zend_long options, char *iv, size_t iv_len,
-		zval *tag, zend_long tag_len, char *aad, size_t add_len);
-PHP_OPENSSL_API zend_string* php_openssl_decrypt(char *data, size_t data_len,
-		char *method, size_t method_len, char *password,
-		size_t password_len, zend_long options, char *iv, size_t iv_len,
-		char *tag, zend_long tag_len, char *aad, size_t add_len);
+PHP_OPENSSL_API zend_string* php_openssl_encrypt(
+	const char *data, size_t data_len,
+	const char *method, size_t method_len,
+	const char *password, size_t password_len,
+	zend_long options,
+	const char *iv, size_t iv_len,
+	zval *tag, zend_long tag_len,
+	const char *aad, size_t aad_len);
+PHP_OPENSSL_API zend_string* php_openssl_decrypt(
+	const char *data, size_t data_len,
+	const char *method, size_t method_len,
+	const char *password, size_t password_len,
+	zend_long options,
+	const char *iv, size_t iv_len,
+	const char *tag, zend_long tag_len,
+	const char *aad, size_t aad_len);
+
+/* OpenSSLCertificate class */
+
+typedef struct _php_openssl_certificate_object {
+	X509 *x509;
+	zend_object std;
+} php_openssl_certificate_object;
+
+extern zend_class_entry *php_openssl_certificate_ce;
+
+static inline php_openssl_certificate_object *php_openssl_certificate_from_obj(zend_object *obj) {
+	return (php_openssl_certificate_object *)((char *)(obj) - XtOffsetOf(php_openssl_certificate_object, std));
+}
+
+#define Z_OPENSSL_CERTIFICATE_P(zv) php_openssl_certificate_from_obj(Z_OBJ_P(zv))
 
 PHP_MINIT_FUNCTION(openssl);
 PHP_MSHUTDOWN_FUNCTION(openssl);

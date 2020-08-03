@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: 243017c5440bff0b3ee3296705d8455d0fac5b7e */
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pcntl_fork, 0, 0, IS_LONG, 0)
 ZEND_END_ARG_INFO()
@@ -37,14 +38,14 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pcntl_sigprocmask, 0, 2, _IS_BOO
 ZEND_END_ARG_INFO()
 #endif
 
-#if defined(HAVE_STRUCT_SIGINFO_T) && HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT
+#if defined(HAVE_STRUCT_SIGINFO_T) && defined(HAVE_SIGWAITINFO) && defined(HAVE_SIGTIMEDWAIT)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_pcntl_sigwaitinfo, 0, 1, MAY_BE_LONG|MAY_BE_FALSE)
 	ZEND_ARG_TYPE_INFO(0, set, IS_ARRAY, 0)
 	ZEND_ARG_INFO_WITH_DEFAULT_VALUE(1, info, "[]")
 ZEND_END_ARG_INFO()
 #endif
 
-#if defined(HAVE_STRUCT_SIGINFO_T) && HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT
+#if defined(HAVE_STRUCT_SIGINFO_T) && defined(HAVE_SIGWAITINFO) && defined(HAVE_SIGTIMEDWAIT)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_pcntl_sigtimedwait, 0, 1, MAY_BE_LONG|MAY_BE_FALSE)
 	ZEND_ARG_TYPE_INFO(0, set, IS_ARRAY, 0)
 	ZEND_ARG_INFO_WITH_DEFAULT_VALUE(1, info, "[]")
@@ -91,7 +92,7 @@ ZEND_END_ARG_INFO()
 
 #if defined(HAVE_GETPRIORITY)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_MASK_EX(arginfo_pcntl_getpriority, 0, 0, MAY_BE_LONG|MAY_BE_FALSE)
-	ZEND_ARG_TYPE_INFO(0, pid, IS_LONG, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, pid, IS_LONG, 1, "null")
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, process_identifier, IS_LONG, 0, "PRIO_PROCESS")
 ZEND_END_ARG_INFO()
 #endif
@@ -99,7 +100,7 @@ ZEND_END_ARG_INFO()
 #if defined(HAVE_SETPRIORITY)
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pcntl_setpriority, 0, 1, _IS_BOOL, 0)
 	ZEND_ARG_TYPE_INFO(0, priority, IS_LONG, 0)
-	ZEND_ARG_TYPE_INFO(0, pid, IS_LONG, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, pid, IS_LONG, 1, "null")
 	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, process_identifier, IS_LONG, 0, "PRIO_PROCESS")
 ZEND_END_ARG_INFO()
 #endif
@@ -109,7 +110,7 @@ ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pcntl_strerror, 0, 1, IS_STRING,
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_pcntl_async_signals, 0, 0, _IS_BOOL, 0)
-	ZEND_ARG_TYPE_INFO(0, on, _IS_BOOL, 0)
+	ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, on, _IS_BOOL, 1, "null")
 ZEND_END_ARG_INFO()
 
 #if defined(HAVE_UNSHARE)
@@ -128,10 +129,10 @@ ZEND_FUNCTION(pcntl_signal_dispatch);
 #if defined(HAVE_SIGPROCMASK)
 ZEND_FUNCTION(pcntl_sigprocmask);
 #endif
-#if defined(HAVE_STRUCT_SIGINFO_T) && HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT
+#if defined(HAVE_STRUCT_SIGINFO_T) && defined(HAVE_SIGWAITINFO) && defined(HAVE_SIGTIMEDWAIT)
 ZEND_FUNCTION(pcntl_sigwaitinfo);
 #endif
-#if defined(HAVE_STRUCT_SIGINFO_T) && HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT
+#if defined(HAVE_STRUCT_SIGINFO_T) && defined(HAVE_SIGWAITINFO) && defined(HAVE_SIGTIMEDWAIT)
 ZEND_FUNCTION(pcntl_sigtimedwait);
 #endif
 ZEND_FUNCTION(pcntl_wifexited);
@@ -169,10 +170,10 @@ static const zend_function_entry ext_functions[] = {
 #if defined(HAVE_SIGPROCMASK)
 	ZEND_FE(pcntl_sigprocmask, arginfo_pcntl_sigprocmask)
 #endif
-#if defined(HAVE_STRUCT_SIGINFO_T) && HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT
+#if defined(HAVE_STRUCT_SIGINFO_T) && defined(HAVE_SIGWAITINFO) && defined(HAVE_SIGTIMEDWAIT)
 	ZEND_FE(pcntl_sigwaitinfo, arginfo_pcntl_sigwaitinfo)
 #endif
-#if defined(HAVE_STRUCT_SIGINFO_T) && HAVE_SIGWAITINFO && HAVE_SIGTIMEDWAIT
+#if defined(HAVE_STRUCT_SIGINFO_T) && defined(HAVE_SIGWAITINFO) && defined(HAVE_SIGTIMEDWAIT)
 	ZEND_FE(pcntl_sigtimedwait, arginfo_pcntl_sigtimedwait)
 #endif
 	ZEND_FE(pcntl_wifexited, arginfo_pcntl_wifexited)

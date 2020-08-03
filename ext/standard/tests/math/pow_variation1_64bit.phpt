@@ -8,11 +8,6 @@ if (PHP_INT_SIZE != 8) die("skip this test is for 64bit platform only");
 ?>
 --FILE--
 <?php
-/* Prototype  : number pow  ( number $base  , number $exp  )
- * Description: Exponential expression.
- * Source code: ext/standard/math.c
- */
-
 echo "*** Testing pow() : usage variations ***\n";
 
 //get an unset variable
@@ -94,7 +89,7 @@ foreach($inputs as $input) {
 };
 fclose($fp);
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing pow() : usage variations ***
 
 -- Iteration 1 --
@@ -146,35 +141,25 @@ int(1)
 int(0)
 
 -- Iteration 17 --
-
-Warning: A non-numeric value encountered in %s on line %d
-int(0)
+Unsupported operand types: string ** int
 
 -- Iteration 18 --
-
-Warning: A non-numeric value encountered in %s on line %d
-int(0)
+Unsupported operand types: string ** int
 
 -- Iteration 19 --
 Unsupported operand types: array ** int
 
 -- Iteration 20 --
-
-Warning: A non-numeric value encountered in %s on line %d
-int(0)
+Unsupported operand types: string ** int
 
 -- Iteration 21 --
-
-Warning: A non-numeric value encountered in %s on line %d
-int(0)
+Unsupported operand types: string ** int
 
 -- Iteration 22 --
-
-Warning: A non-numeric value encountered in %s on line %d
-int(0)
+Unsupported operand types: string ** int
 
 -- Iteration 23 --
-Unsupported operand types: object ** int
+Unsupported operand types: classA ** int
 
 -- Iteration 24 --
 int(0)
@@ -183,4 +168,4 @@ int(0)
 int(0)
 
 -- Iteration 26 --
-%s
+Unsupported operand types: resource ** int

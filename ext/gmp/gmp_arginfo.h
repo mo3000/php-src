@@ -1,4 +1,5 @@
-/* This is a generated file, edit the .stub.php file instead. */
+/* This is a generated file, edit the .stub.php file instead.
+ * Stub hash: 4b5e54ee34a3cb6471d5a3c30c50e218a80347c0 */
 
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_TYPE_MASK_EX(arginfo_gmp_init, 0, 1, GMP, MAY_BE_FALSE)
 	ZEND_ARG_INFO(0, number)
@@ -287,5 +288,10 @@ static const zend_function_entry ext_functions[] = {
 	ZEND_FE(gmp_hamdist, arginfo_gmp_hamdist)
 	ZEND_FE(gmp_nextprime, arginfo_gmp_nextprime)
 	ZEND_FE(gmp_binomial, arginfo_gmp_binomial)
+	ZEND_FE_END
+};
+
+
+static const zend_function_entry class_GMP_methods[] = {
 	ZEND_FE_END
 };

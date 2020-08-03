@@ -73,11 +73,11 @@ static PHP_INI_MH(OnChangeCallback) /* {{{ */
 /* }}} */
 
 PHP_INI_BEGIN()
-	 STD_PHP_INI_ENTRY("assert.active",		"1",	PHP_INI_ALL,	OnUpdateBool,		active,	 			zend_assert_globals,		assert_globals)
-	 STD_PHP_INI_ENTRY("assert.bail",		"0",	PHP_INI_ALL,	OnUpdateBool,		bail,	 			zend_assert_globals,		assert_globals)
-	 STD_PHP_INI_ENTRY("assert.warning",	"1",	PHP_INI_ALL,	OnUpdateBool,		warning, 			zend_assert_globals,		assert_globals)
+	 STD_PHP_INI_BOOLEAN("assert.active",		"1",	PHP_INI_ALL,	OnUpdateBool,		active,	 			zend_assert_globals,		assert_globals)
+	 STD_PHP_INI_BOOLEAN("assert.bail",		"0",	PHP_INI_ALL,	OnUpdateBool,		bail,	 			zend_assert_globals,		assert_globals)
+	 STD_PHP_INI_BOOLEAN("assert.warning",	"1",	PHP_INI_ALL,	OnUpdateBool,		warning, 			zend_assert_globals,		assert_globals)
 	 PHP_INI_ENTRY("assert.callback",		NULL,	PHP_INI_ALL,	OnChangeCallback)
-	 STD_PHP_INI_ENTRY("assert.exception",	"0",	PHP_INI_ALL,	OnUpdateBool,		exception, 			zend_assert_globals,		assert_globals)
+	 STD_PHP_INI_BOOLEAN("assert.exception",	"1",	PHP_INI_ALL,	OnUpdateBool,		exception, 			zend_assert_globals,		assert_globals)
 PHP_INI_END()
 
 static void php_assert_init_globals(zend_assert_globals *assert_globals_p) /* {{{ */
@@ -135,8 +135,7 @@ PHP_MINFO_FUNCTION(assert) /* {{{ */
 }
 /* }}} */
 
-/* {{{ proto int assert(string|bool assertion[, mixed description])
-   Checks if assertion is false */
+/* {{{ Checks if assertion is false */
 PHP_FUNCTION(assert)
 {
 	zval *assertion;
@@ -218,8 +217,7 @@ PHP_FUNCTION(assert)
 }
 /* }}} */
 
-/* {{{ proto mixed assert_options(int what [, mixed value])
-   Set/get the various assert flags */
+/* {{{ Set/get the various assert flags */
 PHP_FUNCTION(assert_options)
 {
 	zval *value = NULL;
@@ -240,7 +238,7 @@ PHP_FUNCTION(assert_options)
 		if (ac == 2) {
 			zend_string *value_str = zval_try_get_string(value);
 			if (UNEXPECTED(!value_str)) {
-				return;
+				RETURN_THROWS();
 			}
 
 			key = zend_string_init("assert.active", sizeof("assert.active")-1, 0);
@@ -256,7 +254,7 @@ PHP_FUNCTION(assert_options)
 		if (ac == 2) {
 			zend_string *value_str = zval_try_get_string(value);
 			if (UNEXPECTED(!value_str)) {
-				return;
+				RETURN_THROWS();
 			}
 
 			key = zend_string_init("assert.bail", sizeof("assert.bail")-1, 0);
@@ -272,7 +270,7 @@ PHP_FUNCTION(assert_options)
 		if (ac == 2) {
 			zend_string *value_str = zval_try_get_string(value);
 			if (UNEXPECTED(!value_str)) {
-				return;
+				RETURN_THROWS();
 			}
 
 			key = zend_string_init("assert.warning", sizeof("assert.warning")-1, 0);
@@ -302,7 +300,7 @@ PHP_FUNCTION(assert_options)
 		if (ac == 2) {
 			zend_string *val = zval_try_get_string(value);
 			if (UNEXPECTED(!val)) {
-				return;
+				RETURN_THROWS();
 			}
 
 			key = zend_string_init("assert.exception", sizeof("assert.exception")-1, 0);
@@ -315,9 +313,7 @@ PHP_FUNCTION(assert_options)
 
 	default:
 		zend_argument_value_error(1, "must have a valid value");
-		break;
+		RETURN_THROWS();
 	}
-
-	return;
 }
 /* }}} */

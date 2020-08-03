@@ -54,6 +54,7 @@
 #include "php_main.h"
 #include "fopen_wrappers.h"
 #include "ext/standard/php_standard.h"
+#include "ext/standard/dl_arginfo.h"
 #include "cli.h"
 #ifdef PHP_WIN32
 #include <io.h>
@@ -78,6 +79,7 @@
 
 #include "ps_title.h"
 #include "php_cli_process_title.h"
+#include "php_cli_process_title_arginfo.h"
 
 #ifndef PHP_WIN32
 # define php_select(m, r, w, e, t)	select(m, r, w, e, t)
@@ -118,7 +120,7 @@ static DWORD orig_cp = 0;
 #define PHP_MODE_SHOW_INI_CONFIG        13
 
 cli_shell_callbacks_t cli_shell_callbacks = { NULL, NULL, NULL };
-PHP_CLI_API cli_shell_callbacks_t *php_cli_get_shell_callbacks()
+PHP_CLI_API cli_shell_callbacks_t *php_cli_get_shell_callbacks(void)
 {
 	return &cli_shell_callbacks;
 }
@@ -260,6 +262,9 @@ PHP_CLI_API ssize_t sapi_cli_single_write(const char *str, size_t str_length) /*
 	} while (ret <= 0 && errno == EAGAIN && sapi_cli_select(STDOUT_FILENO));
 #else
 	ret = fwrite(str, 1, MIN(str_length, 16384), stdout);
+	if (ret == 0 && ferror(stdout)) {
+		return -1;
+	}
 #endif
 	return ret;
 }
@@ -351,7 +356,7 @@ static void sapi_cli_register_variables(zval *track_vars_array) /* {{{ */
 }
 /* }}} */
 
-static void sapi_cli_log_message(char *message, int syslog_type_int) /* {{{ */
+static void sapi_cli_log_message(const char *message, int syslog_type_int) /* {{{ */
 {
 	fprintf(stderr, "%s\n", message);
 #ifdef PHP_WIN32
@@ -420,8 +425,7 @@ static void sapi_cli_ini_defaults(HashTable *configuration_hash)
 }
 /* }}} */
 
-/* {{{ sapi_module_struct cli_sapi_module
- */
+/* {{{ sapi_module_struct cli_sapi_module */
 static sapi_module_struct cli_sapi_module = {
 	"cli",							/* name */
 	"Command Line Interface",    	/* pretty name */
@@ -455,12 +459,6 @@ static sapi_module_struct cli_sapi_module = {
 };
 /* }}} */
 
-/* {{{ arginfo ext/standard/dl.c */
-ZEND_BEGIN_ARG_INFO(arginfo_dl, 0)
-	ZEND_ARG_INFO(0, extension_filename)
-ZEND_END_ARG_INFO()
-/* }}} */
-
 static const zend_function_entry additional_functions[] = {
 	ZEND_FE(dl, arginfo_dl)
 	PHP_FE(cli_set_process_title,        arginfo_cli_set_process_title)
@@ -468,8 +466,7 @@ static const zend_function_entry additional_functions[] = {
 	PHP_FE_END
 };
 
-/* {{{ php_cli_usage
- */
+/* {{{ php_cli_usage */
 static void php_cli_usage(char *argv0)
 {
 	char *prog;
@@ -578,8 +575,7 @@ static void cli_register_file_handles(void) /* {{{ */
 
 static const char *param_mode_conflict = "Either execute direct code, process stdin or use a file.\n";
 
-/* {{{ cli_seek_file_begin
- */
+/* {{{ cli_seek_file_begin */
 static int cli_seek_file_begin(zend_file_handle *file_handle, char *script_file)
 {
 	FILE *fp = VCWD_FOPEN(script_file, "rb");
@@ -1067,7 +1063,8 @@ static int do_cli(int argc, char **argv) /* {{{ */
 
 					memset(&execute_data, 0, sizeof(zend_execute_data));
 					EG(current_execute_data) = &execute_data;
-					zend_call_method_with_1_params(Z_OBJ(ref), pce, &pce->constructor, "__construct", NULL, &arg);
+					zend_call_known_instance_method_with_1_params(
+						pce->constructor, Z_OBJ(ref), NULL, &arg);
 
 					if (EG(exception)) {
 						zval tmp, *msg, rv;
@@ -1137,8 +1134,7 @@ err:
 }
 /* }}} */
 
-/* {{{ main
- */
+/* {{{ main */
 #ifdef PHP_CLI_WIN32_NO_CONSOLE
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
@@ -1180,20 +1176,23 @@ int main(int argc, char *argv[])
 
 	cli_sapi_module.additional_functions = additional_functions;
 
-#if defined(PHP_WIN32) && defined(_DEBUG) && defined(PHP_WIN32_DEBUG_HEAP)
+#if defined(PHP_WIN32) && defined(_DEBUG)
 	{
-		int tmp_flag;
-		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-		_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-		_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-		_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
-		_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-		_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-		tmp_flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
-		tmp_flag |= _CRTDBG_DELAY_FREE_MEM_DF;
-		tmp_flag |= _CRTDBG_LEAK_CHECK_DF;
+		char *tmp = getenv("PHP_WIN32_DEBUG_HEAP");
+		if (tmp && zend_atoi(tmp, 0)) {
+			int tmp_flag;
+			_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+			_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+			_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+			_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+			_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+			_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+			tmp_flag = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+			tmp_flag |= _CRTDBG_DELAY_FREE_MEM_DF;
+			tmp_flag |= _CRTDBG_LEAK_CHECK_DF;
 
-		_CrtSetDbgFlag(tmp_flag);
+			_CrtSetDbgFlag(tmp_flag);
+		}
 	}
 #endif
 

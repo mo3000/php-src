@@ -2,11 +2,6 @@
 Test array_intersect() function : usage variations - unexpected values for 'arr2' argument
 --FILE--
 <?php
-/* Prototype  : array array_intersect(array $arr1, array $arr2 [, array $...])
- * Description: Returns the entries of arr1 that have values which are present in all the other arguments
- * Source code: ext/standard/array.c
-*/
-
 /*
 * Testing array_intersect() function by passing values to $arr2 argument other than arrays
 * and see that function emits proper warning messages wherever expected.
@@ -179,8 +174,8 @@ array_intersect(): Argument #2 ($arr2) must be of type array, string given
 -- Iterator 20 --array_intersect(): Argument #2 ($arr2) must be of type array, string given
 array_intersect(): Argument #2 ($arr2) must be of type array, string given
 
--- Iterator 21 --array_intersect(): Argument #2 ($arr2) must be of type array, object given
-array_intersect(): Argument #2 ($arr2) must be of type array, object given
+-- Iterator 21 --array_intersect(): Argument #2 ($arr2) must be of type array, classA given
+array_intersect(): Argument #2 ($arr2) must be of type array, classA given
 
 -- Iterator 22 --array_intersect(): Argument #2 ($arr2) must be of type array, null given
 array_intersect(): Argument #2 ($arr2) must be of type array, null given

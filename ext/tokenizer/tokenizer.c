@@ -44,8 +44,7 @@ void tokenizer_token_get_all_register_constants(INIT_FUNC_ARGS) {
 	REGISTER_LONG_CONSTANT("TOKEN_PARSE", TOKEN_PARSE, CONST_CS|CONST_PERSISTENT);
 }
 
-/* {{{ tokenizer_module_entry
- */
+/* {{{ tokenizer_module_entry */
 zend_module_entry tokenizer_module_entry = {
 	STANDARD_MODULE_HEADER,
 	"tokenizer",
@@ -226,7 +225,7 @@ PHP_METHOD(PhpToken, getTokenName)
 	}
 
 	if (Z_LVAL_P(id_zval) < 256) {
-		RETURN_INTERNED_STR(ZSTR_CHAR(Z_LVAL_P(id_zval)));
+		RETURN_CHAR(Z_LVAL_P(id_zval));
 	} else {
 		const char *token_name = get_token_type_name(Z_LVAL_P(id_zval));
 		if (!token_name) {
@@ -249,8 +248,7 @@ PHP_METHOD(PhpToken, __toString)
 	RETURN_STR_COPY(text);
 }
 
-/* {{{ PHP_MINIT_FUNCTION
- */
+/* {{{ PHP_MINIT_FUNCTION */
 PHP_MINIT_FUNCTION(tokenizer)
 {
 	zend_class_entry ce;
@@ -289,8 +287,7 @@ PHP_MINIT_FUNCTION(tokenizer)
 }
 /* }}} */
 
-/* {{{ PHP_MINFO_FUNCTION
- */
+/* {{{ PHP_MINFO_FUNCTION */
 PHP_MINFO_FUNCTION(tokenizer)
 {
 	php_info_print_table_start();
@@ -420,11 +417,33 @@ struct event_context {
 	zend_class_entry *token_class;
 };
 
-void on_event(zend_php_scanner_event event, int token, int line, void *context)
+static zval *extract_token_id_to_replace(zval *token_zv, const char *text, size_t length) {
+	zval *id_zv, *text_zv;
+	ZEND_ASSERT(token_zv);
+	if (Z_TYPE_P(token_zv) == IS_ARRAY) {
+		id_zv = zend_hash_index_find(Z_ARRVAL_P(token_zv), 0);
+		text_zv = zend_hash_index_find(Z_ARRVAL_P(token_zv), 1);
+	} else if (Z_TYPE_P(token_zv) == IS_OBJECT) {
+		id_zv = OBJ_PROP_NUM(Z_OBJ_P(token_zv), 0);
+		text_zv = OBJ_PROP_NUM(Z_OBJ_P(token_zv), 1);
+	} else {
+		return NULL;
+	}
+
+	/* There are multiple candidate tokens to which this feedback may apply,
+	 * check text to make sure this is the right one. */
+	ZEND_ASSERT(Z_TYPE_P(text_zv) == IS_STRING);
+	if (Z_STRLEN_P(text_zv) == length && !memcmp(Z_STRVAL_P(text_zv), text, length)) {
+		return id_zv;
+	}
+	return NULL;
+}
+
+void on_event(
+		zend_php_scanner_event event, int token, int line,
+		const char *text, size_t length, void *context)
 {
 	struct event_context *ctx = context;
-	HashTable *tokens_ht;
-	zval *token_zv;
 
 	switch (event) {
 		case ON_TOKEN:
@@ -435,19 +454,22 @@ void on_event(zend_php_scanner_event event, int token, int line, void *context)
 			} else if (token == T_ECHO && LANG_SCNG(yy_leng) == sizeof("<?=") - 1) {
 				token = T_OPEN_TAG_WITH_ECHO;
 			}
-			add_token(ctx->tokens, token,
-				LANG_SCNG(yy_text), LANG_SCNG(yy_leng), line, ctx->token_class, NULL);
+			add_token(
+				ctx->tokens, token, (unsigned char *) text, length, line, ctx->token_class, NULL);
 			break;
-		case ON_FEEDBACK:
-			tokens_ht = Z_ARRVAL_P(ctx->tokens);
-			token_zv = zend_hash_index_find(tokens_ht, zend_hash_num_elements(tokens_ht) - 1);
-			ZEND_ASSERT(token_zv);
-			if (Z_TYPE_P(token_zv) == IS_ARRAY) {
-				ZVAL_LONG(zend_hash_index_find(Z_ARRVAL_P(token_zv), 0), token);
-			} else {
-				zend_update_property_long(php_token_ce, token_zv, "type", sizeof("type")-1, token);
-			}
+		case ON_FEEDBACK: {
+			HashTable *tokens_ht = Z_ARRVAL_P(ctx->tokens);
+			zval *token_zv, *id_zv = NULL;
+			ZEND_HASH_REVERSE_FOREACH_VAL(tokens_ht, token_zv) {
+				id_zv = extract_token_id_to_replace(token_zv, text, length);
+				if (id_zv) {
+					break;
+				}
+			} ZEND_HASH_FOREACH_END();
+			ZEND_ASSERT(id_zv);
+			ZVAL_LONG(id_zv, token);
 			break;
+		}
 		case ON_STOP:
 			if (LANG_SCNG(yy_cursor) != LANG_SCNG(yy_limit)) {
 				add_token(ctx->tokens, T_INLINE_HTML, LANG_SCNG(yy_cursor),
@@ -520,8 +542,7 @@ static zend_bool tokenize_common(
 
 /* }}} */
 
-/* {{{ proto array token_get_all(string source [, int flags])
- */
+/* {{{ */
 PHP_FUNCTION(token_get_all)
 {
 	zend_string *source;
@@ -539,8 +560,7 @@ PHP_FUNCTION(token_get_all)
 }
 /* }}} */
 
-/* {{{ proto string token_name(int type)
- */
+/* {{{ */
 PHP_FUNCTION(token_name)
 {
 	zend_long type;

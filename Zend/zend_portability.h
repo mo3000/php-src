@@ -107,13 +107,15 @@
 # define ZEND_ASSERT(c) ZEND_ASSUME(c)
 #endif
 
+#if ZEND_DEBUG
+# define ZEND_UNREACHABLE() do {ZEND_ASSERT(0); ZEND_ASSUME(0);} while (0)
+#else
+# define ZEND_UNREACHABLE() ZEND_ASSUME(0)
+#endif
+
 /* Only use this macro if you know for sure that all of the switches values
    are covered by its case statements */
-#if ZEND_DEBUG
-# define EMPTY_SWITCH_DEFAULT_CASE() default: ZEND_ASSERT(0); break;
-#else
-# define EMPTY_SWITCH_DEFAULT_CASE() default: ZEND_ASSUME(0); break;
-#endif
+#define EMPTY_SWITCH_DEFAULT_CASE() default: ZEND_UNREACHABLE(); break;
 
 #if defined(__GNUC__) && __GNUC__ >= 4
 # define ZEND_IGNORE_VALUE(x) (({ __typeof__ (x) __x = (x); (void) __x; }))
@@ -327,28 +329,7 @@ char *alloca();
 #endif
 
 #ifndef XtOffsetOf
-# if defined(CRAY) || (defined(__ARMCC_VERSION) && !defined(LINUX))
-#  ifdef __STDC__
-#   define XtOffset(p_type, field) _Offsetof(p_type, field)
-#  else
-#   ifdef CRAY2
-#    define XtOffset(p_type, field) \
-       (sizeof(int)*((unsigned int)&(((p_type)NULL)->field)))
-#   else /* !CRAY2 */
-#    define XtOffset(p_type, field) ((unsigned int)&(((p_type)NULL)->field))
-#   endif /* !CRAY2 */
-#  endif /* __STDC__ */
-# else /* ! (CRAY || __arm) */
-#  define XtOffset(p_type, field) \
-     ((zend_long) (((char *) (&(((p_type)NULL)->field))) - ((char *) NULL)))
-# endif /* !CRAY */
-
-# ifdef offsetof
 # define XtOffsetOf(s_type, field) offsetof(s_type, field)
-# else
-# define XtOffsetOf(s_type, field) XtOffset(s_type*, field)
-# endif
-
 #endif
 
 #if (defined(HAVE_ALLOCA) || (defined (__GNUC__) && __GNUC__ >= 2)) && !(defined(ZTS) && defined(HPUX)) && !defined(DARWIN)
@@ -611,6 +592,21 @@ extern "C++" {
 /* On CPU with few registers, it's cheaper to reload value then use spill slot */
 #if defined(__i386__) || (defined(_WIN32) && !defined(_WIN64))
 # define ZEND_PREFER_RELOAD
+#endif
+
+#if defined(ZEND_WIN32) && defined(_DEBUG)
+# define ZEND_IGNORE_LEAKS_BEGIN() _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) & ~_CRTDBG_ALLOC_MEM_DF)
+# define ZEND_IGNORE_LEAKS_END() _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_ALLOC_MEM_DF)
+#else
+# define ZEND_IGNORE_LEAKS_BEGIN()
+# define ZEND_IGNORE_LEAKS_END()
+#endif
+
+/* MSVC yields C4090 when a (const T **) is passed to a (void *); ZEND_VOIDP works around that */
+#ifdef _MSC_VER
+# define ZEND_VOIDP(ptr) ((void *) ptr)
+#else
+# define ZEND_VOIDP(ptr) (ptr)
 #endif
 
 #endif /* ZEND_PORTABILITY_H */

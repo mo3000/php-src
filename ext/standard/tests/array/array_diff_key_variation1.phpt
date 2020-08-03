@@ -2,11 +2,6 @@
 Test array_diff_key() function : usage variation - Passing unexpected values to first argument
 --FILE--
 <?php
-/* Prototype  : array array_diff_key(array arr1, array arr2 [, array ...])
- * Description: Returns the entries of arr1 that have keys which are not present in any of the others arguments.
- * Source code: ext/standard/array.c
- */
-
 echo "*** Testing array_diff_key() : usage variation ***\n";
 
 // Initialise function arguments not being substituted (if any)
@@ -192,12 +187,12 @@ array_diff_key(): Argument #1 ($arr1) must be of type array, string given
 array_diff_key(): Argument #1 ($arr1) must be of type array, string given
 
 --instance of classWithToString--
-array_diff_key(): Argument #1 ($arr1) must be of type array, object given
-array_diff_key(): Argument #1 ($arr1) must be of type array, object given
+array_diff_key(): Argument #1 ($arr1) must be of type array, classWithToString given
+array_diff_key(): Argument #1 ($arr1) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_diff_key(): Argument #1 ($arr1) must be of type array, object given
-array_diff_key(): Argument #1 ($arr1) must be of type array, object given
+array_diff_key(): Argument #1 ($arr1) must be of type array, classWithoutToString given
+array_diff_key(): Argument #1 ($arr1) must be of type array, classWithoutToString given
 
 --undefined var--
 array_diff_key(): Argument #1 ($arr1) must be of type array, null given

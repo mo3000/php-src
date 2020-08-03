@@ -12,21 +12,7 @@ use PhpParser\PrettyPrinterAbstract;
 
 error_reporting(E_ALL);
 
-try {
-    initPhpParser();
-} catch (Exception $e) {
-    echo "{$e->getMessage()}\n";
-    exit(1);
-}
-
-class CustomPrettyPrinter extends Standard
-{
-    protected function pName_FullyQualified(Name\FullyQualified $node) {
-        return implode('\\', $node->parts);
-    }
-}
-
-function processDirectory(string $dir) {
+function processDirectory(string $dir, bool $forceRegeneration) {
     $it = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($dir),
         RecursiveIteratorIterator::LEAVES_ONLY
@@ -34,22 +20,51 @@ function processDirectory(string $dir) {
     foreach ($it as $file) {
         $pathName = $file->getPathName();
         if (preg_match('/\.stub\.php$/', $pathName)) {
-            processStubFile($pathName);
+            processStubFile($pathName, $forceRegeneration);
         }
     }
 }
 
-function processStubFile(string $stubFile) {
-    $arginfoFile = str_replace('.stub.php', '', $stubFile) . '_arginfo.h';
-
+function processStubFile(string $stubFile, bool $forceRegeneration) {
     try {
-        $fileInfo = parseStubFile($stubFile);
-        $arginfoCode = generateArgInfoCode($fileInfo);
+        if (!file_exists($stubFile)) {
+            throw new Exception("File $stubFile does not exist");
+        }
+
+        $arginfoFile = str_replace('.stub.php', '', $stubFile) . '_arginfo.h';
+        $stubCode = file_get_contents($stubFile);
+        $stubHash = computeStubHash($stubCode);
+        $oldStubHash = extractStubHash($arginfoFile);
+        if ($stubHash === $oldStubHash && $forceRegeneration === false) {
+            /* Stub file did not change, do not regenerate. */
+            return;
+        }
+
+        initPhpParser();
+        $fileInfo = parseStubFile($stubCode);
+        $arginfoCode = generateArgInfoCode($fileInfo, $stubHash);
         file_put_contents($arginfoFile, $arginfoCode);
     } catch (Exception $e) {
         echo "In $stubFile:\n{$e->getMessage()}\n";
         exit(1);
     }
+}
+
+function computeStubHash(string $stubCode): string {
+    return sha1(str_replace("\r\n", "\n", $stubCode));
+}
+
+function extractStubHash(string $arginfoFile): ?string {
+    if (!file_exists($arginfoFile)) {
+        return null;
+    }
+
+    $arginfoCode = file_get_contents($arginfoFile);
+    if (!preg_match('/\* Stub hash: ([0-9a-f]+) \*/', $arginfoCode, $matches)) {
+        return null;
+    }
+
+    return $matches[1];
 }
 
 class SimpleType {
@@ -65,6 +80,10 @@ class SimpleType {
 
     public static function fromNode(Node $node) {
         if ($node instanceof Node\Name) {
+            if ($node->toString() === "mixed") {
+                return new SimpleType($node->toString(), true);
+            }
+
             assert($node->isFullyQualified());
             return new SimpleType($node->toString(), false);
         }
@@ -97,6 +116,8 @@ class SimpleType {
             return "IS_VOID";
         case "callable":
             return "IS_CALLABLE";
+        case "mixed":
+            return "IS_MIXED";
         default:
             throw new Exception("Not implemented: $this->name");
         }
@@ -123,6 +144,8 @@ class SimpleType {
             return "MAY_BE_OBJECT";
         case "callable":
             return "MAY_BE_CALLABLE";
+        case "mixed":
+            return "MAY_BE_ANY";
         default:
             throw new Exception("Not implemented: $this->name");
         }
@@ -637,8 +660,11 @@ function parseFunctionLike(
             $param->default->name->toLowerString() === "null" &&
             $type && !$type->isNullable()
         ) {
-            throw new Exception(
-                "Parameter $varName of function $name has null default, but is not nullable");
+            $simpleType = $type->tryToSimpleType();
+            if ($simpleType === null || $simpleType->name !== "mixed") {
+                throw new Exception(
+                    "Parameter $varName of function $name has null default, but is not nullable");
+            }
         }
 
         $foundVariadic = $param->variadic;
@@ -726,18 +752,16 @@ function getFileDocComment(array $stmts): ?DocComment {
     return null;
 }
 
-function parseStubFile(string $fileName): FileInfo {
-    if (!file_exists($fileName)) {
-        throw new Exception("File $fileName does not exist");
-    }
-
-    $code = file_get_contents($fileName);
-
+function parseStubFile(string $code): FileInfo {
     $lexer = new PhpParser\Lexer();
     $parser = new PhpParser\Parser\Php7($lexer);
     $nodeTraverser = new PhpParser\NodeTraverser;
     $nodeTraverser->addVisitor(new PhpParser\NodeVisitor\NameResolver);
-    $prettyPrinter = new CustomPrettyPrinter();
+    $prettyPrinter = new class extends Standard {
+        protected function pName_FullyQualified(Name\FullyQualified $node) {
+            return implode('\\', $node->parts);
+        }
+    };
 
     $stmts = $parser->parse($code);
     $nodeTraverser->traverse($stmts);
@@ -881,14 +905,21 @@ function funcInfoToCode(FuncInfo $funcInfo): string {
                 }
             } else if (null !== $representableType = $argType->tryToRepresentableType()) {
                 if ($representableType->classType !== null) {
-                    throw new Exception('Unimplemented');
+                    $code .= sprintf(
+                        "\tZEND_%s_OBJ_TYPE_MASK(%s, %s, %s, %s, %s)\n",
+                        $argKind, $argInfo->getSendByString(), $argInfo->name,
+                        $representableType->classType->toEscapedName(),
+                        $representableType->toTypeMask(),
+                        $argInfo->getDefaultValueString()
+                    );
+                } else {
+                    $code .= sprintf(
+                        "\tZEND_%s_TYPE_MASK(%s, %s, %s, %s)\n",
+                        $argKind, $argInfo->getSendByString(), $argInfo->name,
+                        $representableType->toTypeMask(),
+                        $argInfo->getDefaultValueString()
+                    );
                 }
-                $code .= sprintf(
-                    "\tZEND_%s_TYPE_MASK(%s, %s, %s, %s)\n",
-                    $argKind, $argInfo->getSendByString(), $argInfo->name,
-                    $representableType->toTypeMask(),
-                    $argInfo->getDefaultValueString()
-                );
             } else {
                 throw new Exception('Unimplemented');
             }
@@ -937,8 +968,9 @@ function generateCodeWithConditions(
     return $code;
 }
 
-function generateArgInfoCode(FileInfo $fileInfo): string {
-    $code = "/* This is a generated file, edit the .stub.php file instead. */\n";
+function generateArgInfoCode(FileInfo $fileInfo, string $stubHash): string {
+    $code = "/* This is a generated file, edit the .stub.php file instead.\n"
+          . " * Stub hash: $stubHash */\n";
     $generatedFuncInfos = [];
     $code .= generateCodeWithConditions(
         $fileInfo->getAllFuncInfos(), "\n",
@@ -1044,6 +1076,16 @@ function installPhpParser(string $version, string $phpParserDir) {
 }
 
 function initPhpParser() {
+    static $isInitialized = false;
+    if ($isInitialized) {
+        return;
+    }
+
+    if (!extension_loaded("tokenizer")) {
+        throw new Exception("The \"tokenizer\" extension is not available");
+    }
+
+    $isInitialized = true;
     $version = "4.3.0";
     $phpParserDir = __DIR__ . "/PHP-Parser-$version";
     if (!is_dir($phpParserDir)) {
@@ -1058,17 +1100,17 @@ function initPhpParser() {
     });
 }
 
-if ($argc >= 2) {
-    if (is_file($argv[1])) {
-        // Generate single file.
-        processStubFile($argv[1]);
-    } else if (is_dir($argv[1])) {
-        processDirectory($argv[1]);
-    } else {
-        echo "$argv[1] is neither a file nor a directory.\n";
-        exit(1);
-    }
+$optind = null;
+$options = getopt("f", ["force-regeneration"], $optind);
+$forceRegeneration = isset($options["f"]) || isset($options["force-regeneration"]);
+$location = $argv[$optind + 1] ?? ".";
+
+if (is_file($location)) {
+    // Generate single file.
+    processStubFile($location, $forceRegeneration);
+} else if (is_dir($location)) {
+    processDirectory($location, $forceRegeneration);
 } else {
-    // Regenerate all stub files we can find.
-    processDirectory('.');
+    echo "$location is neither a file nor a directory.\n";
+    exit(1);
 }

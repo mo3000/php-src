@@ -27,7 +27,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
     Property [ public $name = '' ]
   }
 
-  - Methods [53] {
+  - Methods [54] {
     Method [ <internal:Reflection> final private method __clone ] {
 
       - Parameters [0] {
@@ -37,7 +37,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
     Method [ <internal:Reflection, ctor> public method __construct ] {
 
       - Parameters [1] {
-        Parameter #0 [ <required> $argument ]
+        Parameter #0 [ <required> $objectOrClass ]
       }
     }
 
@@ -165,13 +165,15 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
 
     Method [ <internal:Reflection> public method getConstants ] {
 
-      - Parameters [0] {
+      - Parameters [1] {
+        Parameter #0 [ <optional> int $filter = ReflectionClassConstant::IS_PUBLIC | ReflectionClassConstant::IS_PROTECTED | ReflectionClassConstant::IS_PRIVATE ]
       }
     }
 
     Method [ <internal:Reflection> public method getReflectionConstants ] {
 
-      - Parameters [0] {
+      - Parameters [1] {
+        Parameter #0 [ <optional> int $filter = ReflectionClassConstant::IS_PUBLIC | ReflectionClassConstant::IS_PROTECTED | ReflectionClassConstant::IS_PRIVATE ]
       }
     }
 
@@ -259,7 +261,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
     Method [ <internal:Reflection> public method newInstance ] {
 
       - Parameters [1] {
-        Parameter #0 [ <optional> ...$args = <default> ]
+        Parameter #0 [ <optional> mixed ...$args = <default> ]
       }
     }
 
@@ -285,7 +287,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
     Method [ <internal:Reflection> public method isSubclassOf ] {
 
       - Parameters [1] {
-        Parameter #0 [ <required> $class ]
+        Parameter #0 [ <required> ReflectionClass|string $class ]
       }
     }
 
@@ -299,7 +301,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
 
       - Parameters [2] {
         Parameter #0 [ <required> string $name ]
-        Parameter #1 [ <optional> $default = <default> ]
+        Parameter #1 [ <optional> mixed $default = <default> ]
       }
     }
 
@@ -307,7 +309,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
 
       - Parameters [2] {
         Parameter #0 [ <required> string $name ]
-        Parameter #1 [ <required> $value ]
+        Parameter #1 [ <required> mixed $value ]
       }
     }
 
@@ -332,7 +334,7 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
     Method [ <internal:Reflection> public method implementsInterface ] {
 
       - Parameters [1] {
-        Parameter #0 [ <required> $interface ]
+        Parameter #0 [ <required> ReflectionClass|string $interface ]
       }
     }
 
@@ -364,6 +366,15 @@ Class [ <internal:Reflection> class ReflectionClass implements Reflector, String
 
       - Parameters [0] {
       }
+    }
+
+    Method [ <internal:Reflection> public method getAttributes ] {
+
+      - Parameters [2] {
+        Parameter #0 [ <optional> ?string $name = null ]
+        Parameter #1 [ <optional> int $flags = 0 ]
+      }
+      - Return [ array ]
     }
   }
 }

@@ -2,12 +2,6 @@
 Test array_intersect_assoc() function : usage variations - unexpected values for 'arr1' argument(Bug#43196)
 --FILE--
 <?php
-/* Prototype  : array array_intersect_assoc(array $arr1, array $arr2 [, array $...])
- * Description: Returns the entries of arr1 that have values which are present in all the other arguments.
- * Keys are used to do more restrictive check
- * Source code: ext/standard/array.c
-*/
-
 /*
 * Testing array_intersect_assoc() function by passing values to $arr1 argument other than arrays
 * and see that function emits proper warning messages wherever expected.
@@ -179,8 +173,8 @@ array_intersect_assoc(): Argument #1 ($arr1) must be of type array, string given
 -- Iteration 20 --array_intersect_assoc(): Argument #1 ($arr1) must be of type array, string given
 array_intersect_assoc(): Argument #1 ($arr1) must be of type array, string given
 
--- Iteration 21 --array_intersect_assoc(): Argument #1 ($arr1) must be of type array, object given
-array_intersect_assoc(): Argument #1 ($arr1) must be of type array, object given
+-- Iteration 21 --array_intersect_assoc(): Argument #1 ($arr1) must be of type array, classA given
+array_intersect_assoc(): Argument #1 ($arr1) must be of type array, classA given
 
 -- Iteration 22 --array_intersect_assoc(): Argument #1 ($arr1) must be of type array, null given
 array_intersect_assoc(): Argument #1 ($arr1) must be of type array, null given

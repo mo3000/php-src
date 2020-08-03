@@ -6,12 +6,6 @@ extension_loaded('mbstring') or die('skip');
 ?>
 --FILE--
 <?php
-/* Prototype  : mixed mb_substitute_character([mixed substchar])
- * Description: Sets the current substitute_character or returns the current substitute_character
- * Source code: ext/mbstring/mbstring.c
- * Alias to functions:
- */
-
 echo "*** Testing mb_substitute_character() : basic functionality ***\n";
 
 
@@ -44,4 +38,4 @@ bool(true)
 string(4) "none"
 bool(true)
 string(4) "long"
-mb_substitute_character(): Argument #1 ($substitute_character) must be 'none', 'long', 'entity' or a valid codepoint
+mb_substitute_character(): Argument #1 ($substitute_character) must be "none", "long", "entity" or a valid codepoint

@@ -14,9 +14,14 @@ PHP 8.0 INTERNALS UPGRADE NOTES
   k. The 'I' length modifier
   l. Some VM instructions switched to IS_TMP_VAR result instead of IS_VAR
   m. All internal functions must have arginfo
-  n. zend_hash_sort compare function signature change
+  n. zend_hash_sort compare function and zend_hash_sort signature change
   o. cast_object() object handler is now required
   p. ARG_COUNT() macro removed
+  q. GC_COLLECTABLE flag
+  r. Cannot implement Traversable only
+  s. zend_fcall_info no_separation flag removed
+  t. Signature changes
+  u. Error Notification callbacks to replace zend_error_cb overwrite use-cases
 
 2. Build system changes
   a. Abstract
@@ -67,13 +72,13 @@ PHP 8.0 INTERNALS UPGRADE NOTES
      Instead type checks should be performed using the zend_parse_parameters()
      or ZEND_PARSE_PARAMETERS_*() APIs.
 
-  g. zend_free_op type and "should_free" argument of zend_get_zval_ptr() were
-     removed. It's possible to get the old "should_free" value using the
-     following code.
+  g. The zend_free_op type and the "should_free" and "type" arguments of
+     zend_get_zval_ptr() were removed. It's possible to get the old
+     "should_free" value using the following code:
 
-     zval *ret = zend_get_zval_ptr(opline, opline->op1_type, &opline->op1,
-         execute_data, BP_VAR_R);
-     zval *should_free = (op_type & (IS_TMP_VAR|IS_VAR)) ? ret : NULL;
+         zval *ret = zend_get_zval_ptr(
+             opline, opline->op1_type, &opline->op1, execute_data);
+         zval *should_free = (op_type & (IS_TMP_VAR|IS_VAR)) ? ret : NULL;
 
   h. Added the zend_value_error() function, which is intended to be used
      to raise ValueError when inappropriate argument values are passed
@@ -86,7 +91,7 @@ PHP 8.0 INTERNALS UPGRADE NOTES
   j. compare_objects() handler was removed. Extensions should use compare() object
      handler instead and check if both arguments are objects and have the same
      compare handler, using ZEND_COMPARE_OBJECTS_FALLBACK() macro.
-     
+
   k. The 'I' length modifier, used to denote 32 and 64bit integer from the custom
      snprintf and spprintf implementations has been removed.
      Use the ZEND_LONG_FMT, ZEND_ULONG_FMT and ZEND_XLONG_FMT macros defined in
@@ -111,29 +116,118 @@ PHP 8.0 INTERNALS UPGRADE NOTES
          typedef int (*bucket_compare_func_t)(Bucket *a, Bucket *b);
 
      Previously compare_func_t was used, which accepted void pointers.
+     Furthermore, the return type of zend_hash_sort and zend_ts_hash_sort has
+     been changed from int to void; these functions always succeed.
 
   o. The cast_object() handler is now required, i.e. must be non-null. You can
      indicate that casting is not supported by always returning FAILURE.
 
   p. The ARG_COUNT() macro has been removed use ZEND_NUM_ARGS() instead.
 
+  q. GC_COLLECTABLE flag was inverted into GC_NOT_COLLECTABLE.
+     Assignments to GC_TYPE_INFO() might need to be changed to properly
+     set the value of the GC_NOT_COLLECTABLE flag.
+
+  r. Just for for userland classes, it is no longer allowed to implement only
+     the Traversable interface. Instead, it is necessary to implement either
+     Iterator or IteratorAggregate. You can do the latter by implementing
+     zend_ce_aggregate and providing the following method implementation:
+
+         ZEND_METHOD(MyClass, getIterator) {
+             ZEND_PARSE_PARAMETERS_NONE();
+             zend_create_internal_iterator_zval(return_value, ZEND_THIS);
+         }
+
+  s. The zend_fcall_info no_separation flag has been removed, and separation is
+      never allowed. If you wish to pass (or allow passing) arguments by
+      reference, explicitly create those arguments as references using
+      ZEND_MAKE_REF. This removal also affects call_user_function_ex(), which
+      should be replaced by call_user_function().
+
+  t. The following ZEND_API function have changed signature:
+     1. Void in Zend Engine 4.0:
+        - add_assoc_*()
+        - add_index_*()
+        - add_property_*()
+        - object_init()
+        - zend_declare_class_constant*()
+        - zend_declare_property*()
+        - zend_startup_modules()
+        - zend_wrong_parameters_none_error()
+        - zend_fcall_info_argp()
+        - zend_fcall_info_argv()
+        - zend_fcall_info_argn()
+     2. Argument int to uint32_t in Zend Engine 4.0:
+        - _zend_get_parameters_array_ex()
+        - zend_copy_parameters_array()
+        - zend_fcall_info_args_save()
+        - zend_fcall_info_args_restore()
+        - zend_fcall_info_argp()
+        - zend_fcall_info_argv()
+        - zend_fcall_info_argn()
+        - zend_wrong_parameter*()
+        - zend_wrong_callback_error()
+        - zend_parse_arg_class()
+     3. Argument int to zend_bool in Zend Engine 4.0:
+        - add_next_index_bool()
+     4. Argument int to size_t in Zend Engine 4.0:
+        - zend_set_hash_symbol()
+     5. Argument zval* to zend_object* in Zend Engine 4.0:
+        - zend_get_closure_method_def()
+
+  u. Instead of overwriting zend_error_cb extensions with debugging, monitoring
+     use-cases catching Errors/Exceptions are strongly encouraged to use
+	 the new error notification API instead.
+
+	 Error notification callbacks are guaranteed to be called regardless of
+	 the users error_reporting setting or userland error handler return values.
+
+     Register notification callbacks during MINIT of an extension:
+
+		void my_error_notify_cb(int type,
+			const char *error_filename,
+			uint32_t error_lineno,
+			zend_string *message) {
+		}
+		zend_register_error_notify_callback(my_error_notify_cb);
+
 ========================
 2. Build system changes
 ========================
 
   a. Abstract
-    - Symbol HAVE_HASH_EXT is removed and is no longer defined. It should be
-      considered to have hash extension always available since PHP 7.4.
-    - Symbol HAVE_PCRE is removed and is no longer defined. It should be
-      considered to have pcre extension always available since PHP 7.4.
-    - Symbol HAVE_LOCALE_H has been removed and is no longer defined.
+    1.  Symbol HAVE_HASH_EXT is removed and is no longer defined. It should be
+        considered to have hash extension always available since PHP 7.4.
+
+    2.  Symbol HAVE_PCRE is removed and is no longer defined. It should be
+        considered to have pcre extension always available since PHP 7.4.
+
+    3.  Symbol HAVE_LOCALE_H has been removed and is no longer defined.
+
+    4.  --disable-inline-optimization (which actually disabled all compiler
+        optimizations) has been removed. If you wish to build PHP on a host
+        with extremely constrained memory, and compilation fails with an "out
+        of memory" message, add "-O0" to CFLAGS.
+
+    5.  build system and provider are displayed in phpinfo from environment:
+        - PHP_BUILD_SYSTEM (default is same as PHP_UNAME)
+        - PHP_BUILD_PROVIDER (no default)
 
   b. Unix build system changes
 
     1.  --enable-maintainer-zts is renamed --enable-zts for parity with Windows
-        and as recognition that ZTS is not a "maintainer" or experimental feature.
+        and as recognition that ZTS is not a "maintainer" or experimental
+        feature.
+
+    2.  The PHP_CHECK_GCC_ARG() m4 macro has been removed in favor of
+        AX_CHECK_COMPILE_FLAG().
 
   c. Windows build system changes
+
+    - The configuration option --enable-crt-debug has been removed. The VC
+      debug heap can now be enabled for debug builds by setting the environment
+      variable PHP_WIN32_DEBUG_HEAP to a non-negative number before PHP process
+      startup.
 
 ========================
 3. Module changes

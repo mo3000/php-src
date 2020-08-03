@@ -2,7 +2,7 @@
 
 /** @generate-function-entries */
 
-class mysqli_driver
+final class mysqli_driver
 {
 }
 
@@ -238,14 +238,14 @@ class mysqli
     public function set_charset(string $charset) {}
 
     /**
-     * @param mixed $value
+     * @param string|int $value
      * @return bool
      * @alias mysqli_options
      */
     public function options(int $option, $value) {}
 
     /**
-     * @param mixed $value
+     * @param string|int $value
      * @return bool
      * @alias mysqli_options
      */
@@ -300,7 +300,7 @@ class mysqli
     public function refresh(int $options) {}
 }
 
-class mysqli_result
+class mysqli_result implements IteratorAggregate
 {
     /** @alias mysqli_result_construct */
     public function __construct(object $mysqli_link, int $resmode = MYSQLI_STORE_RESULT) {}
@@ -365,7 +365,7 @@ class mysqli_result
      * @return object|null
      * @alias mysqli_fetch_object
      */
-    public function fetch_object(string $class_name = UNKNOWN, array $params = []) {}
+    public function fetch_object(string $class_name = "stdClass", array $params = []) {}
 
     /**
      * @return array|null
@@ -384,6 +384,8 @@ class mysqli_result
      * @alias mysqli_free_result
      */
     public function free_result() {}
+
+    public function getIterator(): Iterator;
 }
 
 class mysqli_stmt
@@ -407,7 +409,7 @@ class mysqli_stmt
      * @return bool
      * @alias mysqli_stmt_bind_param
      */
-    public function bind_param(string $types, &...$vars) {}
+    public function bind_param(string $types, mixed &...$vars) {}
 
     /**
      * @return bool
@@ -510,15 +512,14 @@ class mysqli_stmt
 #endif
 }
 
-class mysqli_warning
+final class mysqli_warning
 {
     protected function __construct(object $mysqli_link) {}
 
-    /** @return bool */
-    public function next() {}
+    public function next(): bool {}
 }
 
-class mysqli_sql_exception extends RuntimeException
+final class mysqli_sql_exception extends RuntimeException
 {
 }
 
@@ -580,11 +581,7 @@ function mysqli_fetch_array(mysqli_result $mysql_result, int $fetchtype = MYSQLI
 
 function mysqli_fetch_assoc(mysqli_result $mysql_result): ?array {}
 
-function mysqli_fetch_object(
-    mysqli_result $mysqli_result,
-    string $class_name = UNKNOWN,
-    array $params = []
-): ?object {}
+function mysqli_fetch_object(mysqli_result $mysqli_result, string $class_name = "stdClass", array $params = []): ?object {}
 
 function mysqli_fetch_row(mysqli_result $mysqli_result): ?array {}
 
@@ -602,7 +599,7 @@ function mysqli_get_client_stats(): array {}
 
 function mysqli_get_charset(mysqli $mysqli_link): ?object {}
 
-function mysqli_get_client_info(mysqli $mysqli_link = UNKNOWN): ?string {}
+function mysqli_get_client_info(?mysqli $mysqli_link = null): ?string {}
 
 function mysqli_get_client_version(): int {}
 
@@ -612,7 +609,7 @@ function mysqli_get_host_info(mysqli $mysqli_link): string {}
 
 function mysqli_get_proto_info(mysqli $mysqli_link): int {}
 
-function mysqli_get_server_info(mysqli $mysqli_link): ?string {}
+function mysqli_get_server_info(mysqli $mysqli_link): string {}
 
 function mysqli_get_server_version(mysqli $mysqli_link): int {}
 
@@ -636,7 +633,7 @@ function mysqli_num_fields(mysqli_result $mysql_result): int {}
 
 function mysqli_num_rows(mysqli_result $mysqli_result): int|string {}
 
-/** @param mixed $value */
+/** @param string|int $value */
 function mysqli_options(mysqli $mysqli_link, int $option, $value): bool {}
 
 function mysqli_ping(mysqli $mysqli_link): bool {}
@@ -682,11 +679,9 @@ function mysqli_stmt_attr_get(mysqli_stmt $mysql_stmt, int $attr): int|false {}
 
 function mysqli_stmt_attr_set(mysqli_stmt $mysql_stmt, int $attr, int $mode_in): bool {}
 
-/** @param mixed &...$vars */
-function mysqli_stmt_bind_param(mysqli_stmt $mysql_stmt, string $types, &...$vars): bool {}
+function mysqli_stmt_bind_param(mysqli_stmt $mysql_stmt, string $types, mixed &...$vars): bool {}
 
-/** @param mixed &...$vars */
-function mysqli_stmt_bind_result(mysqli_stmt $mysql_stmt, &...$vars): bool {}
+function mysqli_stmt_bind_result(mysqli_stmt $mysql_stmt, mixed &...$vars): bool {}
 
 function mysqli_stmt_close(mysqli_stmt $mysql_stmt): bool {}
 
@@ -761,7 +756,7 @@ function mysqli_refresh(mysqli $mysqli_link, int $options): bool {}
 function mysqli_escape_string(mysqli $mysqli_link, string $string_to_escape): string {}
 
 /**
- * @param mixed $value
+ * @param string|int $value
  * @alias mysqli_options
  */
 function mysqli_set_opt(mysqli $mysqli_link, int $option, $value): bool {}

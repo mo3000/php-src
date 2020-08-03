@@ -39,17 +39,80 @@
 /* This symbol is defined in ext/standard/config.m4.
  * Essentially, it is set if you HAVE_FORK || PHP_WIN32
  * Other platforms may modify that configure check and add suitable #ifdefs
- * around the alternate code.
- * */
+ * around the alternate code. */
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
 
 #if HAVE_OPENPTY
 # if HAVE_PTY_H
 #  include <pty.h>
+# elif defined(__FreeBSD__)
+/* FreeBSD defines `openpty` in <libutil.h> */
+#  include <libutil.h>
+# elif defined(__NetBSD__)
+/* On recent NetBSD releases the emalloc, estrdup ... calls had been introduced in libutil */
+#  include <sys/termios.h>
+extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
 # else
-/* Mac OS X defines `openpty` in <util.h> */
+/* Mac OS X (and some BSDs) define `openpty` in <util.h> */
 #  include <util.h>
 # endif
+#elif defined(__sun)
+# include <fcntl.h>
+# include <stropts.h>
+# include <termios.h>
+# define HAVE_OPENPTY 1
+
+/* Solaris/Illumos does not have any openpty implementation */
+int openpty(int *master, int *slave, char *name, struct termios *termp, struct winsize *winp)
+{
+	int fd, sd;
+	const char *slaveid;
+
+	assert(master);
+	assert(slave);
+
+	sd = *master = *slave = -1;
+	fd = open("/dev/ptmx", O_NOCTTY|O_RDWR);
+	if (fd == -1) {
+		return -1;
+	}
+	/* Checking if we can have to the pseudo terminal */
+	if (grantpt(fd) != 0 || unlockpt(fd) != 0) {
+		goto fail;
+	}
+	slaveid = ptsname(fd);
+	if (!slaveid) {
+		goto fail;
+	}
+
+	/* Getting the slave path and pushing pseudo terminal */
+	sd = open(slaveid, O_NOCTTY|O_RDONLY);
+	if (sd == -1 || ioctl(sd, I_PUSH, "ptem") == -1) {
+		goto fail;
+	}
+	if (termp) {
+		if (tcgetattr(sd, termp) < 0) {
+			goto fail;
+		}
+	}
+	if (winp) {
+		if (ioctl(sd, TIOCSWINSZ, winp) == -1) {
+			goto fail;
+		}
+	}
+
+	*slave = sd;
+	*master = fd;
+	return 0;
+fail:
+	if (sd != -1) {
+		close(sd);
+	}
+	if (fd != -1) {
+		close(fd);
+	}
+	return -1;
+}
 #endif
 
 #include "proc_open.h"
@@ -69,7 +132,7 @@ static php_process_env _php_array_to_envp(zval *environment)
 	char **ep;
 #endif
 	char *p;
-	size_t cnt, sizeenv = 0;
+	size_t sizeenv = 0;
 	HashTable *env_hash; /* temporary PHP array used as helper */
 
 	memset(&env, 0, sizeof(env));
@@ -78,7 +141,7 @@ static php_process_env _php_array_to_envp(zval *environment)
 		return env;
 	}
 
-	cnt = zend_hash_num_elements(Z_ARRVAL_P(environment));
+	uint32_t cnt = zend_hash_num_elements(Z_ARRVAL_P(environment));
 
 	if (cnt < 1) {
 #ifndef PHP_WIN32
@@ -233,8 +296,7 @@ PHP_MINIT_FUNCTION(proc_open)
 }
 /* }}} */
 
-/* {{{ proto bool proc_terminate(resource process [, int signal])
-   Kill a process opened by `proc_open` */
+/* {{{ Kill a process opened by `proc_open` */
 PHP_FUNCTION(proc_terminate)
 {
 	zval *zproc;
@@ -260,8 +322,7 @@ PHP_FUNCTION(proc_terminate)
 }
 /* }}} */
 
-/* {{{ proto int|false proc_close(resource process)
-   Close a process opened by `proc_open` */
+/* {{{ Close a process opened by `proc_open` */
 PHP_FUNCTION(proc_close)
 {
 	zval *zproc;
@@ -283,8 +344,7 @@ PHP_FUNCTION(proc_close)
 }
 /* }}} */
 
-/* {{{ proto array|false proc_get_status(resource process)
-   Get information about a process opened by `proc_open` */
+/* {{{ Get information about a process opened by `proc_open` */
 PHP_FUNCTION(proc_get_status)
 {
 	zval *zproc;
@@ -384,11 +444,18 @@ static inline HANDLE dup_fd_as_handle(int fd)
 # define close_descriptor(fd)	close(fd)
 #endif
 
+/* Determines the type of a descriptor item. */
+typedef enum _descriptor_type {
+	DESCRIPTOR_TYPE_STD,
+	DESCRIPTOR_TYPE_PIPE,
+	DESCRIPTOR_TYPE_SOCKET
+} descriptor_type;
+
 /* One instance of this struct is created for each item in `$descriptorspec` argument to `proc_open`
  * They are used within `proc_open` and freed before it returns */
 typedef struct _descriptorspec_item {
 	int index;                       /* desired FD # in child process */
-	int is_pipe;
+	descriptor_type type;
 	php_file_descriptor_t childend;  /* FD # opened for use in child
 	                                  * (will be copied to `index` in child) */
 	php_file_descriptor_t parentend; /* FD # opened for use in parent
@@ -619,7 +686,7 @@ static int set_proc_descriptor_to_pty(descriptorspec_item *desc, int *master_fd,
 		}
 	}
 
-	desc->is_pipe    = 1;
+	desc->type       = DESCRIPTOR_TYPE_PIPE;
 	desc->childend   = dup(*slave_fd);
 	desc->parentend  = dup(*master_fd);
 	desc->mode_flags = O_RDWR;
@@ -627,6 +694,19 @@ static int set_proc_descriptor_to_pty(descriptorspec_item *desc, int *master_fd,
 #else
 	php_error_docref(NULL, E_WARNING, "PTY (pseudoterminal) not supported on this system");
 	return FAILURE;
+#endif
+}
+
+/* Mark the descriptor close-on-exec, so it won't be inherited by children */
+static php_file_descriptor_t make_descriptor_cloexec(php_file_descriptor_t fd)
+{
+#ifdef PHP_WIN32
+	return dup_handle(fd, FALSE, TRUE);
+#else
+#if defined(F_SETFD) && defined(FD_CLOEXEC)
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+#endif
+	return fd;
 #endif
 }
 
@@ -639,7 +719,7 @@ static int set_proc_descriptor_to_pipe(descriptorspec_item *desc, zend_string *z
 		return FAILURE;
 	}
 
-	desc->is_pipe = 1;
+	desc->type = DESCRIPTOR_TYPE_PIPE;
 
 	if (strncmp(ZSTR_VAL(zmode), "w", 1) != 0) {
 		desc->parentend = newpipe[1];
@@ -651,13 +731,38 @@ static int set_proc_descriptor_to_pipe(descriptorspec_item *desc, zend_string *z
 		desc->mode_flags = O_RDONLY;
 	}
 
-#ifdef PHP_WIN32
-	/* don't let the child inherit the parent side of the pipe */
-	desc->parentend = dup_handle(desc->parentend, FALSE, TRUE);
+	desc->parentend = make_descriptor_cloexec(desc->parentend);
 
+#ifdef PHP_WIN32
 	if (ZSTR_LEN(zmode) >= 2 && ZSTR_VAL(zmode)[1] == 'b')
 		desc->mode_flags |= O_BINARY;
 #endif
+
+	return SUCCESS;
+}
+
+#ifdef PHP_WIN32
+#define create_socketpair(socks) socketpair_win32(AF_INET, SOCK_STREAM, 0, (socks), 0)
+#else
+#define create_socketpair(socks) socketpair(AF_UNIX, SOCK_STREAM, 0, (socks))
+#endif
+
+static int set_proc_descriptor_to_socket(descriptorspec_item *desc)
+{
+	php_socket_t sock[2];
+
+	if (create_socketpair(sock)) {
+		zend_string *err = php_socket_error_str(php_socket_errno());
+		php_error_docref(NULL, E_WARNING, "Unable to create socket pair: %s", ZSTR_VAL(err));
+		zend_string_release(err);
+		return FAILURE;
+	}
+
+	desc->type = DESCRIPTOR_TYPE_SOCKET;
+	desc->parentend = make_descriptor_cloexec((php_file_descriptor_t) sock[0]);
+
+	/* Pass sock[1] to child because it will never use overlapped IO on Windows. */
+	desc->childend = (php_file_descriptor_t) sock[1];
 
 	return SUCCESS;
 }
@@ -767,6 +872,9 @@ static int set_proc_descriptor_from_array(zval *descitem, descriptorspec_item *d
 			goto finish;
 		}
 		retval = set_proc_descriptor_to_pipe(&descriptors[ndesc], zmode);
+	} else if (zend_string_equals_literal(ztype, "socket")) {
+		/* Set descriptor to socketpair */
+		retval = set_proc_descriptor_to_socket(&descriptors[ndesc]);
 	} else if (zend_string_equals_literal(ztype, "file")) {
 		/* Set descriptor to file */
 		if ((zfile = get_string_parameter(descitem, 1, "file name parameter for 'file'")) == NULL) {
@@ -789,7 +897,7 @@ static int set_proc_descriptor_from_array(zval *descitem, descriptorspec_item *d
 		}
 
 		retval = redirect_proc_descriptor(
-			&descriptors[ndesc], Z_LVAL_P(ztarget), descriptors, ndesc, nindex);
+			&descriptors[ndesc], (int)Z_LVAL_P(ztarget), descriptors, ndesc, nindex);
 	} else if (zend_string_equals_literal(ztype, "null")) {
 		/* Set descriptor to blackhole (discard all data written) */
 		retval = set_proc_descriptor_to_blackhole(&descriptors[ndesc]);
@@ -824,7 +932,7 @@ static int set_proc_descriptor_from_resource(zval *resource, descriptorspec_item
 	}
 
 #ifdef PHP_WIN32
-	php_file_descriptor_t fd_t = (HANDLE)_get_osfhandle(fd);
+	php_file_descriptor_t fd_t = (php_file_descriptor_t)_get_osfhandle(fd);
 #else
 	php_file_descriptor_t fd_t = fd;
 #endif
@@ -835,6 +943,7 @@ static int set_proc_descriptor_from_resource(zval *resource, descriptorspec_item
 	return SUCCESS;
 }
 
+#ifndef PHP_WIN32
 static int close_parentends_of_pipes(descriptorspec_item *descriptors, int ndesc)
 {
 	/* We are running in child process
@@ -842,7 +951,7 @@ static int close_parentends_of_pipes(descriptorspec_item *descriptors, int ndesc
 	 * Also, dup() the child end of all pipes as necessary so they will use the FD
 	 * number which the user requested */
 	for (int i = 0; i < ndesc; i++) {
-		if (descriptors[i].is_pipe) {
+		if (descriptors[i].type != DESCRIPTOR_TYPE_STD) {
 			close(descriptors[i].parentend);
 		}
 		if (descriptors[i].childend != descriptors[i].index) {
@@ -857,6 +966,7 @@ static int close_parentends_of_pipes(descriptorspec_item *descriptors, int ndesc
 
 	return SUCCESS;
 }
+#endif
 
 static void close_all_descriptors(descriptorspec_item *descriptors, int ndesc)
 {
@@ -879,8 +989,7 @@ static void efree_argv(char **argv)
 	}
 }
 
-/* {{{ proto resource|false proc_open(string|array command, array descriptorspec, array &pipes [, string cwd [, array env [, array other_options]]])
-   Execute a command, with specified files used for input/output */
+/* {{{ Execute a command, with specified files used for input/output */
 PHP_FUNCTION(proc_open)
 {
 	zval *command_zv, *descriptorspec, *pipes;       /* Mandatory arguments */
@@ -986,8 +1095,8 @@ PHP_FUNCTION(proc_open)
 				goto exit_fail;
 			}
 		} else if (Z_TYPE_P(descitem) == IS_ARRAY) {
-			if (set_proc_descriptor_from_array(descitem, descriptors, ndesc, nindex, &pty_master_fd,
-				&pty_slave_fd) == FAILURE) {
+			if (set_proc_descriptor_from_array(descitem, descriptors, ndesc, (int)nindex,
+				&pty_master_fd, &pty_slave_fd) == FAILURE) {
 				goto exit_fail;
 			}
 		} else {
@@ -1133,12 +1242,13 @@ PHP_FUNCTION(proc_open)
 	/* Clean up all the child ends and then open streams on the parent
 	 *   ends, where appropriate */
 	for (i = 0; i < ndesc; i++) {
-		char *mode_string = NULL;
 		php_stream *stream = NULL;
 
 		close_descriptor(descriptors[i].childend);
 
-		if (descriptors[i].is_pipe) {
+		if (descriptors[i].type == DESCRIPTOR_TYPE_PIPE) {
+			char *mode_string = NULL;
+
 			switch (descriptors[i].mode_flags) {
 #ifdef PHP_WIN32
 				case O_WRONLY|O_BINARY:
@@ -1158,32 +1268,31 @@ PHP_FUNCTION(proc_open)
 					mode_string = "r+";
 					break;
 			}
+
 #ifdef PHP_WIN32
 			stream = php_stream_fopen_from_fd(_open_osfhandle((zend_intptr_t)descriptors[i].parentend,
 						descriptors[i].mode_flags), mode_string, NULL);
 			php_stream_set_option(stream, PHP_STREAM_OPTION_PIPE_BLOCKING, blocking_pipes, NULL);
 #else
 			stream = php_stream_fopen_from_fd(descriptors[i].parentend, mode_string, NULL);
-# if defined(F_SETFD) && defined(FD_CLOEXEC)
-			/* Mark the descriptor close-on-exec, so it won't be inherited by
-			 * potential other children */
-			fcntl(descriptors[i].parentend, F_SETFD, FD_CLOEXEC);
-# endif
 #endif
-			if (stream) {
-				zval retfp;
-
-				/* nasty hack; don't copy it */
-				stream->flags |= PHP_STREAM_FLAG_NO_SEEK;
-
-				php_stream_to_zval(stream, &retfp);
-				add_index_zval(pipes, descriptors[i].index, &retfp);
-
-				proc->pipes[i] = Z_RES(retfp);
-				Z_ADDREF(retfp);
-			}
+		} else if (descriptors[i].type == DESCRIPTOR_TYPE_SOCKET) {
+			stream = php_stream_sock_open_from_socket((php_socket_t) descriptors[i].parentend, NULL);
 		} else {
 			proc->pipes[i] = NULL;
+		}
+
+		if (stream) {
+			zval retfp;
+
+			/* nasty hack; don't copy it */
+			stream->flags |= PHP_STREAM_FLAG_NO_SEEK;
+
+			php_stream_to_zval(stream, &retfp);
+			add_index_zval(pipes, descriptors[i].index, &retfp);
+
+			proc->pipes[i] = Z_RES(retfp);
+			Z_ADDREF(retfp);
 		}
 	}
 

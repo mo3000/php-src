@@ -20,6 +20,11 @@
 #ifndef ZEND_JIT_INTERNAL_H
 #define ZEND_JIT_INTERNAL_H
 
+typedef struct _zend_jit_op_array_extension {
+	zend_func_info func_info;
+	const void *orig_handler;
+} zend_jit_op_array_extension;
+
 /* Profiler */
 extern zend_ulong zend_jit_profile_counter;
 extern int zend_jit_profile_counter_rid;
@@ -123,7 +128,7 @@ ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL zend_jit_func_counter_helper(ZEND_OPCODE_H
 ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL zend_jit_loop_counter_helper(ZEND_OPCODE_HANDLER_ARGS);
 
 void ZEND_FASTCALL zend_jit_copy_extra_args_helper(EXECUTE_DATA_D);
-void ZEND_FASTCALL zend_jit_deprecated_helper(OPLINE_D);
+zend_bool ZEND_FASTCALL zend_jit_deprecated_helper(OPLINE_D);
 
 void ZEND_FASTCALL zend_jit_get_constant(const zval *key, uint32_t flags);
 int  ZEND_FASTCALL zend_jit_check_constant(const zval *key);
@@ -132,36 +137,13 @@ int  ZEND_FASTCALL zend_jit_check_constant(const zval *key);
 #define zend_jit_opline_hash(opline) \
 	zend_jit_hash(opline)
 
-#define ZEND_JIT_TRACE_FUNC_COST      (1*250)
-#define ZEND_JIT_TRACE_RET_COST      (15*250)
-#define ZEND_JIT_TRACE_LOOP_COST      (2*250)
-#define ZEND_JIT_TRACE_COUNTER_INIT (127*250)
-
-#define ZEND_JIT_TRACE_MAX_TRACES        1024 /* max number of traces */
-#define ZEND_JIT_TRACE_MAX_LENGTH        1024 /* max length of single trace */
-#define ZEND_JIT_TRACE_MAX_EXITS          512 /* max number of side exits per trace */
-#define ZEND_JIT_TRACE_MAX_SIDE_TRACES    128 /* max number of side traces of a root trace */
-#define ZEND_JIT_TRACE_MAX_EXIT_COUNTERS 8192 /* max number of side exits for all trace */
-
-#define ZEND_JIT_TRACE_MAX_FUNCS           30 /* max number of different functions in a single trace */
-#define ZEND_JIT_TRACE_MAX_CALL_DEPTH      10 /* max depth of inlined calls */
-#define ZEND_JIT_TRACE_MAX_RET_DEPTH        4 /* max depth of inlined returns */
-#define ZEND_JIT_TRACE_MAX_RECURSION        2 /* max number of recursive inlined calls */
-#define ZEND_JIT_TRACE_MAX_UNROLL_LOOPS     8 /* max number of unrolled loops */
-
-#define ZEND_JIT_TRACE_HOT_SIDE_COUNT       8 /* number of exits before taking side trace */
-#define ZEND_JIT_TRACE_HOT_RETURN_COUNT     8 /* number of returns before taking continuation trace */
-
-#define ZEND_JIT_TRACE_MAX_ROOT_FAILURES   16 /* number of attemts to record/compile a root trace */
-#define ZEND_JIT_TRACE_MAX_SIDE_FAILURES    4 /* number of attemts to record/compile a side trace */
-
-#define ZEND_JIT_TRACE_BAD_ROOT_SLOTS      64 /* number of slots in bad root trace cache */
-
 #define ZEND_JIT_TRACE_STOP(_) \
 	_(LOOP,              "loop") \
 	_(RECURSIVE_CALL,    "recursive call") \
 	_(RECURSIVE_RET,     "recursive return") \
 	_(RETURN,            "return") \
+	_(RETURN_HALT,       "return from interpreter") \
+	_(INTERPRETER,       "exit to VM interpreter") \
 	_(LINK,              "link to another trace") \
 	/* compilation and linking successful */ \
 	_(COMPILED,          "compiled") \
@@ -179,7 +161,6 @@ int  ZEND_FASTCALL zend_jit_check_constant(const zval *key);
 	_(BLACK_LIST,        "trace blacklisted") \
 	_(INNER_LOOP,        "inner loop")                     /* trace it */ \
 	_(COMPILED_LOOP,     "compiled loop") \
-	_(TOPLEVEL,          "toplevel") \
 	_(TRAMPOLINE,        "trampoline call") \
 	_(BAD_FUNC,          "bad function call") \
 	_(HALT,              "exit from interpreter") \
@@ -226,6 +207,9 @@ typedef enum _zend_jit_trace_stop {
 #define ZEND_JIT_EXIT_BLACKLISTED   (1<<1)
 #define ZEND_JIT_EXIT_TO_VM         (1<<2) /* exit to VM without attempt to create a side trace */
 #define ZEND_JIT_EXIT_RESTORE_CALL  (1<<3) /* deoptimizer should restore EX(call) chain */
+#define ZEND_JIT_EXIT_POLYMORPHISM  (1<<4) /* exit because of polymorphic call */
+#define ZEND_JIT_EXIT_FREE_OP1      (1<<5)
+#define ZEND_JIT_EXIT_FREE_OP2      (1<<6)
 
 typedef union _zend_op_trace_info {
 	zend_op dummy; /* the size of this structure must be the same as zend_op */
@@ -239,6 +223,7 @@ typedef union _zend_op_trace_info {
 
 typedef struct _zend_jit_op_array_trace_extension {
 	zend_func_info func_info;
+	const zend_op_array *op_array;
 	size_t offset; /* offset from "zend_op" to corresponding "op_info" */
 	zend_op_trace_info trace_info[1];
 } zend_jit_op_array_trace_extension;
@@ -275,7 +260,7 @@ typedef enum _zend_jit_trace_op {
 #define ZEND_JIT_TRACE_GET_FIRST_SSA_VAR(_info) \
 	(_info >> ZEND_JIT_TRACE_SSA_VAR_SHIFT)
 
-typedef struct _zend_jit_trace_rec {
+struct _zend_jit_trace_rec {
 	union {
 		struct { ZEND_ENDIAN_LOHI(
 			uint8_t   op,    /* zend_jit_trace_op */
@@ -304,7 +289,7 @@ typedef struct _zend_jit_trace_rec {
 		const zend_op          *opline;
 		const zend_class_entry *ce;
 	};
-} zend_jit_trace_rec;
+};
 
 #define ZEND_JIT_TRACE_START_REC_SIZE 2
 
@@ -351,6 +336,7 @@ typedef union _zend_jit_trace_stack {
 
 /* trace info flags */
 #define ZEND_JIT_TRACE_CHECK_INTERRUPT (1<<0)
+#define ZEND_JIT_TRACE_LOOP            (1<<1)
 
 typedef struct _zend_jit_trace_info {
 	uint32_t                  id;            /* trace id */
@@ -363,6 +349,7 @@ typedef struct _zend_jit_trace_info {
 	uint32_t                  exit_counters; /* offset in exit counters array */
 	uint32_t                  stack_map_size;
 	uint32_t                  flags;         /* See ZEND_JIT_TRACE_... defines above */
+	uint32_t                  polymorphism;  /* Counter of polymorphic calls */
 	const zend_op            *opline;        /* first opline */
 	const void               *code_start;    /* address of native code */
 	zend_jit_trace_exit_info *exit_info;     /* info about side exits */
@@ -370,12 +357,11 @@ typedef struct _zend_jit_trace_info {
 	//uint32_t    loop_offset;
 } zend_jit_trace_info;
 
-typedef struct _zend_jit_trace_stack_frame zend_jit_trace_stack_frame;
-
 struct _zend_jit_trace_stack_frame {
 	zend_jit_trace_stack_frame *call;
 	zend_jit_trace_stack_frame *prev;
 	const zend_function        *func;
+	const zend_op              *call_opline;
 	uint32_t                    call_level;
 	uint32_t                    _info;
 	zend_jit_trace_stack        stack[1];
@@ -399,6 +385,7 @@ struct _zend_jit_trace_stack_frame {
 		_frame->call = NULL; \
 		_frame->prev = NULL; \
 		_frame->func = (const zend_function*)_func; \
+		_frame->call_opline = NULL; \
 		_frame->call_level = 0; \
 		_frame->_info = (((uint32_t)(num_args)) << TRACE_FRAME_SHIFT_NUM_ARGS) & TRACE_FRAME_MASK_NUM_ARGS; \
 		_frame->_info |= _flags; \
@@ -446,33 +433,13 @@ struct _zend_jit_trace_stack_frame {
 		(frame)->_info |= TRACE_FRAME_MASK_THIS_CHECKED; \
 	} while (0)
 
-typedef struct _zend_jit_globals {
-	zend_jit_trace_rec *current_trace;
-	zend_jit_trace_stack_frame *current_frame;
-
-	const zend_op *bad_root_cache_opline[ZEND_JIT_TRACE_BAD_ROOT_SLOTS];
-	uint8_t bad_root_cache_count[ZEND_JIT_TRACE_BAD_ROOT_SLOTS];
-	uint8_t bad_root_cache_stop[ZEND_JIT_TRACE_BAD_ROOT_SLOTS];
-	uint32_t bad_root_slot;
-
-	uint8_t  exit_counters[ZEND_JIT_TRACE_MAX_EXIT_COUNTERS];
-} zend_jit_globals;
-
-#ifdef ZTS
-# define JIT_G(v) ZEND_TSRMG(zend_jit_globals_id, zend_jit_globals *, v)
-extern int zend_jit_globals_id;
-#else
-# define JIT_G(v) (jit_globals.v)
-extern zend_jit_globals jit_globals;
-#endif
-
 ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL zend_jit_func_trace_helper(ZEND_OPCODE_HANDLER_ARGS);
 ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL zend_jit_ret_trace_helper(ZEND_OPCODE_HANDLER_ARGS);
 ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL zend_jit_loop_trace_helper(ZEND_OPCODE_HANDLER_ARGS);
 
 int ZEND_FASTCALL zend_jit_trace_hot_root(zend_execute_data *execute_data, const zend_op *opline);
 int ZEND_FASTCALL zend_jit_trace_exit(uint32_t exit_num, zend_jit_registers_buf *regs);
-zend_jit_trace_stop ZEND_FASTCALL zend_jit_trace_execute(zend_execute_data *execute_data, const zend_op *opline, zend_jit_trace_rec *trace_buffer, uint8_t start);
+zend_jit_trace_stop ZEND_FASTCALL zend_jit_trace_execute(zend_execute_data *execute_data, const zend_op *opline, zend_jit_trace_rec *trace_buffer, uint8_t start, zend_bool is_megamorphc);
 
 static zend_always_inline const zend_op* zend_jit_trace_get_exit_opline(zend_jit_trace_rec *trace, const zend_op *opline, zend_bool *exit_if_true)
 {
@@ -486,13 +453,34 @@ static zend_always_inline const zend_op* zend_jit_trace_get_exit_opline(zend_jit
 			*exit_if_true = opline->opcode == ZEND_JMPZ;
 			return opline + 1;
 		} else {
-			ZEND_ASSERT(0);
+			ZEND_UNREACHABLE();
 		}
 	} else  {
-		ZEND_ASSERT(0);
+		ZEND_UNREACHABLE();
 	}
 	*exit_if_true = 0;
 	return NULL;
+}
+
+static zend_always_inline zend_bool zend_jit_may_be_polymorphic_call(const zend_op *opline)
+{
+	if (opline->opcode == ZEND_INIT_FCALL
+	 || opline->opcode == ZEND_INIT_FCALL_BY_NAME
+	 || opline->opcode == ZEND_INIT_NS_FCALL_BY_NAME) {
+		return 0;
+	} else if (opline->opcode == ZEND_INIT_METHOD_CALL
+     || opline->opcode == ZEND_INIT_DYNAMIC_CALL) {
+		return 1;
+	} else if (opline->opcode == ZEND_INIT_STATIC_METHOD_CALL) {
+		return (opline->op1_type != IS_CONST || opline->op2_type != IS_CONST);
+	} else if (opline->opcode == ZEND_INIT_USER_CALL) {
+		return (opline->op2_type != IS_CONST);
+	} else if (opline->opcode == ZEND_NEW) {
+		return (opline->op1_type != IS_CONST);
+	} else {
+		ZEND_UNREACHABLE();
+		return 0;
+	}
 }
 
 #endif /* ZEND_JIT_INTERNAL_H */

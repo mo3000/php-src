@@ -150,8 +150,8 @@ static void dom_xpath_ext_function_php(xmlXPathParserContextPtr ctxt, int nargs,
 	xmlXPathFreeObject(obj);
 
 	fci.object = NULL;
+	fci.named_params = NULL;
 	fci.retval = &retval;
-	fci.no_separation = 0;
 
 	if (!zend_make_callable(&fci.function_name, &callable)) {
 		php_error_docref(NULL, E_WARNING, "Unable to call handler %s()", ZSTR_VAL(callable));
@@ -209,7 +209,7 @@ static void dom_xpath_ext_function_object_php(xmlXPathParserContextPtr ctxt, int
 }
 /* }}} */
 
-/* {{{ proto DOMXPath::__construct(DOMDocument doc) U */
+/* {{{ */
 PHP_METHOD(DOMXPath, __construct)
 {
 	zval *doc;
@@ -290,7 +290,7 @@ int dom_xpath_register_node_ns_write(dom_object *obj, zval *newval)
 }
 /* }}} */
 
-/* {{{ proto bool dom_xpath_register_ns(string prefix, string uri) */
+/* {{{ */
 PHP_METHOD(DOMXPath, registerNamespace)
 {
 	zval *id;
@@ -475,47 +475,47 @@ static void php_xpath_eval(INTERNAL_FUNCTION_PARAMETERS, int type) /* {{{ */
 }
 /* }}} */
 
-/* {{{ proto DOMNodeList dom_xpath_query(string expr [,DOMNode context [, bool registerNodeNS]]) */
+/* {{{ */
 PHP_METHOD(DOMXPath, query)
 {
 	php_xpath_eval(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_DOM_XPATH_QUERY);
 }
 /* }}} end dom_xpath_query */
 
-/* {{{ proto mixed dom_xpath_evaluate(string expr [,DOMNode context [, bool registerNodeNS]]) */
+/* {{{ */
 PHP_METHOD(DOMXPath, evaluate)
 {
 	php_xpath_eval(INTERNAL_FUNCTION_PARAM_PASSTHRU, PHP_DOM_XPATH_EVALUATE);
 }
 /* }}} end dom_xpath_evaluate */
 
-/* {{{ proto void dom_xpath_register_php_functions() */
+/* {{{ */
 PHP_METHOD(DOMXPath, registerPhpFunctions)
 {
 	zval *id = ZEND_THIS;
-	dom_xpath_object *intern;
-	zval *array_value, *entry, new_string;
-	zend_string *name;
+	dom_xpath_object *intern = Z_XPATHOBJ_P(id);
+	zval *entry, new_string;
+	zend_string *name = NULL;
+	HashTable *ht = NULL;
 
-	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "a",  &array_value) == SUCCESS) {
-		intern = Z_XPATHOBJ_P(id);
-		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(array_value), entry) {
+	ZEND_PARSE_PARAMETERS_START(0, 1)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_STR_OR_ARRAY_HT_OR_NULL(name, ht)
+	ZEND_PARSE_PARAMETERS_END();
+
+	if (ht) {
+		ZEND_HASH_FOREACH_VAL(ht, entry) {
 			zend_string *str = zval_get_string(entry);
-			ZVAL_LONG(&new_string,1);
+			ZVAL_LONG(&new_string, 1);
 			zend_hash_update(intern->registered_phpfunctions, str, &new_string);
 			zend_string_release_ex(str, 0);
 		} ZEND_HASH_FOREACH_END();
 		intern->registerPhpFunctions = 2;
-		RETURN_TRUE;
-
-	} else if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "S",  &name) == SUCCESS) {
-		intern = Z_XPATHOBJ_P(id);
-
+	} else if (name) {
 		ZVAL_LONG(&new_string, 1);
 		zend_hash_update(intern->registered_phpfunctions, name, &new_string);
 		intern->registerPhpFunctions = 2;
 	} else {
-		intern = Z_XPATHOBJ_P(id);
 		intern->registerPhpFunctions = 1;
 	}
 

@@ -2,11 +2,6 @@
 Test array_intersect_key() function : usage variation - Passing unexpected values to second argument
 --FILE--
 <?php
-/* Prototype  : array array_intersect_key(array arr1, array arr2 [, array ...])
- * Description: Returns the entries of arr1 that have keys which are present in all the other arguments.
- * Source code: ext/standard/array.c
- */
-
 echo "*** Testing array_intersect_key() : usage variation ***\n";
 
 // Initialise function arguments not being substituted (if any)
@@ -197,12 +192,12 @@ array_intersect_key(): Argument #2 ($arr2) must be of type array, string given
 array_intersect_key(): Argument #2 ($arr2) must be of type array, string given
 
 --instance of classWithToString--
-array_intersect_key(): Argument #2 ($arr2) must be of type array, object given
-array_intersect_key(): Argument #2 ($arr2) must be of type array, object given
+array_intersect_key(): Argument #2 ($arr2) must be of type array, classWithToString given
+array_intersect_key(): Argument #2 ($arr2) must be of type array, classWithToString given
 
 --instance of classWithoutToString--
-array_intersect_key(): Argument #2 ($arr2) must be of type array, object given
-array_intersect_key(): Argument #2 ($arr2) must be of type array, object given
+array_intersect_key(): Argument #2 ($arr2) must be of type array, classWithoutToString given
+array_intersect_key(): Argument #2 ($arr2) must be of type array, classWithoutToString given
 
 --undefined var--
 array_intersect_key(): Argument #2 ($arr2) must be of type array, null given
